@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import net.derkholm.nmica.build.NMApp;
+import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifAlignment;
@@ -23,7 +23,7 @@ import org.bjv2.util.cli.Option;
 
 @App(overview="A tool for aligning a set of motifs and output the alignment", 
 	generateStub=true)
-@NMApp(launchName="nmalign", vm=VirtualMachine.SERVER)
+@NMExtraApp(launchName="nmalign", vm=VirtualMachine.SERVER)
 public class MotifAligner {
 	
 	private File motifs;

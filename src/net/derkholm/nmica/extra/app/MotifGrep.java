@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
-import net.derkholm.nmica.build.NMApp;
+import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
@@ -17,7 +17,7 @@ import org.bjv2.util.cli.Option;
 
 
 @App(overview="A tool for outputting subsets of motif sets based on name lists or a regular expression", generateStub=true)
-@NMApp(launchName="nmgrep", vm=VirtualMachine.SERVER)
+@NMExtraApp(launchName="nmgrep", vm=VirtualMachine.SERVER)
 public class MotifGrep {
 
 	private File motifs;

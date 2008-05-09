@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
-import net.derkholm.nmica.build.NMApp;
+import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
@@ -39,7 +39,7 @@ import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
 @App(overview = "Spike motifs to sequences with a specified rate", generateStub = true)
-@NMApp(launchName = "nmspikeseq", vm = VirtualMachine.SERVER)
+@NMExtraApp(launchName = "nmspikeseq", vm = VirtualMachine.SERVER)
 public class Spike {
 	protected File[] seqFiles;
 	protected File[] motifFiles;

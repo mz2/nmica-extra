@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
 
-import net.derkholm.nmica.build.NMApp;
+import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.maths.NativeMath;
 import net.derkholm.nmica.model.motif.Mosaic;
@@ -46,7 +46,7 @@ import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
 @App(overview="Output background likelihoods of a sequence given a mosaic background model", generateStub=true)
-@NMApp(launchName="nmmostool", vm=VirtualMachine.SERVER)
+@NMExtraApp(launchName="nmmostool", vm=VirtualMachine.SERVER)
 public class MosaicTool {
 	private File mosaic;
 	

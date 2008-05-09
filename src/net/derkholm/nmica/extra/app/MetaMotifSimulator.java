@@ -1,49 +1,30 @@
 package net.derkholm.nmica.extra.app;
 
-import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.OutputStreamWriter;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
-
-import javax.sound.midi.SysexMessage;
-
-import org.biojava.bio.BioError;
-import org.biojava.bio.dist.Distribution;
-import org.biojava.bio.dp.WeightMatrix;
-import org.biojava.bio.seq.DNATools;
-import org.biojava.bio.symbol.AlphabetManager;
-import org.biojava.bio.symbol.FiniteAlphabet;
-import org.biojava.bio.symbol.IllegalAlphabetException;
-import org.biojava.bio.symbol.IllegalSymbolException;
-import org.biojava.bio.symbol.Symbol;
-import org.biojava.utils.ChangeVetoException;
-import org.bjv2.util.cli.App;
-import org.bjv2.util.cli.Option;
-import org.bjv2.util.cli.UserLevel;
-
-import cern.colt.list.IntArrayList;
+import java.util.List;
 
 import net.derkholm.nmica.apps.MetaMotifFinder;
-import net.derkholm.nmica.apps.ModelScoreEvaluator;
-import net.derkholm.nmica.build.NMApp;
+import net.derkholm.nmica.apps.MetaMotifModelScoreEvaluator;
+import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.maths.MathsTools;
-import net.derkholm.nmica.model.ContributionSampler;
 import net.derkholm.nmica.model.Datum;
 import net.derkholm.nmica.model.MultiplexContributionSampler;
+import net.derkholm.nmica.model.metamotif.Dirichlet;
 import net.derkholm.nmica.model.metamotif.MetaMotif;
-import net.derkholm.nmica.model.metamotif.MetaMotifColumnCloneSampler;
 import net.derkholm.nmica.model.metamotif.MetaMotifClippedSimplexPrior;
+import net.derkholm.nmica.model.metamotif.MetaMotifColumnCloneSampler;
 import net.derkholm.nmica.model.metamotif.MetaMotifIOTools;
 import net.derkholm.nmica.model.metamotif.MetaMotifPrior;
 import net.derkholm.nmica.model.metamotif.MetaMotifTools;
-import net.derkholm.nmica.model.metamotif.Dirichlet;
-import net.derkholm.nmica.model.metamotif.bg.Background;
 import net.derkholm.nmica.model.metamotif.bg.MetaMotifBackground;
 import net.derkholm.nmica.model.metamotif.bg.MetaMotifDirichletBackground;
 import net.derkholm.nmica.model.metamotif.bg.MetaMotifMixtureBackground;
@@ -57,17 +38,25 @@ import net.derkholm.nmica.model.metamotif.sampler.MetaMotifSymbolScalingSampler;
 import net.derkholm.nmica.model.metamotif.sampler.MetaMotifSymbolSwapSampler;
 import net.derkholm.nmica.model.metamotif.sampler.MetaMotifZapSampler;
 import net.derkholm.nmica.model.metamotif.sampler.SymbolWeightAlteringSampler;
-import net.derkholm.nmica.model.metamotif.sampler.MetaMotifSeedSampler.SeedLengthPolicy;
-import net.derkholm.nmica.model.metamotif.sampler.MetaMotifSeedSampler.SeedPrecisionPolicy;
-import net.derkholm.nmica.model.metamotif.sampler.MetaMotifSymbolSwapSampler.SymbolWeightSwappingPolicy;
 import net.derkholm.nmica.model.motif.NMWeightMatrix;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
-import net.derkholm.nmica.utils.CliTools;
-import java.util.*;
+
+import org.biojava.bio.BioError;
+import org.biojava.bio.dist.Distribution;
+import org.biojava.bio.dp.WeightMatrix;
+import org.biojava.bio.seq.DNATools;
+import org.biojava.bio.symbol.FiniteAlphabet;
+import org.biojava.bio.symbol.IllegalAlphabetException;
+import org.biojava.bio.symbol.IllegalSymbolException;
+import org.biojava.bio.symbol.Symbol;
+import org.bjv2.util.cli.App;
+import org.bjv2.util.cli.Option;
+
+import cern.colt.list.IntArrayList;
 
 @App(overview="The NestedMICA meta motif sampler / spiking simulator.", generateStub=true)
-@NMApp(launchName="nmmetasim", vm=VirtualMachine.SERVER)
+@NMExtraApp(launchName="nmmetasim", vm=VirtualMachine.SERVER)
 public class MetaMotifSimulator {
 	//private File backgroundFile;
 	private int num = -1;
@@ -508,7 +497,7 @@ public class MetaMotifSimulator {
 				for (int mm = 0; mm < indices.size(); mm++) {
 					strBuf.append(indices.get(mm));
 					if (mm < (indices.size() - 1))
-						strBuf.append(ModelScoreEvaluator.OCC_COL_SEPARATOR);
+						strBuf.append(MetaMotifModelScoreEvaluator.OCC_COL_SEPARATOR);
 				}
 				strBuf.append("\n");
 			}	
