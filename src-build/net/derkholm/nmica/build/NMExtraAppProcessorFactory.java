@@ -31,22 +31,22 @@ import com.sun.mirror.apt.AnnotationProcessorEnvironment;
 import com.sun.mirror.apt.AnnotationProcessorFactory;
 import com.sun.mirror.declaration.AnnotationTypeDeclaration;
 
-public class NMAppProcessorFactory implements AnnotationProcessorFactory {
-
+public class NMExtraAppProcessorFactory implements AnnotationProcessorFactory {
 	public AnnotationProcessor getProcessorFor(
 			Set<AnnotationTypeDeclaration> decl, 
 			AnnotationProcessorEnvironment env) 
 	{
-		return new NMAppProcessor(env);
+		return new NMExtraAppProcessor(env);
 	}
 
 	public Collection<String> supportedAnnotationTypes() {
-		return Arrays.asList(new String[] {NMApp.class.getName(), NMAppProcessor.class.getName()});
+		return Arrays.asList(
+			new String[] {
+				NMExtraApp.class.getName(), 
+				NMExtraAppProcessor.class.getName()});
 	}
 
 	public Collection<String> supportedOptions() {
 		return Arrays.asList("-AlaunchpadDir");
 	}
-	
-	
 }

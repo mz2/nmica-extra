@@ -31,23 +31,22 @@ import com.sun.mirror.apt.AnnotationProcessor;
 import com.sun.mirror.apt.AnnotationProcessorEnvironment;
 import com.sun.mirror.declaration.TypeDeclaration;
 
-public class NMAppProcessor implements AnnotationProcessor {
+public class NMExtraAppProcessor implements AnnotationProcessor {
 	private final AnnotationProcessorEnvironment env;
 	private File output;
 	
-	public NMAppProcessor(AnnotationProcessorEnvironment env) {
+	public NMExtraAppProcessor(AnnotationProcessorEnvironment env) {
 		this.env = env;
 		for (String opt : env.getOptions().keySet()) {
 			if (opt.startsWith("-AlaunchpadDir=")) {
 				this.output = new File(opt.substring("-AlaunchpadDir=".length()));
 			}
 		}
-		
 	}
 	
 	public void process() {
 		for (TypeDeclaration td : env.getTypeDeclarations()) {
-			NMApp nmapp = td.getAnnotation(NMApp.class);
+			NMExtraApp nmapp = td.getAnnotation(NMExtraApp.class);
 			if (nmapp != null) {
 				if (this.output == null) {
 					env.getMessager().printError("Missing required option -AlaunchpadDir");
@@ -77,7 +76,7 @@ public class NMAppProcessor implements AnnotationProcessor {
 						pw.printf("  JAVA_CMD=${JAVA_HOME}/bin/java%n");
 						pw.printf("fi%n");
 						pw.printf("%n");
-						pw.printf("NMICA_CLASSPATH=${NMICA_DIR}/lib/changeless.jar:${NMICA_DIR}/lib/biojava.jar:${NMICA_DIR}/lib/bytecode.jar:${NMICA_DIR}/lib/bjv2-core-0.1.jar:${NMICA_DIR}/lib/stax-api-1.0.1.jar:${NMICA_DIR}/lib/wstx-lgpl-3.0.2.jar:${NMICA_DIR}/lib/nmica.jar%n");
+						pw.printf("NMICA_CLASSPATH=${NMICA_DIR}/lib/changeless.jar:${NMICA_DIR}/lib/biojava.jar:${NMICA_DIR}/lib/bytecode.jar:${NMICA_DIR}/lib/bjv2-core-0.1.jar:${NMICA_DIR}/lib/stax-api-1.0.1.jar:${NMICA_DIR}/lib/wstx-lgpl-3.0.2.jar:${NMICA_DIR}/lib/nmica.jar:${NMICA_DIR}/lib/nmica-extra.jar%n");
 						pw.printf("%n");
 						pw.printf("${JAVA_CMD} ${NMICA_JVM} ${NMICA_JVMOPTS} -classpath ${NMICA_CLASSPATH} -Djava.library.path=${NMICA_DIR}/native -Dchangeless.no_dire_warning=true ${NMICA_MAINCLASS} \"$@\"%n");
 
