@@ -58,4 +58,8 @@ public class MotifPair implements Comparable {
 		public double getScore() {
 			return score;
 		}
+	
+		public boolean isFlipped() {
+			return flip;
+		}
 }

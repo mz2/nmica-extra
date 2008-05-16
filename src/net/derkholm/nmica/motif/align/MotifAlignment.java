@@ -39,23 +39,37 @@ public class MotifAlignment {
 		motifsToAlignmentElems = 
 			new HashMap<Motif, MotifAlignmentElement>();
 	}
-	
+		
 	public void addMotif(Motif m, int offset) {
-		MotifAlignmentElement me = new MotifAlignmentElement(m,offset);
-		motifs.add(me);
-		motifsToAlignmentElems.put(m, me);
-		offsetSortedMotifs.add(me);
+		System.out.println("+"+m.getName()+" offset:" + offset);
+		if (!contains(m)) {
+			MotifAlignmentElement me = new MotifAlignmentElement(m,offset);
+			motifs.add(me);
+			motifsToAlignmentElems.put(m, me);
+			offsetSortedMotifs.add(me);
+		} else {
+			throw new IllegalArgumentException("Motif "+m.getName()+" is already present in the alignment (offset " + offset + ")");
+		}
 	}
 	
-	public void removeMotif(Motif m) {
-		MotifAlignmentElement me = motifsToAlignmentElems.get(m);
-		motifs.remove(me);
-		offsetSortedMotifs.remove(me);
-		motifsToAlignmentElems.remove(m);
+	public boolean removeMotif(Motif m) {
+		if (motifsToAlignmentElems.containsKey(m)) {
+			MotifAlignmentElement me = motifsToAlignmentElems.get(m);
+			motifs.remove(me);
+			offsetSortedMotifs.remove(me);
+			motifsToAlignmentElems.remove(m);
+			return true;
+		} else {
+			return false;
+		}
 	}
 	
 	public boolean contains(Motif m) {
 		return motifs.contains(motifsToAlignmentElems.get(m));
+	}
+	
+	public int offset(Motif m) {
+		return motifsToAlignmentElems.get(m).getOffset();
 	}
 
 	public Iterator<MotifAlignmentElement> iterator() {
@@ -73,8 +87,7 @@ public class MotifAlignment {
 		return mel.getOffset() + mel.getMotif().getWeightMatrix().columns() - mef.getOffset();
 	}
 
-	public <MotifAlignmentElement> 
-		MotifAlignmentElement[] toArray(MotifAlignmentElement[] motifs) {
+	public MotifAlignmentElement[] toArray(MotifAlignmentElement[] motifs) {
 		return this.motifs.toArray(motifs);
 	}
 
@@ -191,4 +204,13 @@ public class MotifAlignment {
 		}
 		
 	}
+
+	public Motif[] motifs() {
+		Motif[] ms = new Motif[motifs.size()];
+		for (int i = 0; i < motifs.size(); i++)
+			ms[i] = motifs.get(i).getMotif();
+		
+		return ms;
+	}
+
 }
