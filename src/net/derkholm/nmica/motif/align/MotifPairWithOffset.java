@@ -10,7 +10,7 @@ public class MotifPairWithOffset extends MotifPair {
 		this.offset = offset;
 	}
 
-	public int getOffset() {
+	public int getOffset() { 
 		return offset;
 	}
 }

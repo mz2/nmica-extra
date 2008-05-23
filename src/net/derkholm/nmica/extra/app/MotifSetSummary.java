@@ -20,7 +20,7 @@ import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 import net.derkholm.nmica.motif.MotifPair;
 import net.derkholm.nmica.motif.MotifTools;
-import net.derkholm.nmica.motif.SimpleMotifComparitor;
+import net.derkholm.nmica.motif.SquaredDifferenceMotifComparitor;
 import net.derkholm.nmica.seq.WmTools;
 
 import org.biojava.bio.dist.Distribution;
@@ -342,7 +342,7 @@ public class MotifSetSummary {
 		if (bestHits) {
 			if (otherMotifs != null) {
 				if (pairedOutput) {
-					MotifPair[] mpairs = SimpleMotifComparitor.getMotifComparitor().bestHits(motifs, otherMotifs);
+					MotifPair[] mpairs = SquaredDifferenceMotifComparitor.getMotifComparitor().bestHits(motifs, otherMotifs);
 					for (MotifPair mp : mpairs) {
 						System.out.print(mp.getM1().getName() + " ");
 						System.out.print(mp.getM2().getName() + " ");
@@ -350,7 +350,7 @@ public class MotifSetSummary {
 					}
 				} else {
 					Matrix2D motifDistances = 
-						SimpleMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs, otherMotifs);
+						SquaredDifferenceMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs, otherMotifs);
 					
 					//print out the header row first
 					for (int i = 0; i < motifDistances.columns(); i++) {
@@ -373,7 +373,7 @@ public class MotifSetSummary {
 					
 				}
 			} else {
-				Matrix2D motifDistances = SimpleMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs);
+				Matrix2D motifDistances = SquaredDifferenceMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs);
 				
 				for (int i = 0; i < motifs.length; i++) {
 					System.out.print("\t"+motifs[i].getName());
@@ -398,7 +398,7 @@ public class MotifSetSummary {
 		}
 		
 		if (bestReciprocalHits) {
-			MotifPair[] mpairs = SimpleMotifComparitor.getMotifComparitor().bestReciprocalHits(motifs, otherMotifs);
+			MotifPair[] mpairs = SquaredDifferenceMotifComparitor.getMotifComparitor().bestReciprocalHits(motifs, otherMotifs);
 			
 			for (MotifPair mp : mpairs) {
 				System.out.print(mp.getM1().getName() + " ");
