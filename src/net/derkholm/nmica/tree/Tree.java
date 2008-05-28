@@ -1,4 +1,4 @@
-package net.derkholm.nmica.motif.align;
+package net.derkholm.nmica.tree;
 
 import java.util.ArrayList;
 import java.util.Collection;
