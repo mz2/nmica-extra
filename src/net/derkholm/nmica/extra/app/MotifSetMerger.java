@@ -34,7 +34,8 @@ public class MotifSetMerger {
 		this.out = str;
 	}
 	
-	@Option(help="Ignore errors, e.g. empty motif set files, (default=false)")
+	@Option(help="Ignore errors, e.g. empty/incorrect motif set files (default=false)",
+			optional=true)
 	public void setIgnoreErrors(boolean b) {
 		this.ignoreErrors = b;
 	}
