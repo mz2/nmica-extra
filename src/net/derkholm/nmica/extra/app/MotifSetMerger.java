@@ -20,14 +20,8 @@ import org.bjv2.util.cli.Option;
 @NMExtraApp(launchName="nmmerge", vm=VirtualMachine.SERVER)
 public class MotifSetMerger {
 	
-	private String name;
 	private String out;
 	private boolean ignoreErrors;
-
-	@Option(help="Name of the motifset",optional=true)
-	public void setName(String name) {
-		this.name = name;
-	}
 	
 	@Option(help="Output filename")
 	public void setOut(String str) {
