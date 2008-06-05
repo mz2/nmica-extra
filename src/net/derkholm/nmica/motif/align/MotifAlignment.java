@@ -30,16 +30,19 @@ import org.biojava.bio.symbol.IllegalAlphabetException;
 import org.biojava.bio.symbol.IllegalSymbolException;
 import org.biojava.bio.symbol.Symbol;
 
+
 public class MotifAlignment implements 
 	Iterable<MotifAlignment.MotifAlignmentElement> {
 	protected List<MotifAlignmentElement> motifElems;
 	protected SortedSet<MotifAlignmentElement> offsetSortedMotifs;
 	protected HashMap<Motif, MotifAlignmentElement> motifsToAlignmentElems;
+	protected SortedSet<Integer> alignedMotifIndices;
 	
 	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
 	
 	protected String name;
 	protected final FiniteAlphabet alphabet;
+	protected Motif[] allMotifs;
 	
 	
 	private MotifAlignment(FiniteAlphabet alphabet) {
@@ -52,42 +55,45 @@ public class MotifAlignment implements
 		
 		motifsToAlignmentElems = 
 			new HashMap<Motif, MotifAlignmentElement>();
+		
+		alignedMotifIndices = new TreeSet<Integer>();
 	}
 	
 	public MotifAlignment(Motif[] motifs, MotifComparitorIFace mc) 
 	throws Exception {
 		this((FiniteAlphabet) motifs[0].getWeightMatrix().getAlphabet());
+		allMotifs = motifs; /* used for indexing */
 		List<Motif> motifList = new ArrayList<Motif>(Arrays.asList(motifs));
 
-		{ 
-			MotifPairWithOffset mp = highestScoringPair((MotifComparitorIFace)mc, 
-							motifList.toArray(new Motif[motifList.size()]));
-			mp.getM1();
-			mp.getM2();
-			
-			addMotif(mp.getM1(), 0, false);
-			addMotif(mp.getM2(), mp.getOffset(), mp.isFlipped());
-			
-			/* if it's flipped, let's flip it back */
-			if (mp.isFlipped()) {
-				mp.getM2()
-					.setWeightMatrix(
-						WmTools.reverseComplement(
-							mp.getM2().getWeightMatrix()));
-			}
-			
-			motifList.remove(mp.getM1());
-			motifList.remove(mp.getM2());
+		MotifComparisonMatrixBundle mb = mc.getComparisonMatrixWithOffsets(
+				motifList.toArray(new Motif[motifList.size()]));
+		
+		MotifPairWithOffset mp = highestScoringPair(mb);
+		mp.getM1();
+		mp.getM2();
+		
+		addMotif(mp.getM1(), 0, false);
+		addMotif(mp.getM2(), mp.getOffset(), mp.isFlipped());
+		
+		/* if it's flipped, let's flip it back */
+		if (mp.isFlipped()) {
+			mp.getM2()
+				.setWeightMatrix(
+					WmTools.reverseComplement(
+						mp.getM2().getWeightMatrix()));
 		}
+		
+		motifList.remove(mp.getM1());
+		motifList.remove(mp.getM2());
+		
+		//System.out.println(" # M1:" + mp.getM1().getName() + " M2:" + mp.getM2().getName());
 		
 		/* then iterate through the remaining ones */
 		while (motifList.size() > 0) {
-			Motif[] remainingMotifs 
-				= motifList.toArray(new Motif[motifList.size()]);
+			//Motif[] remainingMotifs 
+			//	= motifList.toArray(new Motif[motifList.size()]);
 			
-			MotifPairWithOffset mp = 
-				highestScoringPair(mc, motifs(), remainingMotifs);
-			
+			mp = highestScoringPairWithAlreadyAligned(mb);
 			
 			/* if it's flipped, let's flip it back */
 			if (mp.isFlipped()) {
@@ -97,6 +103,7 @@ public class MotifAlignment implements
 							mp.getM2().getWeightMatrix()));
 			}
 			
+			//System.out.println(" > M1:" + mp.getM1().getName() + " M2:" + mp.getM2().getName());
 			int offset;
 			if (mp.isFlipped()) {
 				offset = offset(mp.getM1()) + mp.getOffset();
@@ -104,8 +111,7 @@ public class MotifAlignment implements
 				offset = offset(mp.getM1()) + mp.getOffset();
 			}
 			
-			addMotif(
-						mp.getM2(),
+			addMotif(	mp.getM2(),
 						offset,
 						mp.isFlipped());
 			
@@ -137,14 +143,34 @@ public class MotifAlignment implements
 	}
 		
 	public void addMotif(Motif m, int offset, boolean flipped) {
+		//System.err.println("Adding " + m.getName());
 		//System.err.println("+"+m.getName()+" offset:" + offset);
 		if (!contains(m)) {
 			MotifAlignmentElement me = new MotifAlignmentElement(m,offset,flipped);
 			motifElems.add(me);
 			motifsToAlignmentElems.put(m, me);
 			offsetSortedMotifs.add(me);
+			
+			/* This aligned motif indexing is used 
+			 * with the MotifAlignment(Motif[] motifs,MotifComparitorIFace mc) 
+			 * constructor */
+			if (allMotifs != null) {
+				int i = -1;
+				//System.out.println("All motifs " + allMotifs);
+				for (int index = 0; i < allMotifs.length; index++)
+					if (allMotifs[index] == m) { i = index; break; }
+				
+				if (i == -1)
+					throw new IllegalStateException(
+						"Motif " + m + 
+						" is not contained in the motif array given");
+				
+				alignedMotifIndices.add(i);
+			}
 		} else {
-			throw new IllegalArgumentException("Motif "+m.getName()+" is already present in the alignment (offset " + offset + ")");
+			throw new IllegalArgumentException(
+					"Motif " + m.getName() + 
+					" is already present in the alignment (offset " + offset + ")");
 		}
 	}
 	
@@ -165,6 +191,8 @@ public class MotifAlignment implements
 	}
 	
 	public int offset(Motif m) {
+		//System.out.println("offset for " + m.getName());
+		//System.out.println(motifsToAlignmentElems.get(m));
 		return motifsToAlignmentElems.get(m).getOffset();
 	}
 
@@ -271,13 +299,17 @@ public class MotifAlignment implements
 		
 	}
 
-	public Motif[] motifs() {
-		writeOffsetAnnotations();
+	private Motif[] _motifs() {
 		Motif[] ms = new Motif[motifElems.size()];
 		for (int i = 0; i < motifElems.size(); i++)
 			ms[i] = motifElems.get(i).getMotif();
 		
 		return ms;
+	}
+	
+	public Motif[] motifs() {
+		writeOffsetAnnotations();
+		return _motifs();
 	}
 
 	
@@ -472,9 +504,165 @@ public class MotifAlignment implements
 	public Iterator<MotifAlignmentElement> iterator() {
 		return motifElems.iterator();
 	}
+	
+	public MotifPairWithOffset highestScoringPair(MotifComparisonMatrixBundle mb)
+		throws MotifAlignmentException {
+		double maxScore = Double.POSITIVE_INFINITY;
+		int offset = 0;
+		int bestRow = -1;
+		int bestCol = -1;
+		
+		Motif m0, m1;
+		m0 = null;
+		m1 = null;
+		boolean flipped = false;
+		
+		Motif[] motifs = mb.getRowMotifs();
+		for (int i = 0; i < motifs.length; i++) {
+			for (int j = (i+1); j < motifs.length; j++) {
+				if (alignedMotifIndices.contains(i) && 
+					alignedMotifIndices.contains(j)) continue;
+				//if (!mb.isAllowed(i, j)) continue;
+				
+				double ijScore = mb.getSenseScoreMatrix().get(i, j);
+				if (ijScore < maxScore) {
+					maxScore = ijScore;
+					offset = mb.getSenseOffsetMatrix().get(i, j);
+					bestRow = i;
+					bestCol = j;
+					flipped = false;
+				}
+				
+				double fijScore = mb.getAntisenseScoreMatrix().get(i, j);
+				if (fijScore < maxScore) {
+					maxScore = fijScore;
+					offset = mb.getAntisenseOffsetMatrix().get(i, j);
+					bestRow = i;
+					bestCol = j;
+					flipped = true;
+				}
+			}
+		}
+		
+		if (bestRow < 0 || bestCol < 0)
+			throw new MotifAlignmentException("Could not align motifs");
+		
+		m0 = motifs[bestRow];
+		m1 = motifs[bestCol];
+		
+		if (m0 != null && m1 != null) {
+			//System.out.println("Best row:" + bestRow + " col:" + bestCol);
+			//mb.setAllowed(bestRow, bestCol, false);
+			MotifPairWithOffset mpoffset = new MotifPairWithOffset(
+					m0, 
+					m1, 
+					maxScore, 
+					flipped, offset);					
+			return mpoffset;
+		} else {
+			throw new MotifAlignmentException("Could not align motifs");
+		}
+	}
+	
+	/**
+	 * Always returns the already aligned motif as the m1 of the pair 
+	 * (offset is flipped accordingly)
+	 * 
+	 * @param mb
+	 * @return
+	 * @throws MotifAlignmentException
+	 */
+	public MotifPairWithOffset highestScoringPairWithAlreadyAligned(MotifComparisonMatrixBundle mb)
+	throws MotifAlignmentException {
+	//System.err.println("... comparing with already aligned");
+	double maxScore = Double.POSITIVE_INFINITY;
+	int offset = 0;
+	int bestRow = -1;
+	int bestCol = -1;
+	
+	Motif m0, m1;
+	m0 = null;
+	m1 = null;
+	boolean flipped = false;
+	
+	Motif[] motifs = mb.getRowMotifs();
+	for (int i = 0; i < motifs.length; i++) {
+		for (int j = (i+1); j < motifs.length; j++) {
+			/* if both are already in the alignment, let's ignore */
+			if (alignedMotifIndices.contains(i) &&
+					alignedMotifIndices.contains(j)) continue;
+			
+			/* if one of the aligned motifs is not already in the alignment, let's ignore */
+			if (!alignedMotifIndices.contains(i) && 
+				!alignedMotifIndices.contains(j)) continue;
+			
+			/*
+			if (alignedMotifIndices.contains(i) &&
+				alignedMotifIndices.contains(j))
+				throw new IllegalStateException(
+						"Both of the motifs " + allMotifs[i].getName() + 
+						"(" + i + ") and " + allMotifs[j].getName() + "(" + j + ") " +
+						"are already in the alignment! " +
+						"This comparison should not have been made.");*/
+			
+			double ijScore = mb.getSenseScoreMatrix().get(i, j);
+			if (ijScore < maxScore) {
+				maxScore = ijScore;
+				offset = mb.getSenseOffsetMatrix().get(i, j);
+				bestRow = i;
+				bestCol = j;
+				flipped = false;
+				//if (alignedMotifIndices.contains(i))
+				//	iContained = true;
+			}
+			
+			double fijScore = mb.getAntisenseScoreMatrix().get(i, j);
+			if (fijScore < maxScore) {
+				maxScore = fijScore;
+				offset = mb.getAntisenseOffsetMatrix().get(i, j);
+				bestRow = i;
+				bestCol = j;
+				flipped = true;
+				//if (alignedMotifIndices.contains(i))
+				//	iContained = true;
+			}
+		}
+	}
+	
+	if (bestRow < 0 || bestCol < 0)
+		throw new MotifAlignmentException("Could not align motifs");
+	
+	m0 = motifs[bestRow];
+	m1 = motifs[bestCol];
+	
+	if (m0 != null && m1 != null) {
+		//System.out.println("Best row:" + bestRow + " col:" + bestCol);
+		//mb.setAllowed(bestRow, bestCol, false);
+		MotifPairWithOffset mpoffset;
+		if (alignedMotifIndices.contains(bestRow))
+			mpoffset = new MotifPairWithOffset(
+				m0, 
+				m1, 
+				maxScore, 
+				flipped, offset);
+		else
+			mpoffset = new MotifPairWithOffset(
+				m1,
+				m0,
+				maxScore,
+				flipped, -offset);
+		return mpoffset;
+	} else {
+		throw new MotifAlignmentException("Could not align motifs");
+	}
+}
 
-
-	public MotifPairWithOffset highestScoringPair(MotifComparitorIFace mc, Motif[] motifs) 
+	/*public MotifComparisonMatrixBundle highestScoringPair(MotifComparitorIFace mc, Motif[] motifs) 
+		throws IllegalAlphabetException, IllegalSymbolException {
+		return mc.getComparisonMatrixWithOffsets(motifs);
+	}*/
+	
+	/*public MotifPairWithOffset highestScoringPair(MotifComparitorIFace mc, Motif[] motifs) 
 		throws IllegalAlphabetException, IllegalSymbolException, MotifAlignmentException {
 		
 		MotifComparisonMatrixBundle mb = mc.
@@ -519,32 +707,45 @@ public class MotifAlignment implements
 		} else {
 			throw new MotifAlignmentException("Could not align motifs");
 		}
-	}
+	}*/
 	
-	public MotifPairWithOffset highestScoringPair(
+	/*
+	public SparseMotifComparisonMatrixBundle highestScoringPairBetweenSets(
 			MotifComparitorIFace mc, Motif[] motifs0, Motif[] motifs1) 
 		throws Exception {
-		MotifComparisonMatrixBundle mb = mc.
-			getComparisonMatrixWithOffsets(
-				motifs0, motifs1);
 		
+					mc.getComparisonMatrixWithOffsets(motifs0, motifs1));
+	}*/
+	
+	public MotifPairWithOffset highestScoringPairBetweenSets(
+			SparseMotifComparisonMatrixBundle mb) 
+		throws Exception {
+		Motif[] motifs0 = mb.getRowMotifs();
+		Motif[] motifs1 = mb.getColumnMotifs();
+			
 		double maxScore = Double.POSITIVE_INFINITY;
 		int offset = 0;
 		Motif m0, m1;
 		m0 = null;
 		m1 = null;
+		int bestRow, bestCol;
+		bestRow = -1;
+		bestCol = -1;
+		
 		boolean flipped = false;
 		
 		//System.err.println("---");
 		for (int i = 0; i < motifs0.length; i++) {
 			for (int j = 0; j < motifs1.length; j++) {
+				if (!mb.isAllowed(i, j)) continue;
+				
 				double ijScore = mb.getSenseScoreMatrix().get(i, j);
 				if (ijScore < maxScore) {
 					maxScore = ijScore;
 					offset = mb.getSenseOffsetMatrix().get(i, j);
 					//System.err.println("score::"+ijScore + " offset:" + offset);
-					m0 = motifs0[i];
-					m1 = motifs1[j];
+					bestRow = i;
+					bestCol = j;
 					flipped = false;
 				}
 				
@@ -555,12 +756,20 @@ public class MotifAlignment implements
 					//System.err.println("f score::"+ijScore + " offset:" + offset);
 					m0 = motifs0[i];
 					m1 = motifs1[j];
+					bestRow = i;
+					bestCol = j;
+					
 					flipped = true;
 				}
 			}
 		}
 		
+		m0 = motifs0[bestRow];
+		m1 = motifs1[bestCol];
+		
+		
 		if (m0 != null && m1 != null) {
+			mb.setAllowed(bestRow, bestCol, false);
 			MotifPairWithOffset mpoffset = 
 				new MotifPairWithOffset(m0, m1, maxScore, flipped, offset);					
 			return mpoffset;
