@@ -107,7 +107,9 @@ public class MotifAligner {
 		MotifAlignment alignment 
 			= new MotifAlignment(motifs, mc);
 		alignment = alignment.alignmentWithZeroOffset();
-		alignment = alignment.trimToColumnsPerPosition(minColPerPos);
+		if (minColPerPos > 1) {
+			alignment = alignment.trimToColumnsPerPosition(minColPerPos);
+		}
 		
 		alignment.setName(this.motifs.getName().replace("\\.xms", "")+"_alignment");
 		

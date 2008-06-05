@@ -1,6 +1,8 @@
 package net.derkholm.nmica.extra.app;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -28,6 +30,7 @@ import org.bjv2.util.cli.Option;
 public class MotifSetRegulariser {
 	
 	private String out;
+	private double pseudoCount;
 	private boolean ignoreErrors;
 	
 	
@@ -36,9 +39,13 @@ public class MotifSetRegulariser {
 		this.out = str;
 	}
 	
+	@Option(help="Pseudocount (default=0.050)", optional=true)
+	public void setPseudo(double d) {
+		this.pseudoCount = d;
+	}
+	
 	
 	public void main(String[] args) throws Exception {
-		
 		List<Motif> allMotifs = new ArrayList<Motif>();
 
 		for (String filen : args)
@@ -46,10 +53,17 @@ public class MotifSetRegulariser {
 							new BufferedReader(new FileReader(filen)))) 
 				allMotifs.add(m);
 		
-		
 		for (Motif m : allMotifs) {
-			
+			addPseudoCounts(m.getWeightMatrix(), pseudoCount);
+			rescaleWeightMatrix(m.getWeightMatrix());
 		}
+		
+		Motif[] motifs = allMotifs.toArray(new Motif[allMotifs.size()]);
+		if (out != null)
+			MotifIOTools.writeMotifSetXML(new BufferedOutputStream(
+					new FileOutputStream(out)), motifs);
+		else
+			MotifIOTools.writeMotifSetXML(System.out, motifs);
 	}
 	
 	public static void addPseudoCounts(WeightMatrix matrix, double pseudoCount) 
