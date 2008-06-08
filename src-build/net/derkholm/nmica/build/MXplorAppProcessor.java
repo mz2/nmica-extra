@@ -76,9 +76,18 @@ public class MXplorAppProcessor implements AnnotationProcessor {
 						pw.printf("  JAVA_CMD=${JAVA_HOME}/bin/java%n");
 						pw.printf("fi%n");
 						pw.printf("%n");
-						pw.printf("APP_CLASSPATH=${APP_DIR}/lib/changeless.jar:${APP_DIR}/lib/biojava.jar:${APP_DIR}/lib/bytecode.jar:${APP_DIR}/lib/bjv2-core-0.1.jar:${APP_DIR}/lib/stax-api-1.0.1.jar:${APP_DIR}/lib/wstx-lgpl-3.0.2.jar:${APP_DIR}/lib/nmica.jar:${APP_DIR}/lib/nmica-extra.jar%n");
+						pw.printf("APP_CLASSPATH=${APP_DIR}/lib/changeless.jar:" +
+								"${APP_DIR}/lib/biojava.jar:" +
+								"${APP_DIR}/lib/bytecode.jar:" +
+								"${APP_DIR}/lib/bjv2-core-0.1.jar:" +
+								"${APP_DIR}/lib/stax-api-1.0.1.jar:" +
+								"${APP_DIR}/lib/wstx-lgpl-3.0.2.jar:" +
+								"${APP_DIR}/lib/nmica.jar:" +
+								"${APP_DIR}/lib/colt.jar:" +
+								"${APP_DIR}/lib/nmica-extra.jar:" +
+								"${QTJAMBI_HOME/qtjambi.jar%n");
 						pw.printf("%n");
-						pw.printf("${JAVA_CMD} ${JVM} ${JVMOPTS} -classpath ${APP_CLASSPATH} -Djava.library.path=${NMICA_HOME}/native -Dchangeless.no_dire_warning=true ${MAINCLASS} \"$@\"%n");
+						pw.printf("${JAVA_CMD} ${JVM} ${JVMOPTS} -XstartOnFirstThread -classpath ${APP_CLASSPATH} -Djava.library.path=${NMICA_HOME}/native -Dchangeless.no_dire_warning=true ${MAINCLASS} \"$@\"%n");
 
 						pw.close();
 					} catch (IOException ex) {
