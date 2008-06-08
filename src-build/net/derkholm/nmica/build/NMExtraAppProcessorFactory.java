@@ -31,19 +31,19 @@ import com.sun.mirror.apt.AnnotationProcessorEnvironment;
 import com.sun.mirror.apt.AnnotationProcessorFactory;
 import com.sun.mirror.declaration.AnnotationTypeDeclaration;
 
-public class NMExtraAppProcessorFactory implements AnnotationProcessorFactory {
+public class MXplorAppProcessorFactory implements AnnotationProcessorFactory {
 	public AnnotationProcessor getProcessorFor(
 			Set<AnnotationTypeDeclaration> decl, 
 			AnnotationProcessorEnvironment env) 
 	{
-		return new NMExtraAppProcessor(env);
+		return new MXplorAppProcessor(env);
 	}
 
 	public Collection<String> supportedAnnotationTypes() {
 		return Arrays.asList(
 			new String[] {
-				NMExtraApp.class.getName(), 
-				NMExtraAppProcessor.class.getName()});
+				MXplorApp.class.getName(), 
+				MXplorAppProcessor.class.getName()});
 	}
 
 	public Collection<String> supportedOptions() {

@@ -31,11 +31,11 @@ import com.sun.mirror.apt.AnnotationProcessor;
 import com.sun.mirror.apt.AnnotationProcessorEnvironment;
 import com.sun.mirror.declaration.TypeDeclaration;
 
-public class NMExtraAppProcessor implements AnnotationProcessor {
+public class MXplorAppProcessor implements AnnotationProcessor {
 	private final AnnotationProcessorEnvironment env;
 	private File output;
 	
-	public NMExtraAppProcessor(AnnotationProcessorEnvironment env) {
+	public MXplorAppProcessor(AnnotationProcessorEnvironment env) {
 		this.env = env;
 		for (String opt : env.getOptions().keySet()) {
 			if (opt.startsWith("-AlaunchpadDir=")) {
@@ -46,7 +46,7 @@ public class NMExtraAppProcessor implements AnnotationProcessor {
 	
 	public void process() {
 		for (TypeDeclaration td : env.getTypeDeclarations()) {
-			NMExtraApp nmapp = td.getAnnotation(NMExtraApp.class);
+			MXplorApp nmapp = td.getAnnotation(MXplorApp.class);
 			if (nmapp != null) {
 				if (this.output == null) {
 					env.getMessager().printError("Missing required option -AlaunchpadDir");
