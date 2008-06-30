@@ -30,7 +30,7 @@ import org.bjv2.util.cli.Option;
 public class MotifSetRegulariser {
 	
 	private String out;
-	private double pseudoCount;
+	private double pseudoCount = 0.005;
 	private boolean ignoreErrors;
 	
 	
@@ -39,7 +39,7 @@ public class MotifSetRegulariser {
 		this.out = str;
 	}
 	
-	@Option(help="Pseudocount (default=0.050)", optional=true)
+	@Option(help="Pseudocount (default=0.0050)", optional=true)
 	public void setPseudo(double d) {
 		this.pseudoCount = d;
 	}

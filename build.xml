@@ -243,8 +243,7 @@
   <target name="package-java" depends="compile-java" description="create main class jar file">
     <jar
       jarfile="${jar.main}"
-      manifest="${manifest.file.main}"
-    >
+      manifest="${manifest.file.main}">
       <fileset dir="${build.dest.main}" />
       <fileset dir="${resources.dir}" />
     </jar>

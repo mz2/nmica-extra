@@ -18,7 +18,7 @@ import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
 /**
- * @author thomas
+ * @author thomas,matias
  */
 @App(overview = 
 	"A tool for splitting sequences to " +
