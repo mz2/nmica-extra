@@ -31,11 +31,11 @@ import com.sun.mirror.apt.AnnotationProcessor;
 import com.sun.mirror.apt.AnnotationProcessorEnvironment;
 import com.sun.mirror.declaration.TypeDeclaration;
 
-public class MXplorAppProcessor implements AnnotationProcessor {
+public class NMExtraAppProcessor implements AnnotationProcessor {
 	private final AnnotationProcessorEnvironment env;
 	private File output;
 	
-	public MXplorAppProcessor(AnnotationProcessorEnvironment env) {
+	public NMExtraAppProcessor(AnnotationProcessorEnvironment env) {
 		this.env = env;
 		for (String opt : env.getOptions().keySet()) {
 			if (opt.startsWith("-AlaunchpadDir=")) {
@@ -46,7 +46,7 @@ public class MXplorAppProcessor implements AnnotationProcessor {
 	
 	public void process() {
 		for (TypeDeclaration td : env.getTypeDeclarations()) {
-			MXplorApp nmapp = td.getAnnotation(MXplorApp.class);
+			NMExtraApp nmapp = td.getAnnotation(NMExtraApp.class);
 			if (nmapp != null) {
 				if (this.output == null) {
 					env.getMessager().printError("Missing required option -AlaunchpadDir");
@@ -76,18 +76,9 @@ public class MXplorAppProcessor implements AnnotationProcessor {
 						pw.printf("  JAVA_CMD=${JAVA_HOME}/bin/java%n");
 						pw.printf("fi%n");
 						pw.printf("%n");
-						pw.printf("APP_CLASSPATH=${APP_DIR}/lib/changeless.jar:" +
-								"${APP_DIR}/lib/biojava.jar:" +
-								"${APP_DIR}/lib/bytecode.jar:" +
-								"${APP_DIR}/lib/bjv2-core-0.1.jar:" +
-								"${APP_DIR}/lib/stax-api-1.0.1.jar:" +
-								"${APP_DIR}/lib/wstx-lgpl-3.0.2.jar:" +
-								"${APP_DIR}/lib/nmica.jar:" +
-								"${APP_DIR}/lib/colt.jar:" +
-								"${APP_DIR}/lib/nmica-extra.jar:" +
-								"${QTJAMBI_HOME/qtjambi.jar%n");
+						pw.printf("APP_CLASSPATH=${APP_DIR}/lib/changeless.jar:${APP_DIR}/lib/biojava.jar:${APP_DIR}/lib/bytecode.jar:${APP_DIR}/lib/bjv2-core-0.1.jar:${APP_DIR}/lib/stax-api-1.0.1.jar:${APP_DIR}/lib/wstx-lgpl-3.0.2.jar:${APP_DIR}/lib/nmica.jar:${APP_DIR}/lib/nmica-extra.jar%n");
 						pw.printf("%n");
-						pw.printf("${JAVA_CMD} ${JVM} ${JVMOPTS} -XstartOnFirstThread -classpath ${APP_CLASSPATH} -Djava.library.path=${NMICA_HOME}/native -Dchangeless.no_dire_warning=true ${MAINCLASS} \"$@\"%n");
+						pw.printf("${JAVA_CMD} ${JVM} ${JVMOPTS} -classpath ${APP_CLASSPATH} -Djava.library.path=${NMICA_HOME}/native -Dchangeless.no_dire_warning=true ${MAINCLASS} \"$@\"%n");
 
 						pw.close();
 					} catch (IOException ex) {

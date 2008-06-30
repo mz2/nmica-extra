@@ -29,7 +29,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.SOURCE)
-public @interface MXplorApp {
+public @interface NMExtraApp {
 	public String launchName();
 	public VirtualMachine vm() default VirtualMachine.CLIENT;
 }
