@@ -3,9 +3,6 @@ package net.derkholm.nmica.extra.app;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
@@ -14,21 +11,13 @@ import net.derkholm.nmica.extra.motif.comparison.KullbackLeiblerDifferenceMotifC
 import net.derkholm.nmica.model.metamotif.MetaMotif;
 import net.derkholm.nmica.model.metamotif.MetaMotifIOTools;
 import net.derkholm.nmica.motif.Motif;
-import net.derkholm.nmica.motif.MotifComparisonMatrixBundle;
 import net.derkholm.nmica.motif.MotifComparitorIFace;
 import net.derkholm.nmica.motif.MotifIOTools;
 import net.derkholm.nmica.motif.SquaredDifferenceMotifComparitor;
 import net.derkholm.nmica.motif.align.MotifAlignment;
-import net.derkholm.nmica.motif.align.MotifPairWithOffset;
-import net.derkholm.nmica.motif.align.MotifAlignment.MotifAlignmentElement;
-import net.derkholm.nmica.seq.WmTools;
 
-import org.biojava.bio.symbol.FiniteAlphabet;
-import org.biojava.bio.symbol.IllegalAlphabetException;
-import org.biojava.bio.symbol.IllegalSymbolException;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
-
 
 @App(overview="A tool for aligning a set of motifs and output the alignment", 
 	generateStub=true)
@@ -106,12 +95,19 @@ public class MotifAligner {
 		
 		MotifAlignment alignment 
 			= new MotifAlignment(motifs, mc);
+		
+		alignment = new MotifAlignment(alignment.motifs(), mc);
+		alignment = new MotifAlignment(alignment.motifs(), mc);
 		alignment = alignment.alignmentWithZeroOffset();
-		if (minColPerPos > 1) {
-			alignment = alignment.trimToColumnsPerPosition(minColPerPos);
-		}
+		//if (minColPerPos > 1) {
+		//	alignment = alignment.trimToColumnsPerPosition(minColPerPos);
+		//}
 		
 		alignment.setName(this.motifs.getName().replace("\\.xms", "")+"_alignment");
+		
+		if (!outputType.equals("align_cons")) {
+			System.err.println(alignment.alignmentConsensusString());
+		}
 		
 		if (outputType.equals("avg"))
 			MotifIOTools.writeMotifSetXML(

@@ -5,8 +5,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -37,6 +39,7 @@ public class MotifAlignment implements
 	protected SortedSet<MotifAlignmentElement> offsetSortedMotifs;
 	protected HashMap<Motif, MotifAlignmentElement> motifsToAlignmentElems;
 	protected SortedSet<Integer> alignedMotifIndices;
+	protected Set<Motif> flippedMotifs;
 	
 	private final PropertyChangeSupport pcs = new PropertyChangeSupport(this);
 	
@@ -57,6 +60,7 @@ public class MotifAlignment implements
 			new HashMap<Motif, MotifAlignmentElement>();
 		
 		alignedMotifIndices = new TreeSet<Integer>();
+		flippedMotifs = new HashSet<Motif>();
 	}
 	
 	public MotifAlignment(Motif[] motifs, MotifComparitorIFace mc) 
@@ -75,35 +79,77 @@ public class MotifAlignment implements
 		addMotif(mp.getM1(), 0, false);
 		addMotif(mp.getM2(), mp.getOffset(), mp.isFlipped());
 		
-		/* if it's flipped, let's flip it back */
+		motifList.remove(mp.getM1());
+		motifList.remove(mp.getM2());
+		
+		System.err.printf(" # M1 : %s M2: %s offset: %d score: %.3g flipped: %b %n",
+				mp.getM1().getName(), 
+				mp.getM2().getName(),
+				mp.getOffset(),
+				mp.getScore(),
+				mp.isFlipped());
+		
 		if (mp.isFlipped()) {
+			String oldConsensus = this.consensus(mp.getM2());
 			mp.getM2()
 				.setWeightMatrix(
 					WmTools.reverseComplement(
 						mp.getM2().getWeightMatrix()));
+			String newConsensus = this.consensus(mp.getM2());
+			flippedMotifs.add(mp.getM2());
+			System.err.printf("Flipping %s (%s --> %s)%n", 
+					mp.getM2().getName(), 
+					oldConsensus, newConsensus);
 		}
 		
-		motifList.remove(mp.getM1());
-		motifList.remove(mp.getM2());
-		
-		//System.out.println(" # M1:" + mp.getM1().getName() + " M2:" + mp.getM2().getName());
+		System.err.printf("%n%s",this.alignmentConsensusString());
+		System.err.print("Flipped: ");
+		for (Motif m : flippedMotifs) System.err.printf("%s ",m.getName());
+		System.err.println("\n");
 		
 		/* then iterate through the remaining ones */
 		while (motifList.size() > 0) {
-			//Motif[] remainingMotifs 
-			//	= motifList.toArray(new Motif[motifList.size()]);
 			
 			mp = highestScoringPairWithAlreadyAligned(mb);
 			
-			/* if it's flipped, let's flip it back */
-			if (mp.isFlipped()) {
+			
+			if (mp.isFlipped() &! (flippedMotifs.contains(mp.getM1()))) {
+				//if (flippedMotifs.contains(mp.getM1()) &&) 
+				
+				//if (flippedMotifs.contains(mp.getM1()) &)
+				String oldConsensus = this.consensus(mp.getM2());
+				flippedMotifs.add(mp.getM2());
 				mp.getM2()
 					.setWeightMatrix(
 						WmTools.reverseComplement(
 							mp.getM2().getWeightMatrix()));
+				String newConsensus = this.consensus(mp.getM2());
+				flippedMotifs.add(mp.getM2());
+				System.err.printf(" > Flipping %s (%s --> %s)%n", 
+						mp.getM2().getName(), 
+						oldConsensus, newConsensus);
+			} else if (!mp.isFlipped() && (flippedMotifs.contains(mp.getM1()))) {
+				String oldConsensus = this.consensus(mp.getM2());
+				flippedMotifs.add(mp.getM2());
+				mp.getM2()
+					.setWeightMatrix(
+						WmTools.reverseComplement(
+							mp.getM2().getWeightMatrix()));
+				String newConsensus = this.consensus(mp.getM2());
+				flippedMotifs.add(mp.getM2());
+				System.err.printf(" >> Flipping %s (%s --> %s)%n", 
+						mp.getM2().getName(), 
+						oldConsensus, newConsensus);
 			}
 			
-			//System.out.println(" > M1:" + mp.getM1().getName() + " M2:" + mp.getM2().getName());
+			System.err.printf(" > M1 : %s M2: %s offset: %d score: %.3g flipped: %b %n",
+					mp.getM1().getName(), 
+					mp.getM2().getName(),
+					mp.getOffset(),
+					mp.getScore(),
+					mp.isFlipped());
+			
+			
 			int offset;
 			if (mp.isFlipped()) {
 				offset = offset(mp.getM1()) + mp.getOffset();
@@ -111,12 +157,21 @@ public class MotifAlignment implements
 				offset = offset(mp.getM1()) + mp.getOffset();
 			}
 			
-			addMotif(	mp.getM2(),
+			addMotif(mp.getM2(),
 						offset,
 						mp.isFlipped());
 			
+			System.err.printf("%n%s",this.alignmentConsensusString());
+			System.err.print("Flipped: ");
+			for (Motif m : flippedMotifs) System.err.printf("%s ",m.getName());
+			System.err.println("\n");
 			motifList.remove(mp.getM2());
 		}
+		
+		System.err.println();
+		System.err.print("Flipped: ");
+		for (Motif m : flippedMotifs) System.err.printf("%s ",m.getName());
+		System.err.println("\n");
 	}
 
 	public MotifAlignment(MotifAlignment motifAlignment) {
@@ -301,8 +356,10 @@ public class MotifAlignment implements
 
 	private Motif[] _motifs() {
 		Motif[] ms = new Motif[motifElems.size()];
-		for (int i = 0; i < motifElems.size(); i++)
+		for (int i = 0; i < motifElems.size(); i++) {
 			ms[i] = motifElems.get(i).getMotif();
+			//ms[i].setName(ms[i].getName() + "_" + motifElems.get(i).getOffset());
+		}
 		
 		return ms;
 	}
@@ -461,6 +518,23 @@ public class MotifAlignment implements
 		}
 	}
 	
+	private String consensus(Motif m) throws BioException {
+		StringBuffer strBuf = new StringBuffer();
+		SymbolTokenization tok = alphabet.getTokenization("token");
+		
+		for (int i = 0; i < m.getWeightMatrix().columns(); i++) {
+			Distribution distrib = m.getWeightMatrix().getColumn(i);
+			if (distrib != null) {
+				strBuf.append(
+						tok.tokenizeSymbol(symbolWithMaxWeight(distrib))
+						);
+			} else {
+				strBuf.append("-");
+			}
+		}
+		return strBuf.toString();
+	}
+	
 	public String alignmentConsensusString() throws BioException {
 		StringBuffer strBuf = new StringBuffer();
 		SymbolTokenization tok = alphabet.getTokenization("token");
@@ -469,7 +543,7 @@ public class MotifAlignment implements
 		int maxPos = minOffset + totalLength();
 		
 		for (MotifAlignmentElement elem : motifElems) {
-			strBuf.append(elem.getMotif().getName() + "\n");
+			strBuf.append(elem.getMotif().getName() + " " + elem.getOffset() + " " + "\n");
 			for (int i = minOffset; i < maxPos; i++) {
 				Distribution distrib = elem.getPosition(i);
 				if (distrib != null) {
@@ -650,7 +724,7 @@ public class MotifAlignment implements
 				m1,
 				m0,
 				maxScore,
-				flipped, -offset);
+				flipped, offset);
 		return mpoffset;
 	} else {
 		throw new MotifAlignmentException("Could not align motifs");
@@ -865,7 +939,6 @@ public class MotifAlignment implements
 			int addedOffset = 0;
 			for (int i = first; i <= last; i++) {
 				Distribution d = elem.getPosition(i);
-				//System.out.println(d);
 				if (d != null) {
 					if (!firstOneFound) firstOneFound = true;
 					dists.add(d);
@@ -887,7 +960,6 @@ public class MotifAlignment implements
 				}
 				Motif m = new Motif(elem.getMotif());
 				m.setWeightMatrix(wm);
-				
 				alignment.addMotif(m, 
 									addedOffset, 
 									elem.isFlipped());

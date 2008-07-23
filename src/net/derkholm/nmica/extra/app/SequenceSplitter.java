@@ -27,6 +27,7 @@ import org.bjv2.util.cli.Option;
 public class SequenceSplitter {
     private int maxLength = 200;
     private int minLength = 50;
+    private boolean addSuffix = true;
     
     @Option(help="Maximum length (default=200)", optional=true)
     public void setMaxLength(int i) {
@@ -38,6 +39,11 @@ public class SequenceSplitter {
     		"will not be output.", optional=true)
     public void setMinLength(int i) {
     	this.minLength = i;
+    }
+    
+    @Option(help="Add a suffix to the (default=true)", optional=true)
+    public void setAddSuffix(boolean b) {
+    	this.addSuffix = b;
     }
     
     public void main(String[] args)
