@@ -25,9 +25,12 @@ public class MotifGrep {
 	private File list;
 	private Pattern pattern;
 	private String[] names;
-	private String replaceWithStr;
+	private String replaceWithStr = null;
+	private boolean substring;
 	
-	@Option(help="...",optional=true)
+	@Option(help="List of motif names to match against. " +
+			"Note that this is done by exact comparison, " +
+			"not by finding matching substrings",optional=true)
 	public void setList(File list) {
 		this.list = list;
 	}
@@ -36,7 +39,13 @@ public class MotifGrep {
 	public void setNames(String[] names) {
 		this.names = names;
 	}
-
+	
+	@Option(help="Find motifs whose name contains the specified string as a substring, " +
+			"rather than looking for exact matches " +
+			"(this switch works with -list and -names, default=false)", optional=true)
+	public void setMatchSubstring(boolean b) {
+		this.substring = b;
+	}
 
 	@Option(help="Regular expression to match against the motif names",optional=true)
 	public void setExp(String str) {
@@ -70,19 +79,35 @@ public class MotifGrep {
 		if (names != null) {
 			for (String str : names) {
 				for (Motif m : motifs) {
-					if (m.getName().equals(str)) {
-						om.add(m);
-						break;
-					}	
+					if (substring) {
+						if (m.getName().contains(str)) {
+							om.add(m);
+							break;
+						}	
+						
+					} else {
+						if (m.getName().equals(str)) {
+							om.add(m);
+							break;
+						}	
+						
+					}
 				}
 			}
 		} else if (list != null) {
 			BufferedReader br = new BufferedReader(new FileReader(list));
 			for (String line = br.readLine(); line != null; line = br.readLine()) {
 				for (Motif m : motifs) {
-					if (m.getName().equals(line)) {
-						om.add(m);
-						break;
+					if (substring) {
+						if (m.getName().contains(line)) {
+							om.add(m);
+							break;
+						}
+					} else {
+						if (m.getName().equals(line)) {
+							om.add(m);
+							break;
+						}
 					}
 				}
 			}
