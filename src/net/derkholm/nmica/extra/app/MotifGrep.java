@@ -79,18 +79,9 @@ public class MotifGrep {
 		if (names != null) {
 			for (String str : names) {
 				for (Motif m : motifs) {
-					if (substring) {
-						if (m.getName().contains(str)) {
-							om.add(m);
-							break;
-						}	
-						
-					} else {
-						if (m.getName().equals(str)) {
-							om.add(m);
-							break;
-						}	
-						
+					if (substring ? m.getName().contains(str) : m.getName().equals(str)) {
+						om.add(m);
+						break;
 					}
 				}
 			}
@@ -98,16 +89,9 @@ public class MotifGrep {
 			BufferedReader br = new BufferedReader(new FileReader(list));
 			for (String line = br.readLine(); line != null; line = br.readLine()) {
 				for (Motif m : motifs) {
-					if (substring) {
-						if (m.getName().contains(line)) {
-							om.add(m);
-							break;
-						}
-					} else {
-						if (m.getName().equals(line)) {
-							om.add(m);
-							break;
-						}
+					if (substring ? m.getName().contains(line) : m.getName().equals(line)) {
+						om.add(m);
+						break;
 					}
 				}
 			}
