@@ -82,7 +82,7 @@ public class MotifSetThresholder {
 			System.err.printf("Could not read motif set from %n");
 		}
 		for (Motif m : motifs) {
-			if (this.names.contains(m.getName()) || names == null) {
+			if (names == null || this.names.contains(m.getName())) {
 				m.setThreshold(scoreThreshold);
 			}
 		}
