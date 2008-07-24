@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import net.derkholm.nmica.build.NMExtraApp;
@@ -24,6 +25,7 @@ public class MotifGrep {
 	private File list;
 	private Pattern pattern;
 	private String[] names;
+	private String replaceWithStr;
 	
 	@Option(help="...",optional=true)
 	public void setList(File list) {
@@ -41,7 +43,12 @@ public class MotifGrep {
 		this.pattern = Pattern.compile(str);
 	}
 	
-	@Option(help="...")
+	@Option(help="Replacement string for the regular expression specified with -exp (replaces all instances)")
+	public void setReplaceWith(String str) {
+		this.replaceWithStr = str;
+	}
+	
+	@Option(help="Input motifset file")
 	public void setMotifs(File motifs) {
 		this.motifs = motifs;
 	}
@@ -81,8 +88,16 @@ public class MotifGrep {
 			}
 		} else if (pattern != null) {
 			for (Motif m : motifs) {
-				if (pattern.matcher(m.getName()).find()) {
+				if (replaceWithStr != null) {
+					Matcher matcher = pattern.matcher(m.getName());
+					if (matcher.find()) {
+						m.setName(matcher.replaceAll(replaceWithStr));
+					}
 					om.add(m);
+				} else {
+					if (pattern.matcher(m.getName()).find()) {
+						om.add(m);
+					}
 				}
 			}
 		} else {
