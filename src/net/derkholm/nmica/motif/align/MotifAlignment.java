@@ -82,12 +82,12 @@ public class MotifAlignment implements
 		motifList.remove(mp.getM1());
 		motifList.remove(mp.getM2());
 		
-		System.err.printf(" # M1 : %s M2: %s offset: %d score: %.3g flipped: %b %n",
-				mp.getM1().getName(), 
-				mp.getM2().getName(),
-				mp.getOffset(),
-				mp.getScore(),
-				mp.isFlipped());
+		//System.err.printf(" # M1 : %s M2: %s offset: %d score: %.3g flipped: %b %n",
+		//		mp.getM1().getName(), 
+		//		mp.getM2().getName(),
+		//		mp.getOffset(),
+		//		mp.getScore(),
+		//		mp.isFlipped());
 		
 		if (mp.isFlipped()) {
 			String oldConsensus = this.consensus(mp.getM2());
@@ -97,15 +97,15 @@ public class MotifAlignment implements
 						mp.getM2().getWeightMatrix()));
 			String newConsensus = this.consensus(mp.getM2());
 			flippedMotifs.add(mp.getM2());
-			System.err.printf("Flipping %s (%s --> %s)%n", 
-					mp.getM2().getName(), 
-					oldConsensus, newConsensus);
+			//System.err.printf("Flipping %s (%s --> %s)%n", 
+			//		mp.getM2().getName(), 
+			//		oldConsensus, newConsensus);
 		}
 		
-		System.err.printf("%n%s",this.alignmentConsensusString());
-		System.err.print("Flipped: ");
-		for (Motif m : flippedMotifs) System.err.printf("%s ",m.getName());
-		System.err.println("\n");
+		//System.err.printf("%n%s",this.alignmentConsensusString());
+		//System.err.print("Flipped: ");
+		//for (Motif m : flippedMotifs) System.err.printf("%s ",m.getName());
+		//System.err.println("\n");
 		
 		/* then iterate through the remaining ones */
 		while (motifList.size() > 0) {
@@ -142,12 +142,12 @@ public class MotifAlignment implements
 						oldConsensus, newConsensus);
 			}
 			
-			System.err.printf(" > M1 : %s M2: %s offset: %d score: %.3g flipped: %b %n",
-					mp.getM1().getName(), 
-					mp.getM2().getName(),
-					mp.getOffset(),
-					mp.getScore(),
-					mp.isFlipped());
+			//System.err.printf(" > M1 : %s M2: %s offset: %d score: %.3g flipped: %b %n",
+			//		mp.getM1().getName(), 
+			//		mp.getM2().getName(),
+			//		mp.getOffset(),
+			//		mp.getScore(),
+			//		mp.isFlipped());
 			
 			
 			int offset;
@@ -161,17 +161,17 @@ public class MotifAlignment implements
 						offset,
 						mp.isFlipped());
 			
-			System.err.printf("%n%s",this.alignmentConsensusString());
-			System.err.print("Flipped: ");
-			for (Motif m : flippedMotifs) System.err.printf("%s ",m.getName());
-			System.err.println("\n");
+			//System.err.printf("%n%s",this.alignmentConsensusString());
+			//System.err.print("Flipped: ");
+			//for (Motif m : flippedMotifs) System.err.printf("%s ",m.getName());
+			//System.err.println("\n");
 			motifList.remove(mp.getM2());
 		}
 		
-		System.err.println();
-		System.err.print("Flipped: ");
-		for (Motif m : flippedMotifs) System.err.printf("%s ",m.getName());
-		System.err.println("\n");
+		//System.err.println();
+		//System.err.print("Flipped: ");
+		//for (Motif m : flippedMotifs) System.err.printf("%s ",m.getName());
+		//System.err.println("\n");
 	}
 
 	public MotifAlignment(MotifAlignment motifAlignment) {
