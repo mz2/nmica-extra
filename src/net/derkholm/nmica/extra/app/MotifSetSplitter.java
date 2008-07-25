@@ -34,8 +34,9 @@ public class MotifSetSplitter {
 				if (fileReader != null) fileReader.close();
 				
 				for (Motif m : motifs) {
+					
 					MotifIOTools.writeMotifSetXML(
-						new FileOutputStream(prefix + m.getName() + ".xms"), motifs);
+						new FileOutputStream(prefix + m.getName() + ".xms"), new Motif[] {m});
 				}
 			} catch (Exception e) {
 				System.err.println(
