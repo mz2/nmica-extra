@@ -68,7 +68,7 @@ public class MotifMatchEnumerator {
 				max = Math.max(max, d.getWeight(s));
 			}
 			for (Symbol s : ALPHA) {
-				double here = score + NativeMath.log2(d.getWeight(s) / max);
+				double here = score + Math.log(d.getWeight(s))/Math.log(2.0);
 				if (here > scoreThreshold) {
 					word[index] = s;
 					rec(wm, word, index + 1, here);
