@@ -19,7 +19,7 @@ import org.bjv2.util.cli.Option;
 		generateStub=true)
 @NMExtraApp(launchName="nmsplit", vm=VirtualMachine.SERVER)
 public class MotifSetSplitter {
-	private String prefix;
+	private String prefix = "";
 	
 	@Option(help="Output filename prefix",optional=true)
 	public void setPrefix(String str) {
