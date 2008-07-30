@@ -43,6 +43,11 @@ public class MotifSetThresholder {
 		this.scoreThreshold = d;
 	}
 	
+	@Option(help="Override threshold for motifs with a score above the given score",optional=true)
+	public void forMotifsAtOrAboveThreshold(double d) {
+		
+	}
+	
 	@Option(help="Names of motifs to set the threshold for. " +
 			"If unspecified, all motifs in the set will be given the specified threshold",
 			optional=true)

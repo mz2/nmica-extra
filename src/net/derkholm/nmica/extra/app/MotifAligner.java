@@ -129,5 +129,7 @@ public class MotifAligner {
 		else if (outputType.equals("align_cons"))
 			System.out.println(alignment.alignmentConsensusString());
 
+		System.err.println("Done.");
+		System.exit(0);
 	}
 }

@@ -52,7 +52,7 @@ public class MotifGrep {
 		this.pattern = Pattern.compile(str);
 	}
 	
-	@Option(help="Replacement string for the regular expression specified with -exp (replaces all instances)")
+	@Option(help="Replacement string for the regular expression specified with -exp (replaces all instances)",optional=true)
 	public void setReplaceWith(String str) {
 		this.replaceWithStr = str;
 	}
