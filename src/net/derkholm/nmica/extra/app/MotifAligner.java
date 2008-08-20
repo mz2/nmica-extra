@@ -1,8 +1,10 @@
 package net.derkholm.nmica.extra.app;
 
-import java.io.File;
+import java.io.BufferedInputStream;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
@@ -14,6 +16,7 @@ import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifComparitorIFace;
 import net.derkholm.nmica.motif.MotifIOTools;
 import net.derkholm.nmica.motif.SquaredDifferenceMotifComparitor;
+import net.derkholm.nmica.motif.align.InvalidMetaMotifException;
 import net.derkholm.nmica.motif.align.MotifAlignment;
 
 import org.bjv2.util.cli.App;
@@ -24,21 +27,20 @@ import org.bjv2.util.cli.Option;
 @NMExtraApp(launchName="nmalign", vm=VirtualMachine.SERVER)
 public class MotifAligner {
 	
-	private File motifs;
+	private Motif[] motifs;
 	private String outputType = "align_cons";
 	private String outFile;
 	private MotifComparitorIFace mc = SquaredDifferenceMotifComparitor.getMotifComparitor();
 	private int minColPerPos = 2;
+	private boolean outputSingleMotif;
+	private double singleMotifPseudoCount;
+	private double singleMotifPrecision = 10.0;
 	
-	@Option(help="Input motifset")
-	public void setMotifs(File motifs) {
-		this.motifs = motifs;
-	}
-	
+	/*
 	@Option(help="Output file",optional=true)
 	public void setOut(String outFile) {
 		this.outFile = outFile;
-	}
+	}*/
 	
 	@Option(help="Minimum number of columns per position " +
 			"to allow it to make it to output (default=2)",optional=true)
@@ -46,6 +48,24 @@ public class MotifAligner {
 		this.minColPerPos = i;
 	}
 	
+	@Option(help="If only one motif is given as an input, output it as is " +
+			"(metamotif output type gets special treatment if this is specified, " +
+			"see -singleMotifPseudoCount and -singleMotifPrecision)",optional=true)
+	public void setOutputSingleMotif(boolean b ) {
+		this.outputSingleMotif = b;
+	}
+	
+	@Option(help="If the output contains only a single motif and the metamotif output type is specified, " +
+			"-singleMotifPseudoCount specifies the pseudo count applied to each output Dirichlet column.",optional=true)
+	public void setSingleMotifPseudoCount(double d) {
+		this.singleMotifPseudoCount = d;
+	}
+	
+	@Option(help="If the output contains only a single motif and the metamotif output type is specified, " +
+			"-singleMotifPrecision specifies the precision applied to each output Dirichlet column.",optional=true)
+	public void setSingleMotifPrecision(double d) {
+		this.singleMotifPrecision  = d;
+	}
 	
 	@Option(help="Distance metric:sqdiff2.5(default)|sqdiff|kd|blic",optional=true)
 	public void setDist(String dist) {
@@ -83,14 +103,24 @@ public class MotifAligner {
 	}
 	
 	public void main(String[] args) throws FileNotFoundException, Exception {
-		FileReader motifFileReader = new FileReader(this.motifs);
-		Motif[] motifs = MotifIOTools.loadMotifSetXML(motifFileReader);
-		if (motifFileReader != null) motifFileReader.close();
+		List<Motif> motifList = new ArrayList<Motif>();
+		for (String fStr : args) {
+			BufferedInputStream f = new BufferedInputStream(new FileInputStream(fStr));
+			Motif[] ms = MotifIOTools.loadMotifSetXML(f);
+			for (Motif m : ms) 
+				motifList.add(m);
+		}
+		this.motifs = motifList.toArray(new Motif[motifList.size()]);
 		
 		if (motifs.length == 1) {
 			System.err.println(
 				"WARNING! The supplied motif set file contains only one motif.\n");
-			System.exit(1);
+			
+			//if (outputSingleMotif &! outputType.equals("metamotif")) {
+			//	System.out.println();
+			//}
+			
+			//System.exit(1);
 		}
 		
 		MotifAlignment alignment 
@@ -99,12 +129,13 @@ public class MotifAligner {
 		alignment = new MotifAlignment(alignment.motifs(), mc);
 		alignment = new MotifAlignment(alignment.motifs(), mc);
 		alignment = alignment.alignmentWithZeroOffset();
-		//if (minColPerPos > 1) {
-		//	alignment = alignment.trimToColumnsPerPosition(minColPerPos);
-		//}
+		//alignment = alignment.trimToColumnsPerPosition(minColPerPos);
+		if (minColPerPos > 1 && motifs.length > 1) {
+			alignment = alignment.trimToColumnsPerPosition(minColPerPos);
+		}
 		
-		alignment.setName(this.motifs.getName().replace("\\.xms", "")+"_alignment");
-		
+		//alignment.setName(this.motifs.getName().replace("\\.xms", "")+"_aligned");
+				
 		if (!outputType.equals("align_cons")) {
 			System.err.println(alignment.alignmentConsensusString());
 		}
@@ -119,10 +150,22 @@ public class MotifAligner {
 					alignment.motifs());
 		else if (outputType.equals("metamotif")) {
 			//System.err.println(alignment.alignmentConsensusString());
-			MetaMotifIOTools.
-				writeMetaMotifSetToMotifSetWithAnnotations(
-					System.out, 
-					new MetaMotif[] {alignment.metamotif(true)});
+			try {
+				MetaMotifIOTools.
+					writeMetaMotifSetToMotifSetWithAnnotations(
+						System.out, 
+						new MetaMotif[] {alignment.metamotif(true)});
+			} catch (InvalidMetaMotifException e) {
+				System.err.printf("Will output the input motif as a metamotif " +
+				"with the per-column precision of %.3f.%n, (pseudocount=%.3f)",singleMotifPrecision, singleMotifPseudoCount);
+				MetaMotifIOTools.
+					writeMetaMotifSetToMotifSetWithAnnotations(
+						System.out, 
+						new MetaMotif[] {
+								new MetaMotif(motifs[0],
+														this.singleMotifPrecision, 
+														this.singleMotifPseudoCount)});				
+			}
 			
 		} else if (outputType.equals("cons"))
 			System.out.println(alignment.consensusString());
