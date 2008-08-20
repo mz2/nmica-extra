@@ -35,12 +35,19 @@ public class MotifAligner {
 	private boolean outputSingleMotif;
 	private double singleMotifPseudoCount;
 	private double singleMotifPrecision = 10.0;
+	private boolean addName;
 	
 	/*
 	@Option(help="Output file",optional=true)
 	public void setOut(String outFile) {
 		this.outFile = outFile;
 	}*/
+	
+	@Option(help="Add the name of the motifset file to the motif sets to make them unique (default=false)",
+			optional=true)
+	public void setAddName(boolean b) {
+		this.addName = b;
+	}
 	
 	@Option(help="Minimum number of columns per position " +
 			"to allow it to make it to output (default=2)",optional=true)
@@ -107,8 +114,11 @@ public class MotifAligner {
 		for (String fStr : args) {
 			BufferedInputStream f = new BufferedInputStream(new FileInputStream(fStr));
 			Motif[] ms = MotifIOTools.loadMotifSetXML(f);
-			for (Motif m : ms) 
+			for (Motif m : ms) {
 				motifList.add(m);
+				if (this.addName)
+					m.setName(m.getName() + "[" + fStr + "]");
+			}
 		}
 		this.motifs = motifList.toArray(new Motif[motifList.size()]);
 		
