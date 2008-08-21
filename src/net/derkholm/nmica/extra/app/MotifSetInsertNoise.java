@@ -8,9 +8,13 @@ import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
+import net.derkholm.nmica.model.metamotif.Dirichlet;
 import net.derkholm.nmica.model.motif.NMWeightMatrix;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
@@ -21,6 +25,7 @@ import org.biojava.bio.dist.Distribution;
 import org.biojava.bio.dist.SimpleDistribution;
 import org.biojava.bio.dist.UniformDistribution;
 import org.biojava.bio.dp.WeightMatrix;
+import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.symbol.AtomicSymbol;
 import org.biojava.bio.symbol.FiniteAlphabet;
 import org.biojava.bio.symbol.IllegalAlphabetException;
@@ -32,9 +37,10 @@ import org.bjv2.util.cli.Option;
 @NMExtraApp(launchName="nmnoise", vm=VirtualMachine.SERVER)
 public class MotifSetInsertNoise {
 
-	private double maxPerturb;
-	private int removeColumnsFromEnds;
+	private double maxPerturb = 0.5;
+	private int removeColumnsFromEnds = 0;
 	private String outFilename;
+	private int randomCols = 0;
 
 	@Option(help="The maximum perturbation added to a nucleotide weight", optional=true)
 	public void setMaxRate(double d) {
@@ -46,13 +52,20 @@ public class MotifSetInsertNoise {
 		this.removeColumnsFromEnds = i;
 	}
 	
+	@Option(help="Sample a random column", optional=true)
+	public void setRandomCols(int i) {
+		this.randomCols = i;
+	}
+	
 	@Option(help="Output filename", optional=true)
 	public void setOut(String str) {
 		this.outFilename = str;
 	}
 	
 	private Motif[] motifs;
-
+	
+	private static Random generator = new Random();
+	
 	public void main(String[] args) throws FileNotFoundException, Exception {
 		List<Motif> motifList = new ArrayList<Motif>();
 		for (String filen : args) {
@@ -81,15 +94,43 @@ public class MotifSetInsertNoise {
 				}
 			}
 			
+			if (randomCols > 0) {
+				if (randomCols < wm.columns()) {
+					System.err.printf(
+							"randomCols > motif length (%d > %d)%n",
+							randomCols,wm.columns());
+					System.exit(1);
+				}
+				Dirichlet dir = new Dirichlet(DNATools.getDNA());
+				
+				Set<Integer> replacedColumns = new TreeSet<Integer>();
+				
+				for (int i = 0; i < randomCols; i++) {
+					int repCol = -1;
+					do {
+						repCol = generator.nextInt(wm.columns());
+					} while (replacedColumns.contains(repCol));
+					
+					replacedColumns.add(repCol);
+					
+					wm = replaceColumnWithSampleFromDirichlet(
+							wm,repCol,dir);
+				}
+			}
+			
 			nm.setWeightMatrix(wm);
-			outputMotifs.add(m);
+			outputMotifs.add(nm);
 		}
 		
 		if (outFilename != null)
 			MotifIOTools.writeMotifSetXML(new BufferedOutputStream(
-											new FileOutputStream(outFilename)), motifs);
+											new FileOutputStream(outFilename)), 
+											outputMotifs.toArray(
+													new Motif[outputMotifs.size()]));
 		else {
-			MotifIOTools.writeMotifSetXML(System.out, motifs);
+			MotifIOTools.writeMotifSetXML(System.out, 
+					outputMotifs.toArray(
+							new Motif[outputMotifs.size()]));
 		}
 	}
 	
@@ -104,6 +145,21 @@ public class MotifSetInsertNoise {
 				ds[i] = new SimpleDistribution(wm.getColumn(i));
 			}
 		}
+		try {
+			return new NMWeightMatrix(ds,ds.length,0);
+		} catch (IllegalAlphabetException e) {
+			throw new BioError("Illegal alphabet exception caught",e);
+		}
+	}
+	
+	private WeightMatrix replaceColumnWithSampleFromDirichlet(
+			WeightMatrix wm, int col, Dirichlet dir) {
+		Distribution[] ds = new Distribution[wm.columns()];
+		
+		for (int i = 0; i < ds.length; i++)
+			if (i == col) ds[i] = dir.sampleDistribution();
+			else ds[i] = new SimpleDistribution(ds[i]);
+		
 		try {
 			return new NMWeightMatrix(ds,ds.length,0);
 		} catch (IllegalAlphabetException e) {
