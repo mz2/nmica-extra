@@ -29,6 +29,9 @@ import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.symbol.AtomicSymbol;
 import org.biojava.bio.symbol.FiniteAlphabet;
 import org.biojava.bio.symbol.IllegalAlphabetException;
+import org.biojava.bio.symbol.IllegalSymbolException;
+import org.biojava.bio.symbol.Symbol;
+import org.biojava.utils.ChangeVetoException;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -41,6 +44,7 @@ public class MotifSetInsertNoise {
 	private int removeColumnsFromEnds = 0;
 	private String outFilename;
 	private int randomCols = 0;
+	private boolean shuffleCols;
 
 	@Option(help="The maximum perturbation added to a nucleotide weight", optional=true)
 	public void setMaxRate(double d) {
@@ -57,12 +61,23 @@ public class MotifSetInsertNoise {
 		this.randomCols = i;
 	}
 	
+	@Option(help="Precision of the random column sampling Dirichlet distribution", optional=true)
+	public void setPrecision(double d) {
+		this.dirAlphaSum = d;
+	}
+	
+	@Option(help="Shuffle columns (default=false)", optional=true)
+	public void setShuffleCols(boolean b) {
+		this.shuffleCols = b;
+	}
+	
 	@Option(help="Output filename", optional=true)
 	public void setOut(String str) {
 		this.outFilename = str;
 	}
 	
 	private Motif[] motifs;
+	private double dirAlphaSum = 10;
 	
 	private static Random generator = new Random();
 	
@@ -95,13 +110,13 @@ public class MotifSetInsertNoise {
 			}
 			
 			if (randomCols > 0) {
-				if (randomCols < wm.columns()) {
+				if (randomCols > wm.columns()) {
 					System.err.printf(
 							"randomCols > motif length (%d > %d)%n",
 							randomCols,wm.columns());
 					System.exit(1);
 				}
-				Dirichlet dir = new Dirichlet(DNATools.getDNA());
+				Dirichlet dir = new Dirichlet(this.dirAlphaSum / 4,DNATools.getDNA());
 				
 				Set<Integer> replacedColumns = new TreeSet<Integer>();
 				
@@ -118,6 +133,9 @@ public class MotifSetInsertNoise {
 				}
 			}
 			
+			if (shuffleCols) {
+				wm = shuffleColumns(wm);
+			}
 			nm.setWeightMatrix(wm);
 			outputMotifs.add(nm);
 		}
@@ -134,15 +152,62 @@ public class MotifSetInsertNoise {
 		}
 	}
 	
+	private WeightMatrix shuffleColumns(WeightMatrix wm) throws IllegalAlphabetException {
+		List<Integer> availableCols = new ArrayList<Integer>();
+		Distribution[] dists = new Distribution[wm.columns()];
+		
+		while (availableCols.size() > 1) {
+			int rColInd,fromCol,toCol;
+			rColInd = generator.nextInt(availableCols.size());
+			fromCol = availableCols.get(rColInd);
+			availableCols.remove(rColInd);
+			rColInd = generator.nextInt(availableCols.size());
+			toCol = availableCols.get(rColInd);
+			availableCols.remove(rColInd);
+			
+			Distribution tmp = dists[fromCol];
+			dists[toCol] = new SimpleDistribution(wm.getColumn(fromCol));
+			dists[fromCol] = new SimpleDistribution(wm.getColumn(toCol));
+		}
+		
+		if (availableCols.size() == 1) {
+			dists[availableCols.get(0)] = wm.getColumn(availableCols.get(0));
+		}
+		
+		return new NMWeightMatrix(dists,dists.length,0);
+	}
+	
 	private WeightMatrix removeColumnFromEitherEnd(WeightMatrix wm) {
 		Distribution[] ds = new Distribution[wm.columns() - 1];
 		if (Math.random() < 0.5) {
 			for (int i = 0; i < wm.columns()-1; i++) {
-				ds[i] = new SimpleDistribution(wm.getColumn(i));
+				Distribution d = new SimpleDistribution((FiniteAlphabet) wm.getAlphabet());
+				for (Iterator it = ((FiniteAlphabet) d.getAlphabet())
+						.iterator(); it.hasNext();) {
+					Symbol sym = (Symbol) it.next();
+					try {
+						d.setWeight(sym, wm.getColumn(i).getWeight(sym));
+					} catch (IllegalSymbolException e) {
+						throw new BioError("Illagel symbol exception",e);
+					}
+				}
+				ds[i] = d;
 			}
 		} else {
 			for (int i = 1; i < wm.columns(); i++) {
-				ds[i] = new SimpleDistribution(wm.getColumn(i));
+				Distribution d = new SimpleDistribution((FiniteAlphabet) wm.getAlphabet());
+				for (Iterator it = ((FiniteAlphabet) d.getAlphabet())
+						.iterator(); it.hasNext();) {
+					Symbol sym = (Symbol) it.next();
+					try {
+						d.setWeight(sym, wm.getColumn(i).getWeight(sym));
+					} catch (IllegalSymbolException e) {
+						throw new BioError("Illagel symbol exception",e);
+					}
+				}
+				ds[i] = d;
+
+				ds[i-1] = new SimpleDistribution(wm.getColumn(i));
 			}
 		}
 		try {
@@ -154,11 +219,13 @@ public class MotifSetInsertNoise {
 	
 	private WeightMatrix replaceColumnWithSampleFromDirichlet(
 			WeightMatrix wm, int col, Dirichlet dir) {
+		System.err.println("Replacing column " + col);
 		Distribution[] ds = new Distribution[wm.columns()];
 		
-		for (int i = 0; i < ds.length; i++)
+		for (int i = 0; i < ds.length; i++) {
 			if (i == col) ds[i] = dir.sampleDistribution();
-			else ds[i] = new SimpleDistribution(ds[i]);
+			else ds[i] = new SimpleDistribution(wm.getColumn(i));
+		}
 		
 		try {
 			return new NMWeightMatrix(ds,ds.length,0);
