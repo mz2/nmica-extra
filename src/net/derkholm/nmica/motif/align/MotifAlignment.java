@@ -69,6 +69,13 @@ public class MotifAlignment implements
 		allMotifs = motifs; /* used for indexing */
 		List<Motif> motifList = new ArrayList<Motif>(Arrays.asList(motifs));
 
+		if (motifs.length == 0) {
+			throw new MotifAlignmentException("An empty Motif[] given as input");
+		} else if (motifs.length == 1) {
+			addMotif(motifs[0],0,false);
+			return;
+		}
+		
 		MotifComparisonMatrixBundle mb = mc.getComparisonMatrixWithOffsets(
 				motifList.toArray(new Motif[motifList.size()]));
 		
@@ -382,7 +389,7 @@ public class MotifAlignment implements
 	}
 	
 	public MetaMotif metamotif(boolean trimEnds) 
-		throws IllegalSymbolException, IllegalAlphabetException {
+		throws IllegalSymbolException, IllegalAlphabetException, InvalidMetaMotifException {
 		
 		List<Dirichlet> dists = new ArrayList<Dirichlet>();
 		
@@ -394,9 +401,14 @@ public class MotifAlignment implements
 		int lastNonUniform = -1;
 		boolean nonUniformFound = false;
 		
+		int maxPosDists = 0;
+		
 		for (int i = minOffset; i < offsetTotLen; i++) {
 			int pos = i - minOffset;
 			Distribution[] posDists = distributionsAtPosition(i);
+			if (posDists.length > maxPosDists)
+				maxPosDists = posDists.length;
+			
 			if (posDists.length >= 2) {
 				if (pos < firstNonUniform) {
 					if (!nonUniformFound) {
@@ -410,6 +422,13 @@ public class MotifAlignment implements
 			} else {
 				dists.add(new Dirichlet(alphabet));
 			}
+		}
+		
+		if (maxPosDists <= 1) {
+			throw new InvalidMetaMotifException(
+					"Cannot output a metamotif: " +
+					"the minimum number of 2 columns per position " +
+					"is not met for a single column in the input");
 		}
 		
 		if (trimEnds) {
@@ -426,14 +445,27 @@ public class MotifAlignment implements
 
 		MetaMotif mm = 
 			new MetaMotif(dists.toArray(new Dirichlet[dists.size()]));
-		mm.setName(name);
+		mm.setName(motifAlignmentName() + "_metamotif");
 		return mm;
 	}
 
+	
+	private String motifAlignmentName() {
+		StringBuffer nameBuf = new StringBuffer();
+		for (int i = 0; i < motifElems.size(); i++) {
+			if (i < motifElems.size()-1)
+				nameBuf.append(motifElems.get(i).getMotif().getName() + "__");
+			else 
+				nameBuf.append(motifElems.get(i).getMotif().getName());
+		}
+		return nameBuf.toString();
+	}
+	
 	public Motif averageMotif() 
 		throws IllegalSymbolException, IllegalAlphabetException {
 		Motif motif = new Motif();
-		motif.setName(name);
+
+		motif.setName(motifAlignmentName().toString() + "_avg");
 		
 		FiniteAlphabet alphab = (FiniteAlphabet) 
 			motifElems.get(0).getMotif().getWeightMatrix().getAlphabet();
