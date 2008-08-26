@@ -21,10 +21,12 @@ import org.bjv2.util.cli.Option;
 @NMExtraApp(launchName = "nmthreshold")
 public class MotifSetThresholder {
 
-	private double scoreThreshold=0.0;
+	private double scoreThreshold = 0.0;
 	private Set names = null;
 	private String outFileName;
 	private File inFile;
+	private double atOrAboveThreshold = 0.0;
+	private double confidenceThreshold;
 	
 	@Option(help="The input motif set file")
 	public void setMotifs(File f) {
@@ -43,9 +45,15 @@ public class MotifSetThresholder {
 		this.scoreThreshold = d;
 	}
 	
+	@Option(help="Annotate the motifs with the specified confidence threshold " +
+			"added as an annotation tag (key:\"confidence\",value: value you described)", optional=true)
+	public void setConf(double d) {
+		this.confidenceThreshold = d;
+	}
+	
 	@Option(help="Override threshold for motifs with a score above the given score",optional=true)
-	public void forMotifsAtOrAboveThreshold(double d) {
-		
+	public void setForMotifsAtOrAboveThreshold(double d) {
+		this.atOrAboveThreshold = d;
 	}
 	
 	@Option(help="Names of motifs to set the threshold for. " +
@@ -88,7 +96,8 @@ public class MotifSetThresholder {
 		}
 		for (Motif m : motifs) {
 			if (names == null || this.names.contains(m.getName())) {
-				m.setThreshold(scoreThreshold);
+				if (m.getThreshold() > this.atOrAboveThreshold)
+					m.setThreshold(scoreThreshold);
 			}
 		}
 		if (outFileName != null) {

@@ -52,9 +52,15 @@ public class MotifGrep {
 		this.pattern = Pattern.compile(str);
 	}
 	
-	@Option(help="Replacement string for the regular expression specified with -exp (replaces all instances)",optional=true)
+	@Option(help="Replacement string for the regular expression specified with -exp (replaces all instances)",
+			optional=true)
 	public void setReplaceWith(String str) {
 		this.replaceWithStr = str;
+	}
+	
+	@Option(help="Add prefix of the form ", optional=true) 
+	public void setAddPrefix(String str) {
+		
 	}
 	
 	@Option(help="Input motifset file")

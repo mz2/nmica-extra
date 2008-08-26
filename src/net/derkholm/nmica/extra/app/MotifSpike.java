@@ -1,6 +1,9 @@
 package net.derkholm.nmica.extra.app;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -39,10 +42,11 @@ import org.bjv2.util.cli.Option;
 @NMExtraApp(launchName = "nmspikeseq", vm = VirtualMachine.SERVER)
 public class MotifSpike {
 	protected InputStream[] seqFiles;
-	protected InputStream[] motifFiles;
+	protected File[] motifFiles;
 	protected String outFile;
 	protected double rate = 1.0;
 	protected String type = "DNA";
+	private int spikeCount;
 
 	@Option(help="Input sequence file(s)")
 	public void setSeqs(InputStream[] seqs) {
@@ -50,7 +54,7 @@ public class MotifSpike {
 	}
 	
 	@Option(help="Input motif file(s)")
-	public void setMotif(InputStream[] motif) {
+	public void setMotif(File[] motif) {
 		motifFiles = motif;
 	}
 	
@@ -59,9 +63,14 @@ public class MotifSpike {
 		outFile = str;
 	}
 	
-	@Option(help="Spike rate")
+	@Option(help="Spike rate (per sequence). Default = 1.0 (not used if -spikeCount is specified)",optional=true)
 	public void setRate(double d) {
 		rate = d;
+	}
+	
+	@Option(help="Constant spike count (number of motifs to spike per sequence)",optional=true)
+	public void setSpikeCount(int i) {
+		this.spikeCount = i;
 	}
 	
 	@Option(help="Sequence type:dna(default)|protein",optional=true)
@@ -71,7 +80,7 @@ public class MotifSpike {
 	
 	public void main(String[] args) throws Exception {
 		FiniteAlphabet alp = null;
-		Motif[] mot  = MotifIOTools.loadMotifSetXML(motifFiles);
+		//Motif[] mot  = MotifIOTools.loadMotifSetXML(motifFiles);
 		List<SymbolList> allSymLists = new ArrayList<SymbolList>();
 		
 		for (InputStream seqStream : seqFiles) {
@@ -102,21 +111,47 @@ public class MotifSpike {
 					symList, null, "seq"+i, null));
 		}
 		
-		for (InputStream inputStream : motifFiles) {
-			WeightMatrix wm1 =  mot[0].getWeightMatrix();
-
-			int seqCount = allSymLists.size();
-			int spikeCount = (int) Math.round(rate * seqCount);
+		for (File f : motifFiles) {
+			Motif[] motifs = MotifIOTools.loadMotifSetXML(
+					new BufferedInputStream(
+						new FileInputStream(f)));
 			
-			Random random = new Random();
-			while (spikeCount > 0) {
-				int randIndex = random.nextInt(allSymLists.size());
-			    SymbolList seq = allSymLists.get(randIndex);
+			for (Motif m : motifs) {
+				System.err.printf("Spiking %s...%n",m.getName());
+				WeightMatrix wm = m.getWeightMatrix();
+				int seqCount = allSymLists.size();
 				
-			    SymbolList smallMotifLikeSeq = generateSeqFromWM(wm1);
-			    insertSeqRandomlyToSeq(smallMotifLikeSeq, seq, alp);
-			    spikeCount--;
+				if (this.spikeCount == 0) {
+					int spikeCount = (int) Math.round(rate * seqCount);
+					
+					Random random = new Random();
+					while (spikeCount > 0) {
+						int randIndex = random.nextInt(allSymLists.size());
+					    SymbolList seq = allSymLists.get(randIndex);
+						
+					    insertSeqRandomlyToSeq(generateSeqFromWM(wm), seq, alp);
+					    spikeCount--;
+					}
+				} else {
+					int spikeCount = this.spikeCount;
+					//System.err.println("spike count:"+spikeCount);
+					for (int i = 0; i < allSymLists.size(); i++) {
+						SymbolList seq = allSymLists.get(i);
+						//System.err.printf("Spiking seq %d...%n",i);
+						while (spikeCount > 0) {
+							/*System.err.printf(
+									"%d spikes of %s to put in sequence %d%n", 
+									spikeCount, 
+									m.getName(), 
+									i);*/
+							insertSeqRandomlyToSeq(generateSeqFromWM(wm), seq, alp);
+							spikeCount--;
+						}
+					}
+				}
+
 			}
+			
 			
 			OutputStream output;
 			if (outFile == null) {

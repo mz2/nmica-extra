@@ -154,7 +154,10 @@ public class MotifSetInsertNoise {
 	
 	private WeightMatrix shuffleColumns(WeightMatrix wm) throws IllegalAlphabetException {
 		List<Integer> availableCols = new ArrayList<Integer>();
+		for (int i=0; i < wm.columns(); i++) {availableCols.add(i);}
+
 		Distribution[] dists = new Distribution[wm.columns()];
+		
 		
 		while (availableCols.size() > 1) {
 			int rColInd,fromCol,toCol;
@@ -166,8 +169,8 @@ public class MotifSetInsertNoise {
 			availableCols.remove(rColInd);
 			
 			Distribution tmp = dists[fromCol];
-			dists[toCol] = new SimpleDistribution(wm.getColumn(fromCol));
-			dists[fromCol] = new SimpleDistribution(wm.getColumn(toCol));
+			dists[toCol] = wm.getColumn(fromCol);
+			dists[fromCol] = wm.getColumn(toCol);
 		}
 		
 		if (availableCols.size() == 1) {
