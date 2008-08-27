@@ -150,18 +150,15 @@ public class MotifSpike {
 					}
 				}
 
-			}
-			
-			
-			OutputStream output;
-			if (outFile == null) {
-				output = System.out;
-			} else {
-				output = new BufferedOutputStream(new FileOutputStream(outFile));
-			}
-			SeqIOTools.writeFasta(output,spikedSeqDB);			
-			
+			}	
 		}
+		OutputStream output;
+		if (outFile == null) {
+			output = System.out;
+		} else {
+			output = new BufferedOutputStream(new FileOutputStream(outFile));
+		}
+		SeqIOTools.writeFasta(output,spikedSeqDB);
 	}
 
 	private static void insertSeqRandomlyToSeq (SymbolList shortSeq, SymbolList seq, FiniteAlphabet alp) 
