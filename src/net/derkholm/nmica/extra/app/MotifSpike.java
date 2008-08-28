@@ -145,8 +145,8 @@ public class MotifSpike {
 									m.getName(), 
 									i);*/
 							insertSeqRandomlyToSeq(generateSeqFromWM(wm), seq, alp);
-							spikeCount--;
 						}
+						spikeCount--;
 					}
 				}
 
