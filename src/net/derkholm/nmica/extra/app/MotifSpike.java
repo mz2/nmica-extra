@@ -134,19 +134,15 @@ public class MotifSpike {
 					}
 				} else {
 					int spikeCount = this.spikeCount;
+					Random random = new Random();
 					//System.err.println("spike count:"+spikeCount);
 					for (int i = 0; i < allSymLists.size(); i++) {
 						SymbolList seq = allSymLists.get(i);
-						//System.err.printf("Spiking seq %d...%n",i);
 						while (spikeCount > 0) {
-							/*System.err.printf(
-									"%d spikes of %s to put in sequence %d%n", 
-									spikeCount, 
-									m.getName(), 
-									i);*/
+							seq = allSymLists.get(random.nextInt(allSymLists.size()));
+							spikeCount--;
 							insertSeqRandomlyToSeq(generateSeqFromWM(wm), seq, alp);
 						}
-						spikeCount--;
 					}
 				}
 
