@@ -61,6 +61,12 @@ public class MotifSetComparisonShuffler {
 	public void main(String[] args) 
 		throws Exception
 	{
+		
+		if (args.length != 2) {
+			System.err.println("USAGE: nmshuffle [...] dictionary.xms querymotifs.xms");
+			System.exit(1);
+		}
+		
 		Motif[] dictionary = MotifIOTools.loadMotifSetXML(new FileReader(args[0]));
 		Motif[] queries = MotifIOTools.loadMotifSetXML(new FileReader(args[1]));
 		Distribution elsewhere = new UniformDistribution(DNATools.getDNA());
