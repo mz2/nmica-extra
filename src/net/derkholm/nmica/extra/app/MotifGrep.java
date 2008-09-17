@@ -27,6 +27,7 @@ public class MotifGrep {
 	private String[] names;
 	private String replaceWithStr = null;
 	private boolean substring;
+	private String prefix;
 	
 	@Option(help="List of motif names to match against. " +
 			"Note that this is done by exact comparison, " +
@@ -52,15 +53,16 @@ public class MotifGrep {
 		this.pattern = Pattern.compile(str);
 	}
 	
-	@Option(help="Replacement string for the regular expression specified with -exp (replaces all instances)",
+	@Option(help="Replacement string for the regular expression specified with -exp " +
+			"(replaces all instances)",
 			optional=true)
 	public void setReplaceWith(String str) {
 		this.replaceWithStr = str;
 	}
 	
-	@Option(help="Add prefix of the form ", optional=true) 
+	@Option(help="Add prefix to the motif names", optional=true) 
 	public void setAddPrefix(String str) {
-		
+		this.prefix = str;
 	}
 	
 	@Option(help="Input motifset file")
@@ -119,7 +121,12 @@ public class MotifGrep {
 			System.err.println("Need to supply either -list, -names or -exp");
 			System.exit(1);
 		}
+		
+		if (prefix != null) {
+			for (Motif m : om) {
+				m.setName(prefix + m.getName());
+			}
+		}
 		MotifIOTools.writeMotifSetXML(System.out, om.toArray(new Motif[0]));
 	}
-
 }
