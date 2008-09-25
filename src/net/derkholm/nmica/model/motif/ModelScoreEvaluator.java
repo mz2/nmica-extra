@@ -234,8 +234,9 @@ public class ModelScoreEvaluator {
 	
 	public SimpleMultiICAModel makeModel() 
 	throws Exception {
+		if (!motifModel)
+			makeAndFillOccupancyMatrix(occupancyMatrixFile);
 		
-		makeAndFillOccupancyMatrix(occupancyMatrixFile);
 		contribGrp = new SimpleContributionGroup("metamotifs",
 				MetaMotif.class);
 		
