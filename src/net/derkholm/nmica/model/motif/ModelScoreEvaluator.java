@@ -104,8 +104,6 @@ public class ModelScoreEvaluator {
 	private double priorPseudoCount = ConsensusMotifCreator.DEFAULT_PSEUDOCOUNT;
 	private boolean priorPrecisionOrPseudoCountSpecified = false;
 	
-	
-	
 	//TODO: Integrate this type of model evaluation into being part of nmmetainfer 
 	//such that you can compare the current likelihood values to those achievable for the correct model
 	//as a benchmarking mode
@@ -131,6 +129,20 @@ public class ModelScoreEvaluator {
 	@Option(help="Consensus string(s) that will be made to metamotif models", optional=true)
 	public void setConsensus(String[] strs) {
 		this.consensusStrings = strs;
+	}
+	
+	@Option(help="The Dirichlet prior precision parameter " +
+			"(used in conjunction with -consensus)", optional=true, userLevel=UserLevel.EXPERT)
+	public void setPriorPrecision(double d) {
+		this.priorPrecision = d;
+		this.priorPrecisionOrPseudoCountSpecified = true;
+	}
+	
+	@Option(help="The Dirichlet prior mean pseudocount " +
+			"(used in conjunction with -consensus)", optional=true, userLevel=UserLevel.EXPERT)
+	public void setPriorPseudoCount(double d) {
+		this.priorPseudoCount = d;
+		this.priorPrecisionOrPseudoCountSpecified = true;
 	}
 
 	@Option(help="The sequence background model to use for likelihood calculation",optional=true)
@@ -205,7 +217,7 @@ public class ModelScoreEvaluator {
 	}
 
 	@Option(help = "The occupancy matrix " +
-			"(see nmeval -occmatrixformat for help)")
+			"(see nmeval -occmatrixformat for help)", optional=true)
 	public void setOcc(File file) throws Exception {
 		this.occupancyMatrixFile = file;
 	}
