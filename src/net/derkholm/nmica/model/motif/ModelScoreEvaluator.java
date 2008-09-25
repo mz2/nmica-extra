@@ -391,12 +391,17 @@ public class ModelScoreEvaluator {
 		}
 	}
 
-	
 	public SimpleMultiICAModel getModel() {
 		return model;
 	}
 	
 	public void main(String[] args) throws Exception {
+		if (seqs != null && motifs != null) {
+			motifModel = true;
+		} else if (motifs != null && metaMotifs != null) {
+			motifModel = false;
+		}
+		
 		if (seqs != null && metaMotifs != null) {
 			System.err.println("Specify either -seqs or -metaMotifs, not both");
 			System.exit(1);
