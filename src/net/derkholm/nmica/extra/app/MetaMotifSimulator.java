@@ -12,7 +12,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import net.derkholm.nmica.apps.MetaMotifFinder;
-import net.derkholm.nmica.apps.MetaMotifModelScoreEvaluator;
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.maths.MathsTools;
@@ -38,6 +37,7 @@ import net.derkholm.nmica.model.metamotif.sampler.MetaMotifSymbolScalingSampler;
 import net.derkholm.nmica.model.metamotif.sampler.MetaMotifSymbolSwapSampler;
 import net.derkholm.nmica.model.metamotif.sampler.MetaMotifZapSampler;
 import net.derkholm.nmica.model.metamotif.sampler.SymbolWeightAlteringSampler;
+import net.derkholm.nmica.model.motif.ModelScoreEvaluator;
 import net.derkholm.nmica.model.motif.NMWeightMatrix;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
@@ -497,7 +497,7 @@ public class MetaMotifSimulator {
 				for (int mm = 0; mm < indices.size(); mm++) {
 					strBuf.append(indices.get(mm));
 					if (mm < (indices.size() - 1))
-						strBuf.append(MetaMotifModelScoreEvaluator.OCC_COL_SEPARATOR);
+						strBuf.append(ModelScoreEvaluator.OCC_COL_SEPARATOR);
 				}
 				strBuf.append("\n");
 			}	

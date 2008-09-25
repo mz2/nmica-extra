@@ -29,7 +29,8 @@ import org.biojava.bio.symbol.SymbolList;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
-@App(overview="Empirically find E-values for maxPerSeq motif scores", generateStub=true)
+//m.getName(), seq.getName(), max, (1.0 * gte) / bootstraps, Math.log10((1.0 * gte) / bootstraps));
+@App(overview="Empirically find E-values for maxPerSeq motif scores.\nOutput:motif seq maxscore e-value log10(e-val)", generateStub=true)
 @NMExtraApp(launchName = "nmempeval")
 public class MotifSetEmpiricalEValueCalculator {
 

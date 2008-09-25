@@ -118,8 +118,8 @@ public class MotifGrep {
 				}
 			}
 		} else {
-			System.err.println("Need to supply either -list, -names or -exp");
-			System.exit(1);
+			//just add every motif from input to the output set
+			for (Motif m : motifs) om.add(m);
 		}
 		
 		if (prefix != null) {
