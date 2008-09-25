@@ -22,7 +22,7 @@ import javax.xml.stream.XMLStreamReader;
 
 import net.derkholm.nmica.apps.ConsensusMotifCreator;
 import net.derkholm.nmica.apps.MetaMotifFinder;
-import net.derkholm.nmica.build.NMApp;
+import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.maths.DoubleFunction;
 import net.derkholm.nmica.maths.IdentityDoubleFunction;
@@ -46,15 +46,6 @@ import net.derkholm.nmica.model.metamotif.MetaMotifIOTools;
 import net.derkholm.nmica.model.metamotif.NamedMotifSet;
 import net.derkholm.nmica.model.metamotif.RingBufferMetaMotif;
 import net.derkholm.nmica.model.metamotif.bg.MetaMotifDirichletBackground;
-import net.derkholm.nmica.model.motif.Mosaic;
-import net.derkholm.nmica.model.motif.MosaicIO;
-import net.derkholm.nmica.model.motif.MosaicSequenceBackground;
-import net.derkholm.nmica.model.motif.MotifClippedSimplexPrior;
-import net.derkholm.nmica.model.motif.MotifFacette;
-import net.derkholm.nmica.model.motif.MotifUncountedLikelihood;
-import net.derkholm.nmica.model.motif.NMWeightMatrix;
-import net.derkholm.nmica.model.motif.PosSpecWeightMatrixPrior;
-import net.derkholm.nmica.model.motif.SequenceBackground;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 
@@ -72,13 +63,11 @@ import org.bjv2.util.cli.ConfigurationException;
 import org.bjv2.util.cli.Option;
 import org.bjv2.util.cli.UserLevel;
 
-import com.sun.org.apache.bcel.internal.verifier.structurals.UninitializedObjectType;
-
 //TODO: Implement in a more generic way (such that it also works with motifs)
 @App(overview = "Model evaluator " +
 		"(used for debugging purposes to " +
 		"check correctness of likelihood calculations)", generateStub = true)
-@NMApp(launchName = "nmeval", vm = VirtualMachine.SERVER)
+@NMExtraApp(launchName = "nmeval", vm = VirtualMachine.SERVER)
 public class ModelScoreEvaluator {
 	public static final String OCC_COL_SEPARATOR = ";";
 	protected MetaMotif[] metaMotifs;
