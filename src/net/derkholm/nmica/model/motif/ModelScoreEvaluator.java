@@ -186,11 +186,7 @@ public class ModelScoreEvaluator {
 	public void setMotifs(File file) throws Exception {
 		this.motifs = MotifIOTools.loadMotifSetXML(new FileInputStream(file));
 	}
-	
-	public void setMotifs(Motif[] motifs) {
-		this.motifs = motifs;
-	}
-	
+		
 	@Option(help = "The background alpha parameter " +
 			"(for an uniform 0th order Dirichlet background)", 
 			optional = true, userLevel = UserLevel.EXPERT)
