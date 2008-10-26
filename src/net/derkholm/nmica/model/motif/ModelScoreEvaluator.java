@@ -40,6 +40,7 @@ import net.derkholm.nmica.model.SimpleContributionItem;
 import net.derkholm.nmica.model.SimpleDatum;
 import net.derkholm.nmica.model.SimpleFacetteMap;
 import net.derkholm.nmica.model.SimpleMultiICAModel;
+import net.derkholm.nmica.model.metamotif.Dirichlet;
 import net.derkholm.nmica.model.metamotif.MetaMotif;
 import net.derkholm.nmica.model.metamotif.MetaMotifFacette;
 import net.derkholm.nmica.model.metamotif.MetaMotifIOTools;
@@ -48,8 +49,12 @@ import net.derkholm.nmica.model.metamotif.RingBufferMetaMotif;
 import net.derkholm.nmica.model.metamotif.bg.MetaMotifDirichletBackground;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
+import net.derkholm.nmica.motif.MotifTools;
+import net.derkholm.nmica.seq.NMSimpleDistribution;
 
 import org.biojava.bio.BioException;
+import org.biojava.bio.dist.Distribution;
+import org.biojava.bio.dp.WeightMatrix;
 import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.seq.SequenceIterator;
@@ -58,6 +63,8 @@ import org.biojava.bio.seq.db.IllegalIDException;
 import org.biojava.bio.seq.db.SequenceDB;
 import org.biojava.bio.seq.io.SeqIOTools;
 import org.biojava.bio.symbol.FiniteAlphabet;
+import org.biojava.bio.symbol.IllegalAlphabetException;
+import org.biojava.bio.symbol.Symbol;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.ConfigurationException;
 import org.bjv2.util.cli.Option;
@@ -89,10 +96,11 @@ public class ModelScoreEvaluator {
 	
 	private boolean motifModel;
 	private MosaicSequenceBackground seqBackgroundModel;
+	private double edgePrune = 0.0;
 	
 	private int minLength = -1;
 	private int maxLength = 10;
-	private int extraLength = 2;
+	private int extraLength = 0;
 	private double minClip = Double.NEGATIVE_INFINITY;
     private double maxClip = 1.0;
 	private boolean dirichletPriorFsSpecified;
@@ -124,6 +132,7 @@ public class ModelScoreEvaluator {
     		"(-consensus can also be used to specify one)", optional=true)
     public void setPriorMetaMotifs(File[] f) {
     	this.dirichletPriorFiles = f;
+    	dirichletPriorFsSpecified = true;
     }
     
 	@Option(help="Consensus string(s) that will be made to metamotif models", optional=true)
@@ -242,12 +251,25 @@ public class ModelScoreEvaluator {
 		
 		
 		Facette[] facettes;
-		SequenceBackground seqBackground = null;
+		MotifFacette[] mFacettes;
 		MetaMotifDirichletBackground mmBackground = null;
+		DoubleFunction mixTransferFunction = IdentityDoubleFunction.INSTANCE;
 		
 		if (motifModel) {
-			facettes = new MotifFacette[1];
+			facettes = mFacettes = new MotifFacette[1];
 			
+			mFacettes[0] = new MotifFacette(
+                    seqBackgroundModel,
+                    0.0,
+                    true,
+                    true,
+                    revComp,
+                    uncountedExpectation,
+                    false,
+                    edgePrune,
+                    DNATools.getDNA()
+                );
+			mFacettes[0].setMixTransferFunction(mixTransferFunction);
 			
 		} else {
 			MetaMotifDirichletBackground background = 
@@ -256,7 +278,7 @@ public class ModelScoreEvaluator {
 			MetaMotifFacette[] mmFacettes;
 			facettes = mmFacettes = new MetaMotifFacette[1];
 			
-			DoubleFunction mixTransferFunction = IdentityDoubleFunction.INSTANCE;
+			
 			facettes[0] = new MetaMotifFacette(
 					background, 
 					revComp,
@@ -286,44 +308,81 @@ public class ModelScoreEvaluator {
 					new SequenceDB[] {seqs},
 					new SequenceBackground[] {seqBackgroundModel});
 			
+			for (Motif m : motifs) {
+				MotifTools.addPseudoCounts(m.getWeightMatrix(),pseudoCount);
+				
+				for (int i = 0; i < m.getWeightMatrix().columns(); i++) {
+					Distribution distrib = m.getWeightMatrix().getColumn(i);
+					
+					for (Iterator it = ((FiniteAlphabet) distrib.getAlphabet())
+							.iterator(); it.hasNext();) {
+						Symbol sym = (Symbol) it.next();
+						
+						System.err.printf("%f ", distrib.getWeight(sym));
+					}
+					System.err.println();
+				}
+			}
+			
+			model = new SimpleMultiICAModel(facetteMap, data, motifs.length);
+			
+			for (int i = 0; i < model.getContributions(contribGrp).size(); i++) {
+				model
+					.getContributions(contribGrp)
+						.set(i, new SimpleContributionItem(motifs[i].getWeightMatrix()));
+			}
+			for (int i = 0, rows=model.getMixingMatrix().rows(); i < rows; i++) {
+				for (int j = 0, cols=model.getMixingMatrix().columns(); j < cols; j++) {
+					model.getMixingMatrix().set(i, j, 1.0);
+				}
+			}
 		} else {
 			NamedMotifSet[] motifSets = new NamedMotifSet[1];
 			motifSets[0] = new NamedMotifSet(motifs, null);
 			data = MetaMotifFinder.loadData(motifSets);
 			MetaMotifFinder.addPseudoCounts(data, pseudoCount);
-
+			
+			model = new SimpleMultiICAModel(facetteMap, data, metaMotifs.length);
+			
+			for (int i = 0; i < model.getContributions(contribGrp).size(); i++) {
+				model
+					.getContributions(contribGrp)
+						.set(i, new SimpleContributionItem(metaMotifs[i]));
+			}
 		}
-		
-		model = new SimpleMultiICAModel(facetteMap, data, metaMotifs.length);		
-		
-		for (int i = 0; i < model.getContributions(contribGrp).size(); i++) {
-			model
-				.getContributions(contribGrp)
-					.set(i, new SimpleContributionItem(metaMotifs[i]));
-		}
-		
+				
 		if (!motifModel) fillMixingMatrix(model, occ);
 	
+
+		/*
 		if (motifModel) {
 			Set<String> ids = seqs.ids();
-			Datum d = data[0];
 			System.err.println("Data length   :" + data.length);
 			System.err.println("First data obj:" + data[0]);
 			
-			Object[] dats = d.getFacettedData();
 			double likelihood = 0;
-			for (int i = 0; i < dats.length; i++) {
-				Sequence seq = (Sequence)dats[i];
+			System.err.println(seqBackgroundModel);
+			for (int i = 0; i < data.length; i++) {
+				Datum d = data[i];
+				System.err.println("Datum facetted data length: " + d.getFacettedData().length);
+				Sequence seq = (Sequence)d.getFacettedData()[0];
 				MotifUncountedLikelihood likelihoodCalc = 
 						new MotifUncountedLikelihood(
-								(MotifFacette)facettes[0], 
-								seq);
+								(MotifFacette)facettes[0], seq);
 				double thisLikelihood = likelihoodCalc.likelihood(
 										model.getContributions(contribGrp), 
 										model.getMixture(i));
+				for (int j = 0; j < model.getMixture(i).size(); j++) {
+					System.err.printf("%f ", model.getMixture(i).get(j));
+				}
+				System.err.println();
+				System.err.println(thisLikelihood);
 				likelihood = likelihood + thisLikelihood;
 			}
+			System.err.println("man likelihood:" + likelihood);
 		}
+		*/
+		
 		return model;
 	}
 	
@@ -414,6 +473,7 @@ public class ModelScoreEvaluator {
 		RingBufferMetaMotif[] priorMetamotifs = null;
     	
         if (consensusStrsSpecified) {
+        	System.err.println("Consensus strings specified");
         	priorMetamotifs =             		
         		(RingBufferMetaMotif[]) 
 	        		toRingBufferMetaMotifs(ConsensusMotifCreator.consensusToMetamotifs(
@@ -424,7 +484,13 @@ public class ModelScoreEvaluator {
         	
         	
         } else if (dirichletPriorFsSpecified) {
+        	System.err.println("Dirichlet prior specified");
         	if (this.priorPrecisionOrPseudoCountSpecified) {
+        		System.err.println(
+        				"Prior precision or pseudocount were specified " +
+        				"(either motifset file loaded as metamotifs with " +
+        				"fixed per-column precisions, " +
+        				"or metamotif-specific precision overriden)");
             	priorMetamotifs = 
             		(RingBufferMetaMotif[]) 
             			toRingBufferMetaMotifs(MetaMotifIOTools
@@ -432,35 +498,57 @@ public class ModelScoreEvaluator {
             						dirichletPriorFiles, 
             						this.priorPseudoCount, 
             						this.priorPrecision));
+            	
+            	System.err.printf("pseudocount: %f precision: %f%n", 
+            			priorPseudoCount, priorPrecision );
+            	for (MetaMotif mm : priorMetamotifs) {
+            		for (int i=0,cols=mm.columns(); i < cols; i++) {
+            			Dirichlet dir = mm.getColumn(i);
+            			
+            			for (Iterator it = ((FiniteAlphabet) dir
+								.getAlphabet()).iterator(); it.hasNext();) {
+							Symbol sym = (Symbol) it.next();
+							System.err.printf("%f ",dir.getWeight(sym));
+						}
+            		}
+            		System.err.println();
+            	}
 
         	} else {
+        		System.err.println("Metamotif prior specified (no pseudocount specified or precision overrides)");
         		//this XMS file should contain correctly annotated metamotifs
             	priorMetamotifs = (RingBufferMetaMotif[]) toRingBufferMetaMotifs(MetaMotifIOTools
                 		.loadMetaMotifsFromMultipleFiles(dirichletPriorFiles));            		
         	}
         }
-        PosSpecWeightMatrixPrior pswmpPrior = 
-    		new PosSpecWeightMatrixPrior
-    			(DNATools.getDNA(), 
-				 minLength, maxLength, maxLength + extraLength, priorMetamotifs);
-    	
         
-		model = makeModel();
-		MotifClippedSimplexPrior uninfoPrior = 
+        System.err.println("Prior metamotifs: "+priorMetamotifs);
+        model = makeModel();
+		System.out.printf("likelihood %f%n", model.likelihood());
+		
+        MotifClippedSimplexPrior uninfoPrior = 
 			new MotifClippedSimplexPrior(
 					DNATools.getDNA(), 
 					minLength, maxLength, maxLength + extraLength, minClip, maxClip);
+        PosSpecWeightMatrixPrior pswmpPrior = 
+    		new PosSpecWeightMatrixPrior
+    			(DNATools.getDNA(), 
+				 minLength, 
+				 maxLength, 
+				 maxLength + extraLength, 
+				 priorMetamotifs);
 		
-		System.out.printf("likelihood %f %n", model.likelihood());
 		ObjectMatrix1D contribs = model.getContributions(contribGrp);
-		
 		double accumProbability = 0;
 		for (int i = 0; i < contribs.size(); i++) {
-			NMWeightMatrix nwm = (NMWeightMatrix) contribs.get(i);
-			uninfoPrior.probability(contribs.get(i));
-			double probability = uninfoPrior.probability(nwm);
-			System.err.printf("%d : %f %n",i,probability);
-			accumProbability = probability + probability;
+			ContributionItem nwmItem = (ContributionItem) contribs.get(i);
+			WeightMatrix wm = (WeightMatrix)nwmItem.getItem();
+			NMWeightMatrix nwm = wmtoNWM(wm, wm.columns(), 0);
+			
+			double uninfoLogProbability = uninfoPrior.probability(nwm);
+			double infoLogProbability = pswmpPrior.probability(nwm);
+			System.err.printf("%d prior: %f %f%n",i,uninfoLogProbability);
+			accumProbability = accumProbability + uninfoLogProbability;
 		}
 		
 		if (mixturePermutations > 0) {
@@ -484,6 +572,21 @@ public class ModelScoreEvaluator {
 			
 	}
 
+	private NMWeightMatrix 
+		wmtoNWM(WeightMatrix wm, int cols, int offset) 
+		throws IllegalAlphabetException {
+		NMSimpleDistribution[] dists 
+			= new NMSimpleDistribution[cols + extraLength];
+		
+		//System.err.printf("cols: %d wm.columns(): %d %n",cols,wm.columns());
+		
+		for (int i = 0,len=wm.columns(); i < len; i++) {
+			dists[i] = new NMSimpleDistribution(wm.getColumn(i));
+		}
+		
+		return new NMWeightMatrix(dists, cols, offset);
+	}
+	
 	//TODO: Implement
 	private SimpleMultiICAModel shuffleMetaMotifs(SimpleMultiICAModel model) {
 		SimpleMultiICAModel shuffledModel = new SimpleMultiICAModel(model);

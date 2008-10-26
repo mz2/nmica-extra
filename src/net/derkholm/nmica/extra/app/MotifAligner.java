@@ -4,12 +4,14 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.extra.motif.comparison.BLiCMotifComparitor;
 import net.derkholm.nmica.extra.motif.comparison.KullbackLeiblerDifferenceMotifComparitor;
+import net.derkholm.nmica.model.metamotif.Dirichlet;
 import net.derkholm.nmica.model.metamotif.MetaMotif;
 import net.derkholm.nmica.model.metamotif.MetaMotifIOTools;
 import net.derkholm.nmica.motif.Motif;
@@ -19,6 +21,9 @@ import net.derkholm.nmica.motif.SquaredDifferenceMotifComparitor;
 import net.derkholm.nmica.motif.align.InvalidMetaMotifException;
 import net.derkholm.nmica.motif.align.MotifAlignment;
 
+import org.biojava.bio.symbol.FiniteAlphabet;
+import org.biojava.bio.symbol.IllegalSymbolException;
+import org.biojava.bio.symbol.Symbol;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -36,6 +41,8 @@ public class MotifAligner {
 	private double singleMotifPseudoCount;
 	private double singleMotifPrecision = 10.0;
 	private boolean addName;
+	private double minColWeight;
+	private double maximumPrecision;
 	
 	/*
 	@Option(help="Output file",optional=true)
@@ -60,6 +67,18 @@ public class MotifAligner {
 			"see -singleMotifPseudoCount and -singleMotifPrecision)",optional=true)
 	public void setOutputSingleMotif(boolean b ) {
 		this.outputSingleMotif = b;
+	}
+	
+	@Option(help="In the metamotif output mode weight of each column will be capped to this value",
+			optional=true)
+	public void setMinColWeight(double d) {
+		this.minColWeight = d;
+	}
+	
+	@Option(help="In the metamotif output mode precision of each column will be capped to this value",
+			optional=true)
+	public void setMaxPrecision(double d) {
+		this.maximumPrecision = d;
 	}
 	
 	@Option(help="If the output contains only a single motif and the metamotif output type is specified, " +
@@ -161,10 +180,14 @@ public class MotifAligner {
 		else if (outputType.equals("metamotif")) {
 			//System.err.println(alignment.alignmentConsensusString());
 			try {
+				MetaMotif mm = alignment.metamotif(true);
+				if (this.minColWeight > 0) MotifSetRegulariser.addPseudoCounts(mm, minColWeight);
+				if (this.maximumPrecision > 0) capPrecision(mm, this.maximumPrecision);
+				
 				MetaMotifIOTools.
 					writeMetaMotifSetToMotifSetWithAnnotations(
 						System.out, 
-						new MetaMotif[] {alignment.metamotif(true)});
+						new MetaMotif[] {mm});
 			} catch (InvalidMetaMotifException e) {
 				System.err.printf("Will output the input motif as a metamotif " +
 				"with the per-column precision of %.3f.%n, (pseudocount=%.3f)",singleMotifPrecision, singleMotifPseudoCount);
@@ -184,5 +207,17 @@ public class MotifAligner {
 
 		System.err.println("Done.");
 		System.exit(0);
+	}
+	
+	public static void capPrecision(MetaMotif mm, double maxPrecision) 
+		throws IllegalSymbolException {
+		System.err.printf("Setting precision to %.2f%n", maxPrecision);
+		for (int i = 0; i < mm.columns(); i++) {
+			Dirichlet distrib = mm.getColumn(i);
+			if (distrib.alphaSum() > maxPrecision)
+				distrib.setAlphaSum(maxPrecision);
+		}
+		//MotifSetRegulariser.rescaleWeightMatrix(mm);
+		return;
 	}
 }
