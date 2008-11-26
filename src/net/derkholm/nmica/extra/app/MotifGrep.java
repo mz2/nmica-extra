@@ -36,7 +36,7 @@ public class MotifGrep {
 		this.list = list;
 	}
 	
-	@Option(help="Allowed motif names",optional=true)
+	@Option(help="Allowed motif names (separated by spaces)",optional=true)
 	public void setNames(String[] names) {
 		this.names = names;
 	}
