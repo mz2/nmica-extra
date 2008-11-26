@@ -63,7 +63,7 @@ public class NMExtraAppProcessor implements AnnotationProcessor {
 						pw.printf("JVM=%s%n", nmapp.vm() == VirtualMachine.SERVER ? "-server" : "-client");
 						pw.printf("MAINCLASS=%s%n", td.getQualifiedName() + "Application");
 						pw.printf("%n");
-						pw.printf("if ! [ -e \"${APP_DIR}/lib/nmica.jar\" ]; then%n");
+						pw.printf("if ! [ -e \"${NMICA_DEV_HOME}/lib/nmica.jar\" ]; then%n");
 						pw.printf("  echo \"Couldn't find nmica.jar.  Have you compiled NestedMICA?\"%n");
 						pw.printf("  exit 1%n");
 						pw.printf("fi%n");
