@@ -28,6 +28,10 @@ public class MotifGrep {
 	private String replaceWithStr = null;
 	private boolean substring;
 	private String prefix;
+	private String annotationKey;
+	private boolean matchSpecies;
+	private boolean matchDesc;
+	private boolean matchName;
 	
 	@Option(help="List of motif names to match against. " +
 			"Note that this is done by exact comparison, " +
@@ -48,9 +52,29 @@ public class MotifGrep {
 		this.substring = b;
 	}
 
-	@Option(help="Regular expression to match against the motif names",optional=true)
+	@Option(help="Regular expression to match against",optional=true)
 	public void setExp(String str) {
 		this.pattern = Pattern.compile(str);
+	}
+	
+	@Option(help="Include the motif name in regular expression matching (default=true)",optional=true)
+	public void setMatchName(boolean bool) {
+		this.matchName = bool;
+	}
+	
+	@Option(help="Include the species name in regular expression matching (default=false)",optional=true)
+	public void setMatchSpecies(boolean bool) {
+		this.matchSpecies = bool;
+	}
+
+	@Option(help="Include the description annotations in regular expression matching (default=false)",optional=true)
+	public void setMatchDesc(boolean bool) {
+		this.matchDesc = bool;
+	}
+	
+	@Option(help="Print out the value for the specified annotation key",optional=true)
+	public void setAnnotation(String str) {
+		this.annotationKey = str;
 	}
 	
 	@Option(help="Replacement string for the regular expression specified with -exp " +
@@ -112,9 +136,20 @@ public class MotifGrep {
 					}
 					om.add(m);
 				} else {
-					if (pattern.matcher(m.getName()).find()) {
-						om.add(m);
-					}
+					if (matchName && (pattern.matcher(m.getName()).find())) 
+					{om.add(m); continue;}
+					if (matchDesc 
+							&& m.getAnnotation().containsProperty("description") 
+							&& (pattern.matcher(
+								(CharSequence)m.getAnnotation()
+									.getProperty("description")).find())) 
+					{om.add(m); continue;}
+					if (matchSpecies
+							&& m.getAnnotation().containsProperty("species") 
+							&& (pattern.matcher(
+								(CharSequence)m.getAnnotation()
+									.getProperty("species")).find())) 
+					{om.add(m); continue;}
 				}
 			}
 		} else {
@@ -127,6 +162,18 @@ public class MotifGrep {
 				m.setName(prefix + m.getName());
 			}
 		}
-		MotifIOTools.writeMotifSetXML(System.out, om.toArray(new Motif[0]));
+		
+		if (annotationKey != null) {
+			for (Motif m : om) {
+				if (m.getAnnotation().containsProperty(annotationKey)) {
+					System.out.printf("%s\t%s\t%s%n",
+							m.getName(),
+							annotationKey,
+							m.getAnnotation().getProperty(annotationKey));
+				}
+			}
+		} else {
+			MotifIOTools.writeMotifSetXML(System.out, om.toArray(new Motif[0]));
+		}
 	}
 }
