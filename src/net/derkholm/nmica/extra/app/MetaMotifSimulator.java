@@ -37,7 +37,6 @@ import net.derkholm.nmica.model.metamotif.sampler.MetaMotifSymbolScalingSampler;
 import net.derkholm.nmica.model.metamotif.sampler.MetaMotifSymbolSwapSampler;
 import net.derkholm.nmica.model.metamotif.sampler.MetaMotifZapSampler;
 import net.derkholm.nmica.model.metamotif.sampler.SymbolWeightAlteringSampler;
-import net.derkholm.nmica.model.motif.ModelScoreEvaluator;
 import net.derkholm.nmica.model.motif.NMWeightMatrix;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
