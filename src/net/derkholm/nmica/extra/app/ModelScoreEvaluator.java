@@ -99,7 +99,7 @@ public class ModelScoreEvaluator {
 	private int mixturePermutations = 0;
 	private int modelShuffles = 0;
 	private SimpleMultiICAModel model;
-	private Occupancy occ;
+	private Occupancy<?,?> occ;
 	private SequenceDB seqs;
 	
 	private boolean motifModel;
@@ -263,6 +263,7 @@ public class ModelScoreEvaluator {
 		MetaMotifDirichletBackground mmBackground = null;
 		DoubleFunction mixTransferFunction = IdentityDoubleFunction.INSTANCE;
 		
+		//if evaluating sequence--motif model
 		if (motifModel) {
 			facettes = mFacettes = new MotifFacette[1];
 			
@@ -279,7 +280,9 @@ public class ModelScoreEvaluator {
                 );
 			mFacettes[0].setMixTransferFunction(mixTransferFunction);
 			
-		} else {
+		} 
+		//if evaluating motif--metamotif model
+		else {
 			MetaMotifDirichletBackground background = 
 				new MetaMotifDirichletBackground(bgAlphaSum,DNATools.getDNA());
 			
@@ -294,9 +297,6 @@ public class ModelScoreEvaluator {
 					edgePruneThreshold, 
 					background.getAlphabet());
 			mmFacettes[0].setMixTransferFunction(mixTransferFunction);
-			
-			
-			
 		}			
 		
 		SimpleFacetteMap facetteMap = new SimpleFacetteMap(
@@ -310,7 +310,9 @@ public class ModelScoreEvaluator {
 		
 		Datum[] data;
 		SimpleMultiICAModel model;
-
+		
+		
+		//if were're evaluating a sequence--motif model
 		if (motifModel) {
 			data = loadSequenceData(
 					new SequenceDB[] {seqs},
@@ -344,7 +346,10 @@ public class ModelScoreEvaluator {
 					model.getMixingMatrix().set(i, j, 1.0);
 				}
 			}
-		} else {
+			
+		} 
+		//if we're evaluating a motif--metamotif model
+		else {
 			NamedMotifSet[] motifSets = new NamedMotifSet[1];
 			motifSets[0] = new NamedMotifSet(motifs, null);
 			data = MetaMotifFinder.loadData(motifSets);
@@ -359,7 +364,8 @@ public class ModelScoreEvaluator {
 			}
 		}
 				
-		if (!motifModel) fillMixingMatrix(model, occ);
+		if (!motifModel) fillMotifMetaMotifMixingMatrix(model, (Occupancy<Motif,MetaMotif>)occ);
+		else fillSequenceMotifMixingMatrix(model,(Occupancy<Sequence,Motif>)occ);
 	
 
 		/*
@@ -437,15 +443,27 @@ public class ModelScoreEvaluator {
 
 	//this method is a bridge between the OccupancyMatrix objects 
 	//should really just read the occupancy matrix
-	private void fillMixingMatrix(SimpleMultiICAModel model,
-			Occupancy occMatrix) {
-		for (Motif motif : occMatrix.motifs) {
-			int mI = occMatrix.index(motif);
-			Set<MetaMotif> mms = occMatrix.getMetaMotifs(motif);
+	private void fillMotifMetaMotifMixingMatrix(
+			SimpleMultiICAModel model,
+			Occupancy<Motif, MetaMotif> occMatrix) {
+		for (Motif motif : occMatrix.dataEntries) {
+			int mI = occMatrix.indexOfDataEntry(motif);
+			Set<MetaMotif> mms = occMatrix.getModels(motif);
 			Matrix1D mixture = model.getMixture(mI);
-			
-			for (MetaMotif mm : mms)
-				mixture.set(occMatrix.index(mm), 1.0);
+			for (MetaMotif mm : mms) mixture.set(occMatrix.indexOfModel(mm), 1.0);
+		}
+	}
+	
+	//this method is a bridge between the OccupancyMatrix objects 
+	//should really just read the occupancy matrix
+	private void fillSequenceMotifMixingMatrix(
+			SimpleMultiICAModel model, 
+			Occupancy<Sequence, Motif> occMatrix) {
+		for (Sequence motif : occMatrix.dataEntries) {
+			int mI = occMatrix.indexOfDataEntry(motif);
+			Set<Motif> mms = occMatrix.getModels(motif);
+			Matrix1D mixture = model.getMixture(mI);
+			for (Motif mm : mms) mixture.set(occMatrix.indexOfModel(mm), 1.0);
 		}
 	}
 	
@@ -546,7 +564,7 @@ public class ModelScoreEvaluator {
 				 maxLength + extraLength, 
 				 priorMetamotifs);
 		
-		ObjectMatrix1D contribs = model.getContributions(contribGrp);
+		ObjectMatrix1D<?> contribs = model.getContributions(contribGrp);
 		double accumProbability = 0;
 		for (int i = 0; i < contribs.size(); i++) {
 			ContributionItem nwmItem = (ContributionItem) contribs.get(i);
@@ -555,7 +573,7 @@ public class ModelScoreEvaluator {
 			
 			double uninfoLogProbability = uninfoPrior.probability(nwm);
 			double infoLogProbability = pswmpPrior.probability(nwm);
-			System.err.printf("%d prior: %f %f%n",i,uninfoLogProbability);
+			System.err.printf("motif%d prior %f %f%n",i,uninfoLogProbability, infoLogProbability);
 			accumProbability = accumProbability + uninfoLogProbability;
 		}
 		
@@ -643,10 +661,11 @@ public class ModelScoreEvaluator {
 		return permutedModel;
 	}
 
-	public void makeAndFillOccupancyMatrix(File occupancyMatrixFile) throws FileNotFoundException,
+	public Occupancy<?,?> makeAndFillOccupancyMatrix(
+			File occupancyMatrixFile) throws FileNotFoundException,
 			IOException {
 		BufferedReader reader = new BufferedReader(new FileReader(occupancyMatrixFile));
-		Occupancy occMatrix = new Occupancy(motifs, metaMotifs);
+		Occupancy<Object,Object> occMatrix = new Occupancy<Object,Object>(motifs, metaMotifs);
 		
 		String line = null;
 		int i = 0;
@@ -659,7 +678,7 @@ public class ModelScoreEvaluator {
 					throw new IllegalArgumentException(
 							"The input file contains an invalid index: " + index);
 				
-				occMatrix.addMetaMotif(metaMotifs[index], i);
+				occMatrix.addModel((Object)metaMotifs[index], i);
 			}
 			i++;
 		}
@@ -669,7 +688,7 @@ public class ModelScoreEvaluator {
 					"The input file does not contain " +
 					"the correct number of rows (one per input metamotif)");
 		
-		this.occ = occMatrix;
+		return occMatrix;
 	}
 	
     private static RingBufferMetaMotif[] toRingBufferMetaMotifs(MetaMotif[] metamotifs) {
@@ -680,76 +699,78 @@ public class ModelScoreEvaluator {
 		return rbs;
 	}
 
-	public class Occupancy {
-		private MetaMotif[] metaMotifs;
-		private Motif[] motifs;
-		private HashMap<Motif, Set<MetaMotif>> metaMotifsByMotif = new HashMap<Motif, Set<MetaMotif>>();
-		private HashMap<MetaMotif, Set<Motif>> motifsByMetaMotif = new HashMap<MetaMotif, Set<Motif>>();
+	public class Occupancy<DataType,ModelType> {
+		private ModelType[] models;
+		private DataType[] dataEntries;
+		private HashMap<DataType, Set<ModelType>> 
+		modelsByData = new HashMap<DataType, Set<ModelType>>();
+		private HashMap<ModelType, Set<DataType>> 
+		dataByModels = new HashMap<ModelType, Set<DataType>>();
 		
-		public Set<MetaMotif> getMetaMotifs(Motif m) {
-			return metaMotifsByMotif.get(m);
+		public Set<ModelType> getModels(DataType m) {
+			return modelsByData.get(m);
 		}
 
-		public Set<Motif> getMotifs(MetaMotif mm) {
-			return motifsByMetaMotif.get(mm);
+		public Set<DataType> getDataEntries(ModelType mm) {
+			return dataByModels.get(mm);
 		}
 		
-		public Occupancy(Motif[] motifs, MetaMotif[] metaMotifs) {
-			this.motifs = motifs;
-			this.metaMotifs = metaMotifs;
-			for (Motif m : motifs)
-				metaMotifsByMotif.put(m, new HashSet<MetaMotif>());
+		public Occupancy(DataType[] motifs, ModelType[] metaMotifs) {
+			this.dataEntries = motifs;
+			this.models = metaMotifs;
+			for (DataType m : motifs)
+				modelsByData.put(m, new HashSet<ModelType>());
 			
-			for (MetaMotif mm : metaMotifs)
-				motifsByMetaMotif.put(mm, new HashSet<Motif>());
+			for (ModelType mm : metaMotifs)
+				dataByModels.put(mm, new HashSet<DataType>());
 		}
 		
-		public MetaMotif[] getMetaMotifs() {
-			return metaMotifs;
+		public ModelType[] getModels() {
+			return models;
 		}
 
-		public Motif[] getMotifs() {
-			return motifs;
+		public DataType[] getDataEntries() {
+			return dataEntries;
 		}
 
-		public void addMetaMotif(MetaMotif mm, int[] indices) {
+		public void addModel(ModelType mm, int[] indices) {
 			for (int i : indices)
-				addMetaMotif(mm, i);
+				addModel(mm, i);
 		}
 
-		private void addMetaMotif(MetaMotif mm, int i) {
-			if (i >= 0 && i < motifs.length) {
-				Motif m = motifs[i];
-				metaMotifsByMotif.get(m).add(mm);
-				motifsByMetaMotif.get(mm).add(m);
+		private void addModel(ModelType mm, int i) {
+			if (i >= 0 && i < dataEntries.length) {
+				DataType m = dataEntries[i];
+				modelsByData.get(m).add(mm);
+				dataByModels.get(mm).add(m);
 			} else throw new IllegalArgumentException("Invalid index " + i);
 		}
 		
-		public boolean isPresent(MetaMotif mm, Motif m) {
-			return motifsByMetaMotif.get(mm).contains(m);
+		public boolean isPresent(ModelType mm, DataType m) {
+			return dataByModels.get(mm).contains(m);
 		}
 		
-		public boolean isPresent(MetaMotif mm, int i) {
-			return motifsByMetaMotif.get(mm).contains(motifs[i]);
+		public boolean isPresent(ModelType mm, int i) {
+			return dataByModels.get(mm).contains(dataEntries[i]);
 		}
 		
 		public boolean isPresent(int i, int j) {
-			return motifsByMetaMotif.get(metaMotifs[i]).contains(motifs[i]);
+			return dataByModels.get(models[i]).contains(dataEntries[i]);
 		}
 		
-		public boolean isPresent(int i, Motif m) {
-			return motifsByMetaMotif.get(metaMotifs[i]).contains(m);
+		public boolean isPresent(int i, DataType m) {
+			return dataByModels.get(models[i]).contains(m);
 		}
 		
-		public int index(MetaMotif mm) {
-			for (int i = 0; i < metaMotifs.length; i++)
-				if (mm == metaMotifs[i]) return i;
+		public int indexOfModel(ModelType mm) {
+			for (int i = 0; i < models.length; i++)
+				if (mm == models[i]) return i;
 			return -1;
 		}
 		
-		public int index(Motif mm) {
-			for (int i = 0; i < motifs.length; i++)
-				if (mm == motifs[i]) return i;
+		public int indexOfDataEntry(DataType mm) {
+			for (int i = 0; i < dataEntries.length; i++)
+				if (mm == dataEntries[i]) return i;
 			return -1;
 		}
 	}

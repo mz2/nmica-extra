@@ -206,6 +206,7 @@ public class MotifAligner {
 			System.out.println(alignment.alignmentConsensusString());
 
 		System.err.println("Done.");
+		System.out.close();
 		System.exit(0);
 	}
 	
