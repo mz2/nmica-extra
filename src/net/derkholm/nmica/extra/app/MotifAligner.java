@@ -43,6 +43,7 @@ public class MotifAligner {
 	private boolean addName;
 	private double minColWeight;
 	private double maximumPrecision;
+	private String prefix;
 	
 	/*
 	@Option(help="Output file",optional=true)
@@ -55,6 +56,14 @@ public class MotifAligner {
 	public void setAddName(boolean b) {
 		this.addName = b;
 	}
+	
+	@Option(help="Add a freeform prefix to motif names",
+			optional=true)
+	public void setNamePrefix(String str) {
+		this.prefix = str;
+	}
+	
+	
 	
 	@Option(help="Minimum number of columns per position " +
 			"to allow it to make it to output (default=2)",optional=true)
@@ -137,6 +146,8 @@ public class MotifAligner {
 				motifList.add(m);
 				if (this.addName)
 					m.setName(m.getName() + "[" + fStr + "]");
+				else if (this.prefix != null)
+					m.setName(prefix + m.getName());
 			}
 		}
 		this.motifs = motifList.toArray(new Motif[motifList.size()]);
