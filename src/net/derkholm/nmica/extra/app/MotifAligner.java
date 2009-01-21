@@ -145,7 +145,7 @@ public class MotifAligner {
 			for (Motif m : ms) {
 				motifList.add(m);
 				if (this.addName)
-					m.setName(m.getName() + "[" + fStr + "]");
+					m.setName(m.getName() + "_" + fStr);
 				else if (this.prefix != null)
 					m.setName(prefix + m.getName());
 			}

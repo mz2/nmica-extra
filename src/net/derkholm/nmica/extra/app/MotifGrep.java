@@ -10,9 +10,14 @@ import java.util.regex.Pattern;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
+import net.derkholm.nmica.model.motif.NMWeightMatrix;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 
+import org.biojava.bio.dist.Distribution;
+import org.biojava.bio.dist.SimpleDistribution;
+import org.biojava.bio.dp.WeightMatrix;
+import org.biojava.bio.symbol.IllegalAlphabetException;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -32,12 +37,24 @@ public class MotifGrep {
 	private boolean matchSpecies;
 	private boolean matchDesc;
 	private boolean matchName;
+	private int stripColumnsFromLeft;
+	private int stripColumnsFromRight;
 	
 	@Option(help="List of motif names to match against. " +
 			"Note that this is done by exact comparison, " +
 			"not by finding matching substrings",optional=true)
 	public void setList(File list) {
 		this.list = list;
+	}
+	
+	@Option(help="Strip specified number of columns from the left")
+	public void setStripColumnsFromLeft(int i) {
+		stripColumnsFromLeft = i;
+	}
+	
+	@Option(help="Strip specified number of columns from the right")
+	public void setStripColumnsFromRight(int i) {
+		stripColumnsFromRight = i;
 	}
 	
 	@Option(help="Allowed motif names (separated by spaces)",optional=true)
@@ -173,7 +190,66 @@ public class MotifGrep {
 				}
 			}
 		} else {
-			MotifIOTools.writeMotifSetXML(System.out, om.toArray(new Motif[0]));
+			
+			if (stripColumnsFromLeft > 0) {
+				
+				for (int m = 0; m < om.size(); m++) {
+					Motif mot =  om.get(m);
+					mot.setWeightMatrix(
+						stripColumnsFromLeft(
+								mot.getWeightMatrix(),
+								stripColumnsFromLeft));
+				}
+			}
+			
+			if (stripColumnsFromRight > 0) {
+				
+				for (int m = 0; m < om.size(); m++) {
+					Motif mot =  om.get(m);
+					mot.setWeightMatrix(
+						stripColumnsFromRight(
+								mot.getWeightMatrix(),
+								stripColumnsFromRight));
+				}
+			}
+			
+			MotifIOTools.writeMotifSetXML(
+					System.out, 
+					om.toArray(new Motif[0]));
 		}
+	}
+	
+	public WeightMatrix stripColumnsFromLeft(WeightMatrix inputWM, int count) throws IllegalAlphabetException {
+		int colCount = inputWM.columns();
+		
+		if (colCount - count <= 0) {
+			throw new IllegalArgumentException(
+					"The input weight matrix hass too few columns.");
+		}
+		
+		Distribution[] dists = new Distribution[colCount - count];
+		
+		for (int i = count-1; i < colCount; i++) {
+			dists[i - count] = new SimpleDistribution(inputWM.getColumn(i));
+		}
+		
+		return new NMWeightMatrix(dists,colCount - count, 0);
+	}
+	
+	public WeightMatrix stripColumnsFromRight(WeightMatrix inputWM, int count) throws IllegalAlphabetException {
+		int colCount = inputWM.columns();
+		
+		if (colCount - count <= 0) {
+			throw new IllegalArgumentException(
+					"The input weight matrix hass too few columns.");
+		}
+		
+		Distribution[] dists = new Distribution[colCount - count];
+		
+		for (int i = 0; i < colCount - count; i++) {
+			dists[i] = new SimpleDistribution(inputWM.getColumn(i+count));
+		}
+		
+		return new NMWeightMatrix(dists,inputWM.columns() - count, 0);
 	}
 }
