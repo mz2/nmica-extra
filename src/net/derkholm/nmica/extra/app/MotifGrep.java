@@ -47,12 +47,12 @@ public class MotifGrep {
 		this.list = list;
 	}
 	
-	@Option(help="Strip specified number of columns from the left")
+	@Option(help="Strip specified number of columns from the left",optional=true)
 	public void setStripColumnsFromLeft(int i) {
 		stripColumnsFromLeft = i;
 	}
 	
-	@Option(help="Strip specified number of columns from the right")
+	@Option(help="Strip specified number of columns from the right",optional=true)
 	public void setStripColumnsFromRight(int i) {
 		stripColumnsFromRight = i;
 	}
@@ -190,7 +190,6 @@ public class MotifGrep {
 				}
 			}
 		} else {
-			
 			if (stripColumnsFromLeft > 0) {
 				
 				for (int m = 0; m < om.size(); m++) {
