@@ -95,7 +95,6 @@ public class MotifSetSummary {
 		}*/
 	}
 	
-
 	@Option(help = "Other motif set file(s) to compare those given with -motifs", optional=true)
 	public void setOtherMotifs(File[] files) throws Exception {
 		List<Motif> motifList = new ArrayList<Motif>();
@@ -121,8 +120,16 @@ public class MotifSetSummary {
 		this.reportKD = b;
 	}
 	
-	@Option(help="Field separator (space by default)", optional=true, userLevel = UserLevel.EXPERT)
+	@Option(help="Field separator (options:space|tab)", optional=true, userLevel = UserLevel.EXPERT)
 	public void setSep(String sep) {
+		if (sep.equals("space")) {
+			this.separator = " ";
+		} else if (sep.equals("tab")) {
+			this.separator = "\t";
+		} else {
+			System.err.printf("Invalid separator '%s' given. Allowed values: space,tab %n");
+			System.exit(1);
+		}
 		this.separator = sep;
 	}
 	
