@@ -35,6 +35,7 @@ import org.biojava.bio.symbol.FiniteAlphabet;
 import org.biojava.bio.symbol.Symbol;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
+import org.bjv2.util.cli.UserLevel;
 
 import cern.colt.list.DoubleArrayList;
 
@@ -72,6 +73,7 @@ public class MotifSetSummary {
 	private boolean reportKD;
 	private boolean pairedOutput = true;
 	private boolean perColEntropy;
+	private String separator = " ";
 	
 	@Option(help = "Input motif set file(s)")
 	public void setMotifs(File[] files) throws Exception {
@@ -117,6 +119,11 @@ public class MotifSetSummary {
 	@Option(help="Calculate KD divergences", optional=true)
 	public void setKD(boolean b) {
 		this.reportKD = b;
+	}
+	
+	@Option(help="Field separator (space by default)", optional=true, userLevel = UserLevel.EXPERT)
+	public void setSep(String sep) {
+		this.separator = sep;
 	}
 	
 	@Option(help = "Calculate all per-motif qualities",optional=true)
@@ -274,8 +281,8 @@ public class MotifSetSummary {
 			for (Motif m : motifs)
 				for (int i = 0; i < m.getWeightMatrix().columns(); i++) {
 					System.out.println(
-										m.getName() + " " + 
-										i + " " + 
+										m.getName() + separator + 
+										i + separator + 
 										(entropyElsewhere - DistributionTools.totalEntropy(m.getWeightMatrix().getColumn(i))
 									)
 								);
@@ -344,8 +351,8 @@ public class MotifSetSummary {
 				if (pairedOutput) {
 					MotifPair[] mpairs = SquaredDifferenceMotifComparitor.getMotifComparitor().bestHits(motifs, otherMotifs);
 					for (MotifPair mp : mpairs) {
-						System.out.print(mp.getM1().getName() + " ");
-						System.out.print(mp.getM2().getName() + " ");
+						System.out.print(mp.getM1().getName() + separator);
+						System.out.print(mp.getM2().getName() + separator);
 						System.out.print(mp.getScore() + "\n");
 					}
 				} else {
@@ -354,18 +361,18 @@ public class MotifSetSummary {
 					
 					//print out the header row first
 					for (int i = 0; i < motifDistances.columns(); i++) {
-						System.out.print("\t"+otherMotifs[i].getName());
+						System.out.print(separator+otherMotifs[i].getName());
 					}
 					System.out.println();
 					
 					for (int i = 0; i < motifDistances.rows(); i++) {
 						//print out the motif name and then iterate
-						System.out.print(motifs[i].getName() + "\t");
+						System.out.print(motifs[i].getName() + separator);
 						
 						for (int j = 0; j < motifDistances.columns(); j++) {
 							double d = motifDistances.get(i, j);
 							if (j < (motifDistances.columns()-1))
-								System.out.print(d + "\t");
+								System.out.print(d + separator);
 							else
 								System.out.print(d + "\n");
 						}
@@ -376,18 +383,18 @@ public class MotifSetSummary {
 				Matrix2D motifDistances = SquaredDifferenceMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs);
 				
 				for (int i = 0; i < motifs.length; i++) {
-					System.out.print("\t"+motifs[i].getName());
+					System.out.print(separator+motifs[i].getName());
 				}
 				System.out.println();
 				
 				for (int i = 0; i < motifDistances.rows(); i++) {
 					//print out the motif name and then iterate
-					System.out.print(motifs[i].getName() + "\t");
+					System.out.print(motifs[i].getName() + separator);
 					
 					for (int j = 0; j < motifDistances.columns(); j++) {
 						double d = motifDistances.get(i, j);
 						if (j < (motifDistances.columns()-1))
-							System.out.print(d + "\t");
+							System.out.print(d + separator);
 						else
 							System.out.print(d + "\n");
 					}
@@ -401,8 +408,8 @@ public class MotifSetSummary {
 			MotifPair[] mpairs = SquaredDifferenceMotifComparitor.getMotifComparitor().bestReciprocalHits(motifs, otherMotifs);
 			
 			for (MotifPair mp : mpairs) {
-				System.out.print(mp.getM1().getName() + " ");
-				System.out.print(mp.getM2().getName() + " ");
+				System.out.print(mp.getM1().getName() + separator);
+				System.out.print(mp.getM2().getName() + separator);
 				System.out.print(mp.getScore() + "\n");
 			}
 			
@@ -570,7 +577,7 @@ public class MotifSetSummary {
 		if (printHeader) {
 			for (int i = 0; i < headerCols.size(); i++) {
 				if (i < (headerCols.size() - 1))
-					System.out.print(headerCols.get(i) +" ");
+					System.out.print(headerCols.get(i) + separator);
 				else
 					System.out.print(headerCols.get(i) + "\n");
 			}
@@ -580,36 +587,36 @@ public class MotifSetSummary {
 			Motif mot = motifs[m];
 			
 			if (showName) {
-				System.out.print(mot.getName() + " ");
+				System.out.print(mot.getName() + separator);
 			}
 			if (length) {
-				System.out.print(allLengths[m] + " ");
+				System.out.print(allLengths[m] + separator);
 			}
 			
 			if (perMotifAvgEntropy) {
 				headerCols.add("entropy");
-				System.out.print(allEntropies[m] +" ");
+				System.out.print(allEntropies[m] + separator);
 			}
 			
 			if (palindromicity) {
-				System.out.print(palindromicities[m] + " ");
-				System.out.print(gappedPalindromicities1[m] + " ");
-				System.out.print(gappedPalindromicities2[m] + " ");
-				System.out.print(gappedPalindromicities3[m] + " ");
-				System.out.print(selfRepeatednesses[m] + " ");
+				System.out.print(palindromicities[m] + separator);
+				System.out.print(gappedPalindromicities1[m] + separator);
+				System.out.print(gappedPalindromicities2[m] + separator);
+				System.out.print(gappedPalindromicities3[m] + separator);
+				System.out.print(selfRepeatednesses[m] + separator);
 			}
 			
 			if (bg) {
-				System.out.print(symmBGParams[m] + " ");
+				System.out.print(symmBGParams[m] + separator);
 				for (int i = 0; i < alphab.size(); i++) {
-					System.out.print(asymmBGParams[m][i] + " ");
+					System.out.print(asymmBGParams[m][i] + separator);
 				}
 			}
 			
 			if (metamotifs != null) {
 				for (int mm = 0; mm < metamotifs.length; mm++) {
-					System.out.print(metaMotifAvgHits[m][mm] + " ");
-					System.out.print(metaMotifBestHits[m][mm] + " ");
+					System.out.print(metaMotifAvgHits[m][mm] + separator);
+					System.out.print(metaMotifBestHits[m][mm] + separator);
 				}
 			}
 			
