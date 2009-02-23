@@ -75,6 +75,9 @@ public class MotifSetSummary {
 	private boolean perColEntropy;
 	private String separator = " ";
 	
+	private boolean calcAvgMetaMotifScore = true;
+	private boolean calcMaxMetaMotifScore = true;
+	
 	@Option(help = "Input motif set file(s)")
 	public void setMotifs(File[] files) throws Exception {
 		List<Motif> motifList = new ArrayList<Motif>();
@@ -94,6 +97,19 @@ public class MotifSetSummary {
 			this.motifsFilenames[i] = files[i].getName();
 		}*/
 	}
+	
+	@Option(help = "Calculate the average score with each of the metamotifs " +
+					"(sum probabilities with all alignments of motif X with metamotif X, " +
+					"divided by the length of the motif) (default=true)")
+	public void setAvgMetaMotifScore(boolean b) {
+		this.calcAvgMetaMotifScore  = b;
+	}
+	
+	@Option(help = "Calculate the maximum score with each of the metamotifs")
+	public void setMaxMetaMotifScore(boolean b) {
+		this.calcMaxMetaMotifScore  = b;
+	}
+
 	
 	@Option(help = "Other motif set file(s) to compare those given with -motifs", optional=true)
 	public void setOtherMotifs(File[] files) throws Exception {
@@ -356,6 +372,9 @@ public class MotifSetSummary {
 			if (otherMotifs != null) {
 				if (pairedOutput) {
 					MotifPair[] mpairs = SquaredDifferenceMotifComparitor.getMotifComparitor().bestHits(motifs, otherMotifs);
+					if (printHeader) {
+						System.out.println("motif1" + separator + "motif2" + separator + "score");
+					}
 					for (MotifPair mp : mpairs) {
 						System.out.print(mp.getM1().getName() + separator);
 						System.out.print(mp.getM2().getName() + separator);
@@ -388,6 +407,7 @@ public class MotifSetSummary {
 			} else {
 				Matrix2D motifDistances = SquaredDifferenceMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs);
 				
+				//header
 				for (int i = 0; i < motifs.length; i++) {
 					System.out.print(separator+motifs[i].getName());
 				}
@@ -572,11 +592,20 @@ public class MotifSetSummary {
 		}
 		
 		if (metamotifs != null) {
-			for (int mm = 0; mm < metamotifs.length; mm++) {
-				headerCols.add("hitavg_" + metamotifs[mm].getName());
+			if (calcAvgMetaMotifScore == false && calcMaxMetaMotifScore == false) {
+				
+				System.err.println("");
+				System.exit(1);
 			}
-			for (int mm = 0; mm < metamotifs.length; mm++) {
-				headerCols.add("hitmax_" + metamotifs[mm].getName());
+			if (calcAvgMetaMotifScore) {
+				for (int mm = 0; mm < metamotifs.length; mm++) {
+					headerCols.add("hitavg_" + metamotifs[mm].getName());
+				}
+			}
+			if (calcMaxMetaMotifScore) {
+				for (int mm = 0; mm < metamotifs.length; mm++) {
+					headerCols.add("hitmax_" + metamotifs[mm].getName());
+				}
 			}
 		}
 		
