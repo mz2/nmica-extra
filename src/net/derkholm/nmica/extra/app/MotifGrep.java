@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Matcher;
@@ -43,6 +44,8 @@ public class MotifGrep {
 	private boolean matchName;
 	private int stripColumnsFromLeft;
 	private int stripColumnsFromRight;
+	private int[] indices;
+	private int[] ignoreIndices;
 
 	@Option(help = "List of motif names to match against. "
 			+ "Note that this is done by exact comparison, "
@@ -59,6 +62,16 @@ public class MotifGrep {
 	@Option(help = "Strip specified number of columns from the right", optional = true)
 	public void setStripColumnsFromRight(int i) {
 		stripColumnsFromRight = i;
+	}
+	
+	@Option(help = "Extract motifs at indices (first index : 0)", optional = true)
+	public void setAtIndex(int[] inds) {
+		indices = inds;
+	}
+	
+	@Option(help = "Ignore motifs at indices (first index : 0)", optional = true)
+	public void setIgnoreAtIndex(int[] inds) {
+		ignoreIndices = inds;
 	}
 
 	@Option(help = "Allowed motif names (separated by spaces)", optional = true)
@@ -181,8 +194,21 @@ public class MotifGrep {
 					}
 				}
 			}
-		} else {
-			// just add every motif from input to the output set
+		} else if (indices != null) {
+			for (int i : indices) {
+				om.add(motifs[i]);
+			}
+		}
+		else if (ignoreIndices != null) {
+			Arrays.sort(ignoreIndices);
+			for (int i = 0; i < motifs.length; i++) {
+				
+				//if the index isn't found from the ignored indices list, add it to output set
+				if (Arrays.binarySearch(ignoreIndices, i) < 0) {
+					om.add(motifs[i]);
+				}
+			}
+		} else {			// just add every motif from input to the output set
 			for (Motif m : motifs)
 				om.add(m);
 		}
