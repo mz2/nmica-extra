@@ -100,12 +100,14 @@ public class MotifSetSummary {
 	
 	@Option(help = "Calculate the average score with each of the metamotifs " +
 					"(sum probabilities with all alignments of motif X with metamotif X, " +
-					"divided by the length of the motif) (default=true)")
+					"divided by the length of the motif) (default=true)",
+					optional=true)
 	public void setAvgMetaMotifScore(boolean b) {
 		this.calcAvgMetaMotifScore  = b;
 	}
 	
-	@Option(help = "Calculate the maximum score with each of the metamotifs")
+	@Option(help = "Calculate the maximum score with each of the metamotifs",
+			optional=true)
 	public void setMaxMetaMotifScore(boolean b) {
 		this.calcMaxMetaMotifScore  = b;
 	}
