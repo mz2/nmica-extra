@@ -130,7 +130,6 @@ public class MotifSetSummary {
 			System.err.printf("Invalid separator '%s' given. Allowed values: space,tab %n");
 			System.exit(1);
 		}
-		this.separator = sep;
 	}
 	
 	@Option(help = "Calculate all per-motif qualities",optional=true)
