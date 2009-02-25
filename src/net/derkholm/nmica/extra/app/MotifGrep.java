@@ -14,7 +14,10 @@ import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.model.motif.NMWeightMatrix;
 import net.derkholm.nmica.motif.Motif;
+import net.derkholm.nmica.motif.MotifComparitorIFace;
 import net.derkholm.nmica.motif.MotifIOTools;
+import net.derkholm.nmica.motif.SquaredDifferenceMotifComparitor;
+import net.derkholm.nmica.motif.align.MotifAlignment;
 
 import org.biojava.bio.dist.Distribution;
 import org.biojava.bio.dist.SimpleDistribution;
@@ -46,6 +49,8 @@ public class MotifGrep {
 	private int stripColumnsFromRight;
 	private int[] indices;
 	private int[] ignoreIndices;
+	private boolean aligned;
+	private MotifComparitorIFace motifComparitor = SquaredDifferenceMotifComparitor.getMotifComparitor();
 
 	@Option(help = "List of motif names to match against. "
 			+ "Note that this is done by exact comparison, "
@@ -127,6 +132,10 @@ public class MotifGrep {
 		this.motifs = motifs;
 	}
 
+	@Option(help = "Output aligned motifs (default = false)",optional=true)
+	public void setAligned(boolean b) {
+		this.aligned = b;
+	}
 	/**
 	 * @param args
 	 */
@@ -246,7 +255,19 @@ public class MotifGrep {
 				}
 			}
 
-			MotifIOTools.writeMotifSetXML(System.out, om.toArray(new Motif[0]));
+			if (aligned) {
+				//TODO: Fix MotifAlignment so you don't need to do this three times to fix the offsets
+				MotifAlignment alignment = new MotifAlignment(om.toArray(new Motif[0]), motifComparitor);
+				alignment = new MotifAlignment(alignment.motifs(), motifComparitor);
+				alignment = new MotifAlignment(alignment.motifs(), motifComparitor);
+				alignment = alignment.alignmentWithZeroOffset();
+				
+				om = Arrays.asList(alignment.motifs());
+			}
+			
+			MotifIOTools.writeMotifSetXML(
+					System.out,
+					om.toArray(new Motif[0]));
 		}
 	}
 

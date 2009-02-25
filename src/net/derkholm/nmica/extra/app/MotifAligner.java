@@ -63,8 +63,6 @@ public class MotifAligner {
 		this.prefix = str;
 	}
 	
-	
-	
 	@Option(help="Minimum number of columns per position " +
 			"to allow it to make it to output (default=2)",optional=true)
 	public void setMinCols(int i) {
@@ -163,9 +161,9 @@ public class MotifAligner {
 			//System.exit(1);
 		}
 		
+		//TODO: Fix the alignment so you don't have to do this three times...
 		MotifAlignment alignment 
 			= new MotifAlignment(motifs, mc);
-		
 		alignment = new MotifAlignment(alignment.motifs(), mc);
 		alignment = new MotifAlignment(alignment.motifs(), mc);
 		alignment = alignment.alignmentWithZeroOffset();
