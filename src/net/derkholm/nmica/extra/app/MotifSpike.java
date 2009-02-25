@@ -133,6 +133,8 @@ public class MotifSpike {
 					    spikeCount--;
 					}
 				} else {
+					//TODO: Spike a max of only one per sequence.
+					
 					int spikeCount = this.spikeCount;
 					Random random = new Random();
 					//System.err.println("spike count:"+spikeCount);
