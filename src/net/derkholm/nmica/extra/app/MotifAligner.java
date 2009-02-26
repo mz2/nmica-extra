@@ -4,7 +4,7 @@ import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.Arrays;
 import java.util.List;
 
 import net.derkholm.nmica.build.NMExtraApp;
@@ -21,9 +21,7 @@ import net.derkholm.nmica.motif.SquaredDifferenceMotifComparitor;
 import net.derkholm.nmica.motif.align.InvalidMetaMotifException;
 import net.derkholm.nmica.motif.align.MotifAlignment;
 
-import org.biojava.bio.symbol.FiniteAlphabet;
 import org.biojava.bio.symbol.IllegalSymbolException;
-import org.biojava.bio.symbol.Symbol;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -140,13 +138,15 @@ public class MotifAligner {
 		for (String fStr : args) {
 			BufferedInputStream f = new BufferedInputStream(new FileInputStream(fStr));
 			Motif[] ms = MotifIOTools.loadMotifSetXML(f);
+			
 			for (Motif m : ms) {
-				motifList.add(m);
 				if (this.addName)
 					m.setName(m.getName() + "_" + fStr);
 				else if (this.prefix != null)
 					m.setName(prefix + m.getName());
 			}
+
+			motifList.addAll(Arrays.asList(ms));
 		}
 		this.motifs = motifList.toArray(new Motif[motifList.size()]);
 		

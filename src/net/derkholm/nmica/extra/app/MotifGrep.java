@@ -5,8 +5,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -51,7 +54,12 @@ public class MotifGrep {
 	private int[] ignoreIndices;
 	private boolean aligned;
 	private MotifComparitorIFace motifComparitor = SquaredDifferenceMotifComparitor.getMotifComparitor();
+	private boolean printFilename;
 
+	private HashMap<Motif, File> motifToFilenameMap = new HashMap<Motif, File>();
+	private boolean printMotifName;
+	private File[] motifFiles;
+	
 	@Option(help = "List of motif names to match against. "
 			+ "Note that this is done by exact comparison, "
 			+ "not by finding matching substrings", optional = true)
@@ -83,7 +91,7 @@ public class MotifGrep {
 	public void setNames(String[] names) {
 		this.names = names;
 	}
-
+	
 	@Option(help = "Find motifs whose name contains the specified string as a substring, "
 			+ "rather than looking for exact matches "
 			+ "(this switch works with -list and -names, default=false)", optional = true)
@@ -127,21 +135,39 @@ public class MotifGrep {
 		this.prefix = str;
 	}
 
-	@Option(help = "Input motifset file")
-	public void setMotifs(File motifs) {
-		this.motifs = motifs;
+	@Option(help = "Input motifset file(s)")
+	public void setMotifs(File[] motifs) {
+		this.motifFiles = motifs;
 	}
 
 	@Option(help = "Output aligned motifs (default = false)",optional=true)
 	public void setAligned(boolean b) {
 		this.aligned = b;
 	}
+	
+	@Option(help = "Print the matching filename instead of the motif", optional = true)
+	public void setPrintFilename(boolean b) {
+		this.printFilename = b;
+	}
+	
+	@Option(help = "Print the matching motif name instead of the moti", optional = true)
+	public void setPrintMotifname(boolean b) {
+		this.printMotifName = b;
+	}
+	
 	/**
 	 * @param args
 	 */
 	public void main(String[] args) throws Exception {
-		Motif[] motifs = MotifIOTools.loadMotifSetXML(new FileReader(
-				this.motifs));
+		Motif[] motifs;
+		List<Motif> motifList = new ArrayList<Motif>();
+		for (File f : motifFiles) {
+			Motif[] ms = MotifIOTools.loadMotifSetXML(new FileReader(f));
+			motifList.addAll(Arrays.asList(ms));
+			for (Motif m : ms) motifToFilenameMap.put(m, f);
+		}
+		motifs = motifList.toArray(new Motif[0]);
+		
 		List<Motif> om = new ArrayList<Motif>();
 
 		if (names != null && list != null) {
@@ -255,19 +281,44 @@ public class MotifGrep {
 				}
 			}
 
-			if (aligned) {
-				//TODO: Fix MotifAlignment so you don't need to do this three times to fix the offsets
-				MotifAlignment alignment = new MotifAlignment(om.toArray(new Motif[0]), motifComparitor);
-				alignment = new MotifAlignment(alignment.motifs(), motifComparitor);
-				alignment = new MotifAlignment(alignment.motifs(), motifComparitor);
-				alignment = alignment.alignmentWithZeroOffset();
+			
+			
+			if (!printFilename &! printMotifName) {
 				
-				om = Arrays.asList(alignment.motifs());
+				if (aligned) {
+					//TODO: Fix MotifAlignment so you don't need to do this three times to fix the offsets
+					MotifAlignment alignment = new MotifAlignment(om.toArray(new Motif[0]), motifComparitor);
+					alignment = new MotifAlignment(alignment.motifs(), motifComparitor);
+					alignment = new MotifAlignment(alignment.motifs(), motifComparitor);
+					alignment = alignment.alignmentWithZeroOffset();
+					om = Arrays.asList(alignment.motifs());
+				}
+				
+				MotifIOTools.writeMotifSetXML(
+						System.out,
+						om.toArray(new Motif[0]));
 			}
 			
-			MotifIOTools.writeMotifSetXML(
-					System.out,
-					om.toArray(new Motif[0]));
+			if (printFilename) {
+				//print motif file name plus name 
+				if (printMotifName) {
+					for (Motif m : om) {
+						File f = motifToFilenameMap.get(m);
+						System.out.printf("%s\t%s%n",f.getPath(),m.getName());
+					}					
+				} else {
+					//just print the matching filenames (once per file)
+					Set<File> files = new TreeSet<File>();
+					for (Motif m : om) {files.add(motifToFilenameMap.get(m));}
+					for (File f : files) {System.out.printf("%s%n",f.getPath());}
+				}
+			} 
+			else if (printMotifName) {
+				//just print the motif names (no filenames)
+				for (Motif m : om) {
+					System.out.printf("%s%n",m.getName());
+				}
+			}
 		}
 	}
 
