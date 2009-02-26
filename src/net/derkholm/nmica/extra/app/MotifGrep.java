@@ -47,7 +47,7 @@ public class MotifGrep {
 	private String annotationKey;
 	private boolean matchSpecies;
 	private boolean matchDesc;
-	private boolean matchName;
+	private boolean matchName = true;
 	private int stripColumnsFromLeft;
 	private int stripColumnsFromRight;
 	private int[] indices;
