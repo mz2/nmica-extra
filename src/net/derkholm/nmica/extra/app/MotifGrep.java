@@ -59,6 +59,9 @@ public class MotifGrep {
 	private HashMap<Motif, File> motifToFilenameMap = new HashMap<Motif, File>();
 	private boolean printMotifName;
 	private File[] motifFiles;
+	private String[] values;
+	private String[] keys;
+	private boolean override;
 	
 	@Option(help = "List of motif names to match against. "
 			+ "Note that this is done by exact comparison, "
@@ -155,6 +158,22 @@ public class MotifGrep {
 		this.printMotifName = b;
 	}
 	
+	@Option(help = "Assign the specified value to annotation(s) specified with -annotation", optional=true)
+	public void setAssignValue(String[] values) {
+		this.values = values;
+	}
+	
+	@Option(help = "Assign values to specified annotation key(s)", optional=true)
+	public void setAssignKey(String[] keys) {
+		this.keys = keys;
+	}
+	
+	@Option(help = "Allow overriding existing annotation values (default=false)", optional=true)
+	public void setOverride(boolean b) {
+		this.override = b;
+	}
+	
+	
 	/**
 	 * @param args
 	 */
@@ -243,7 +262,7 @@ public class MotifGrep {
 					om.add(motifs[i]);
 				}
 			}
-		} else {			// just add every motif from input to the output set
+		} else { // just add every motif from input to the output set
 			for (Motif m : motifs)
 				om.add(m);
 		}
@@ -267,8 +286,9 @@ public class MotifGrep {
 
 				for (int m = 0; m < om.size(); m++) {
 					Motif mot = om.get(m);
-					mot.setWeightMatrix(stripColumnsFromLeft(mot
-							.getWeightMatrix(), stripColumnsFromLeft));
+					mot.setWeightMatrix(
+						stripColumnsFromLeft(
+								mot.getWeightMatrix(), stripColumnsFromLeft));
 				}
 			}
 
@@ -276,12 +296,43 @@ public class MotifGrep {
 
 				for (int m = 0; m < om.size(); m++) {
 					Motif mot = om.get(m);
-					mot.setWeightMatrix(stripColumnsFromRight(mot
-							.getWeightMatrix(), stripColumnsFromRight));
+					mot.setWeightMatrix(
+						stripColumnsFromRight(
+								mot.getWeightMatrix(), stripColumnsFromRight));
 				}
 			}
 
-			
+			if (this.keys != null) {
+				if (this.values == null) {
+					System.err.println("No annotation values to assign were specified.");
+					System.exit(1);
+				}
+				else if (this.values.length != this.keys.length) {
+					System.err.println(
+							"The number of specified annotation values " +
+							"does not match the number of specified annotation keys.");
+					System.exit(1);
+				}
+				
+				for (Motif m : om) {
+					for (int k = 0; k < keys.length; k++) {
+						String key = keys[k];
+						String val = values[k];
+						if (m.getAnnotation().containsProperty(key)) {
+							if (override) {
+								m.getAnnotation().setProperty(key, val);
+							} else {
+								System.err.printf(
+										"Annotation key '%s' is already set to value '%s' for motif with name %s. " +
+										"To override its value specify -override %n",
+										key,m.getAnnotation().getProperty(key),m.getName());
+							}							
+						} else {
+							m.getAnnotation().setProperty(key, val);
+						}
+					}
+				}
+			}	
 			
 			if (!printFilename &! printMotifName) {
 				
