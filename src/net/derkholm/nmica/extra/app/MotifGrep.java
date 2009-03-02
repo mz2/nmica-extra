@@ -2,7 +2,9 @@ package net.derkholm.nmica.extra.app;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -62,6 +64,9 @@ public class MotifGrep {
 	private String[] values;
 	private String[] keys;
 	private boolean override;
+	private PrintStream outputStream = System.out;
+	private boolean outputAll = true;
+	private String[] removedKeys;
 	
 	@Option(help = "List of motif names to match against. "
 			+ "Note that this is done by exact comparison, "
@@ -173,6 +178,23 @@ public class MotifGrep {
 		this.override = b;
 	}
 	
+	@Option(help = 
+			"Output all motifs rather than just the ones that matched the pattern (default=true). " +
+			"Only applies when -assignKey and -assignValue were used, or when -removeKeys was used.", optional = true)
+	public void setOutputAll(boolean b) {
+		this.outputAll = b;
+	}
+	
+	@Option(help = "Remove the annotation(s) with the specified key(s)", optional=true)
+	public void setRemoveKey(String[] keys) {
+		this.removedKeys = keys;
+	}
+	
+	@Option(help = "Output file", optional=true)
+	public void setOut(File f) throws FileNotFoundException {
+		this.outputStream = new PrintStream(f);
+	}
+
 	
 	/**
 	 * @param args
@@ -181,9 +203,12 @@ public class MotifGrep {
 		Motif[] motifs;
 		List<Motif> motifList = new ArrayList<Motif>();
 		for (File f : motifFiles) {
-			Motif[] ms = MotifIOTools.loadMotifSetXML(new FileReader(f));
+			FileReader fr = new FileReader(f);
+			Motif[] ms = MotifIOTools.loadMotifSetXML(fr);
 			motifList.addAll(Arrays.asList(ms));
 			for (Motif m : ms) motifToFilenameMap.put(m, f);
+			
+			fr.close();
 		}
 		motifs = motifList.toArray(new Motif[0]);
 		
@@ -197,6 +222,7 @@ public class MotifGrep {
 		if (names != null) {
 			for (String str : names) {
 				for (Motif m : motifs) {
+					
 					if (substring ? m.getName().contains(str) : m.getName()
 							.equals(str)) {
 						om.add(m);
@@ -276,14 +302,13 @@ public class MotifGrep {
 		if (annotationKey != null) {
 			for (Motif m : om) {
 				if (m.getAnnotation().containsProperty(annotationKey)) {
-					System.out.printf("%s\t%s\t%s%n", m.getName(),
+					outputStream.printf("%s\t%s\t%s%n", m.getName(),
 							annotationKey, m.getAnnotation().getProperty(
 									annotationKey));
 				}
 			}
 		} else {
 			if (stripColumnsFromLeft > 0) {
-
 				for (int m = 0; m < om.size(); m++) {
 					Motif mot = om.get(m);
 					mot.setWeightMatrix(
@@ -293,7 +318,6 @@ public class MotifGrep {
 			}
 
 			if (stripColumnsFromRight > 0) {
-
 				for (int m = 0; m < om.size(); m++) {
 					Motif mot = om.get(m);
 					mot.setWeightMatrix(
@@ -323,16 +347,35 @@ public class MotifGrep {
 								m.getAnnotation().setProperty(key, val);
 							} else {
 								System.err.printf(
-										"Annotation key '%s' is already set to value '%s' for motif with name %s. " +
+										"Annotation key '%s' is already set to value '%s' " +
+										"for motif with name %s. " +
 										"To override its value specify -override %n",
-										key,m.getAnnotation().getProperty(key),m.getName());
+										key,
+										m.getAnnotation().getProperty(key),
+										m.getName());
 							}							
 						} else {
 							m.getAnnotation().setProperty(key, val);
 						}
 					}
 				}
-			}	
+			}
+			
+			if (removedKeys != null) {
+				for (Motif m : om) {
+					for (String key : removedKeys) {
+						if (m.getAnnotation().containsProperty(key)) {
+							System.err.printf("Removing property with key %s from motif %s%n", key,m.getName());
+							m.getAnnotation().removeProperty(key);
+						}
+					}
+				}
+			}
+			
+			if ((keys != null || removedKeys != null) && outputAll) {
+				System.err.println("Will output all motifs");
+				om = Arrays.asList(motifs);
+			}
 			
 			if (!printFilename &! printMotifName) {
 				
@@ -346,8 +389,10 @@ public class MotifGrep {
 				}
 				
 				MotifIOTools.writeMotifSetXML(
-						System.out,
+						outputStream,
 						om.toArray(new Motif[0]));
+				
+				outputStream.flush();
 			}
 			
 			if (printFilename) {
@@ -355,22 +400,32 @@ public class MotifGrep {
 				if (printMotifName) {
 					for (Motif m : om) {
 						File f = motifToFilenameMap.get(m);
-						System.out.printf("%s\t%s%n",f.getPath(),m.getName());
+						outputStream.printf(
+							"%s\t%s%n",f.getPath(),m.getName());
+						outputStream.flush();
 					}					
 				} else {
 					//just print the matching filenames (once per file)
 					Set<File> files = new TreeSet<File>();
 					for (Motif m : om) {files.add(motifToFilenameMap.get(m));}
-					for (File f : files) {System.out.printf("%s%n",f.getPath());}
+					for (File f : files) {
+						outputStream.printf("%s%n",f.getPath());
+						outputStream.flush();
+					}
 				}
 			} 
 			else if (printMotifName) {
 				//just print the motif names (no filenames)
 				for (Motif m : om) {
-					System.out.printf("%s%n",m.getName());
+					outputStream.printf("%s%n",m.getName());
+					outputStream.flush();
 				}
 			}
 		}
+		
+		outputStream.flush();
+		outputStream.close();
+		
 	}
 
 	public WeightMatrix stripColumnsFromLeft(WeightMatrix inputWM, int count) throws IllegalAlphabetException, IllegalSymbolException, ChangeVetoException {
