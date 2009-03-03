@@ -67,6 +67,7 @@ public class MotifGrep {
 	private PrintStream outputStream = System.out;
 	private boolean outputAll = true;
 	private String[] removedKeys;
+	private boolean negate;
 	
 	@Option(help = "List of motif names to match against. "
 			+ "Note that this is done by exact comparison, "
@@ -195,6 +196,10 @@ public class MotifGrep {
 		this.outputStream = new PrintStream(f);
 	}
 
+	@Option(help = "Negate (output those that do not match)", optional=true)
+	public void setNegate(boolean b) {
+		this.negate = b;
+	}
 	
 	/**
 	 * @param args
@@ -247,7 +252,9 @@ public class MotifGrep {
 				if (replaceWithStr != null) {
 					Matcher matcher = pattern.matcher(m.getName());
 					if (matcher.find()) {
-						System.err.printf("Found a match to pattern %s. Will replace with %s%n",pattern.toString(),replaceWithStr);
+						System.err.printf(
+								"Found a match to search expression from motif %s. Will replace with %s%n",
+								m.getName(),replaceWithStr);
 						m.setName(matcher.replaceAll(replaceWithStr));
 					}
 					om.add(m);
@@ -376,6 +383,12 @@ public class MotifGrep {
 			if ((keys != null || removedKeys != null) && outputAll) {
 				System.err.println("Will output all motifs");
 				om = Arrays.asList(motifs);
+			}
+			
+			if (negate) {
+				List<Motif> newOM = Arrays.asList(motifs);
+				newOM.removeAll(om);
+				om = newOM;
 			}
 			
 			if (!printFilename &! printMotifName) {
