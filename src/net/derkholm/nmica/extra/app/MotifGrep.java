@@ -247,6 +247,7 @@ public class MotifGrep {
 				if (replaceWithStr != null) {
 					Matcher matcher = pattern.matcher(m.getName());
 					if (matcher.find()) {
+						System.err.printf("Found a match to pattern %s. Will replace with %s%n",pattern.toString(),replaceWithStr);
 						m.setName(matcher.replaceAll(replaceWithStr));
 					}
 					om.add(m);
