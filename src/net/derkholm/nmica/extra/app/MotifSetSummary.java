@@ -77,6 +77,7 @@ public class MotifSetSummary {
 	
 	private boolean calcAvgMetaMotifScore = true;
 	private boolean calcMaxMetaMotifScore = true;
+	private boolean perMotifTotalEntropy;
 	
 	@Option(help = "Input motif set file(s)")
 	public void setMotifs(File[] files) throws Exception {
@@ -194,17 +195,22 @@ public class MotifSetSummary {
 	}
 	
 	@Option(help = "Report average entropy of the motif set (per column)", optional=true)
-	public void setAvgEntropy(boolean b) {
+	public void setColwiseAvgEntropy(boolean b) {
 		this.perColAvgEntropy = b;
 	}
 	
 	@Option(help = "Report entropy of the motif set for each motif column", optional=true)
-	public void setColEntropy(boolean b) {
+	public void setColwiseEntropy(boolean b) {
 		this.perColEntropy = b;
 	}
 	
-	@Option(help = "Report entropy for each motif", optional=true)
-	public void setEntropy(boolean b) {
+	@Option(help = "Report total entropy for each motif", optional=true)
+	public void setPerMotifTotalEntropy(boolean b) {
+		this.perMotifTotalEntropy = b;
+	}
+	
+	@Option(help = "Report average entropy for each motif", optional=true)
+	public void setPerMotifAvgEntropy(boolean b) {
 		this.perMotifAvgEntropy = b;
 	}
 	
@@ -270,6 +276,7 @@ public class MotifSetSummary {
 		if (calcAll) {
 			length = true;
 			perMotifAvgEntropy =  true;
+			perMotifTotalEntropy = true;
 			gcContent = true;
 			palindromicity = true;
 			bg = true;
@@ -332,8 +339,9 @@ public class MotifSetSummary {
         
 		double[] allEntropies =  new double[this.motifs.length];
 		double[] allLengths =  new double[this.motifs.length];
+		double[] allTotalEntropies = new double[this.motifs.length];
 		
-		if (perMotifAvgEntropy) {
+		if (perMotifAvgEntropy || perMotifTotalEntropy) {
 			int mI = 0;
 			Distribution elsewhere = new UniformDistribution((FiniteAlphabet)motifs[0].getWeightMatrix().getAlphabet());
 			double entropyElsewhere = DistributionTools.totalEntropy(elsewhere);
@@ -347,11 +355,10 @@ public class MotifSetSummary {
 				}
 				StaticBin1D bin = new StaticBin1D();
 				bin.addAllOf(new DoubleArrayList(entropies));
+				allTotalEntropies[mI] = bin.sum();
 				allEntropies[mI++] = bin.mean();				
 			}
 		}
-		
-		
 		
 		if (length) {
 			int mI = 0;
@@ -540,8 +547,10 @@ public class MotifSetSummary {
 			System.exit(0);
 		}
 		
-		if (num)
+		if (num) {
 			System.out.println(motifs.length);
+			System.exit(0);
+		}
 		
 		double avgDiff = 0.0;
 
@@ -568,14 +577,10 @@ public class MotifSetSummary {
 			}
 		}
 		
-		if (showName)
-			headerCols.add("name");
-		
-		if (length)
-			headerCols.add("length");
-		
-		if (perMotifAvgEntropy)
-			headerCols.add("entropy");
+		if (showName) headerCols.add("name");
+		if (length) headerCols.add("length");
+		if (perMotifAvgEntropy) headerCols.add("avg-entropy");
+		if (perMotifTotalEntropy) headerCols.add("total-entropy");
 		
 		if (palindromicity) {
 			headerCols.add("pal0");
@@ -631,8 +636,13 @@ public class MotifSetSummary {
 			}
 			
 			if (perMotifAvgEntropy) {
-				headerCols.add("entropy");
+				//headerCols.add("avg-entropy");
 				System.out.print(allEntropies[m] + separator);
+			}
+			
+			if (perMotifTotalEntropy) {
+				//headerCols.add("total-entropy");
+				System.out.println(allTotalEntropies[m] + separator);
 			}
 			
 			if (palindromicity) {
