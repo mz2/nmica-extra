@@ -642,7 +642,7 @@ public class MotifSetSummary {
 			
 			if (perMotifTotalEntropy) {
 				//headerCols.add("total-entropy");
-				System.out.println(allTotalEntropies[m] + separator);
+				System.out.print(allTotalEntropies[m] + separator);
 			}
 			
 			if (palindromicity) {
@@ -666,7 +666,6 @@ public class MotifSetSummary {
 					System.out.print(metaMotifBestHits[m][mm] + separator);
 				}
 			}
-			
 			
 			System.out.println();
 		}
