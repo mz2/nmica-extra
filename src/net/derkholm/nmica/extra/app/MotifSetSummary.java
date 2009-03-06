@@ -17,10 +17,12 @@ import net.derkholm.nmica.model.metamotif.DirichletParamEstimator;
 import net.derkholm.nmica.model.metamotif.MetaMotif;
 import net.derkholm.nmica.model.metamotif.MetaMotifIOTools;
 import net.derkholm.nmica.motif.Motif;
+import net.derkholm.nmica.motif.MotifComparitorIFace;
 import net.derkholm.nmica.motif.MotifIOTools;
 import net.derkholm.nmica.motif.MotifPair;
 import net.derkholm.nmica.motif.MotifTools;
 import net.derkholm.nmica.motif.SquaredDifferenceMotifComparitor;
+import net.derkholm.nmica.motif.align.MotifAlignment;
 import net.derkholm.nmica.seq.WmTools;
 
 import org.biojava.bio.dist.Distribution;
@@ -50,7 +52,8 @@ public class MotifSetSummary {
 	private boolean avgLength;
 	private boolean num;
 	private MetaMotif[] metamotifs;
-	
+	private MotifComparitorIFace mc = SquaredDifferenceMotifComparitor.getMotifComparitor();
+
 	private boolean length = false;
 	private boolean perMotifAvgEntropy =  false;
 	private double threshold = Double.POSITIVE_INFINITY;
@@ -79,6 +82,8 @@ public class MotifSetSummary {
 	private boolean calcMaxMetaMotifScore = true;
 	private boolean perMotifTotalEntropy;
 	private int[] indices;
+	private boolean merged;
+	private int minColPerPos = 2;
 	
 	@Option(help = "Input motif set file(s)")
 	public void setMotifs(File[] files) throws Exception {
@@ -278,6 +283,17 @@ public class MotifSetSummary {
 		this.indices = indices;
 	}
 	
+	@Option(help = "Align input motifs and merge the alignment (average motif), " +
+				   "calculate summary from this merged motif", optional = true)
+	public void setMerged(boolean b) {
+		this.merged = b;
+	}
+	
+	@Option(help="Minimum number of columns per position in the merged motif (default=2, only used in conjunction with -merged)",optional=true)
+	public void setMinCols(int i) {
+		this.minColPerPos  = i;
+	}
+	
 	public void main(String[] args) throws Exception {
 		if (calcAll) {
 			length = true;
@@ -293,6 +309,15 @@ public class MotifSetSummary {
 			for (int i = 0; i < indices.length; i++) {
 				selMotifs[i] = motifs[indices[i]];
 			}
+		}
+		
+		if (merged) {
+			MotifAlignment alignment = new MotifAlignment(motifs, mc);
+			alignment = new MotifAlignment(alignment.motifs(), mc);
+			alignment = new MotifAlignment(alignment.motifs(), mc);
+			alignment = alignment.alignmentWithZeroOffset();
+			alignment = alignment.trimToColumnsPerPosition(2);
+			motifs = new Motif[] {alignment.averageMotif()};
 		}
 		
 		if (pseudoCount > 0) {
@@ -353,7 +378,6 @@ public class MotifSetSummary {
 		double[] allEntropies =  new double[this.motifs.length];
 		double[] allLengths =  new double[this.motifs.length];
 		double[] allTotalEntropies = new double[this.motifs.length];
-		
 		if (perMotifAvgEntropy || perMotifTotalEntropy) {
 			int mI = 0;
 			Distribution elsewhere = new UniformDistribution((FiniteAlphabet)motifs[0].getWeightMatrix().getAlphabet());
