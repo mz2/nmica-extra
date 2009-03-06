@@ -78,6 +78,7 @@ public class MotifSetSummary {
 	private boolean calcAvgMetaMotifScore = true;
 	private boolean calcMaxMetaMotifScore = true;
 	private boolean perMotifTotalEntropy;
+	private int[] indices;
 	
 	@Option(help = "Input motif set file(s)")
 	public void setMotifs(File[] files) throws Exception {
@@ -272,6 +273,11 @@ public class MotifSetSummary {
 		this.reportAvgDiff = b;
 	}
 	
+	@Option(help = "Calculate the summary for the motifs at the selected indices only", optional = true)
+	public void setAtIndex(int[] indices) {
+		this.indices = indices;
+	}
+	
 	public void main(String[] args) throws Exception {
 		if (calcAll) {
 			length = true;
@@ -280,6 +286,13 @@ public class MotifSetSummary {
 			gcContent = true;
 			palindromicity = true;
 			bg = true;
+		}
+		
+		if (indices != null) {
+			Motif[] selMotifs = new Motif[indices.length];
+			for (int i = 0; i < indices.length; i++) {
+				selMotifs[i] = motifs[indices[i]];
+			}
 		}
 		
 		if (pseudoCount > 0) {
