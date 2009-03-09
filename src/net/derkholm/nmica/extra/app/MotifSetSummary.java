@@ -6,6 +6,7 @@ import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -85,6 +86,9 @@ public class MotifSetSummary {
 	private boolean merged;
 	private int minColPerPos = 2;
 	
+	HashMap<MetaMotif, File> metaMotifToFileMap = new HashMap<MetaMotif, File>();
+	HashMap<Motif, File> otherMotifToFileMap = new HashMap<Motif, File>();
+	
 	@Option(help = "Input motif set file(s)")
 	public void setMotifs(File[] files) throws Exception {
 		List<Motif> motifList = new ArrayList<Motif>();
@@ -127,8 +131,10 @@ public class MotifSetSummary {
 		for (File f : files) {
 			Motif[] ms = MotifIOTools.loadMotifSetXML(
 					new BufferedInputStream(new FileInputStream(f)));
-			for (Motif m : ms)
+			for (Motif m : ms) {
 				motifList.add(m);
+				otherMotifToFileMap.put(m,f);
+			}
 		}
 		this.otherMotifs = motifList.toArray(new Motif[motifList.size()]);
 		
@@ -185,7 +191,10 @@ public class MotifSetSummary {
 			try { 
 				MetaMotif[] ms = MetaMotifIOTools.loadMetaMotifSetXML(
 						new BufferedInputStream(new FileInputStream(f)));
-				for (MetaMotif m : ms) {metamotifList.add(m);}
+				for (MetaMotif m : ms) {
+					metamotifList.add(m);
+					metaMotifToFileMap.put(m,f);
+				}
 			} catch (Exception e) {
 				System.err.println("Reading input metamotif set " + f.getName() + " failed.");
 				System.err.println(e);
@@ -294,6 +303,13 @@ public class MotifSetSummary {
 		this.minColPerPos  = i;
 	}
 	
+	
+	//no need to make this configurable
+	//@Option(help="Metamotif name in header field name")
+	//public void setMetamotifName(boolean b) {
+	//	this.metaMotifNameInHeader = b;
+	//}
+	
 	public void main(String[] args) throws Exception {
 		if (calcAll) {
 			length = true;
@@ -317,7 +333,7 @@ public class MotifSetSummary {
 			alignment = new MotifAlignment(alignment.motifs(), mc);
 			alignment = new MotifAlignment(alignment.motifs(), mc);
 			alignment = alignment.alignmentWithZeroOffset();
-			alignment = alignment.trimToColumnsPerPosition(2);
+			alignment = alignment.trimToColumnsPerPosition(minColPerPos);
 			motifs = new Motif[] {alignment.averageMotif()};
 		}
 		
@@ -379,11 +395,12 @@ public class MotifSetSummary {
 		double[] allEntropies =  new double[this.motifs.length];
 		double[] allLengths =  new double[this.motifs.length];
 		double[] allTotalEntropies = new double[this.motifs.length];
-		if (perMotifAvgEntropy || perMotifTotalEntropy) {
+		
+		if (perMotifAvgEntropy || 
+			perMotifTotalEntropy) {
 			int mI = 0;
 			Distribution elsewhere = new UniformDistribution((FiniteAlphabet)motifs[0].getWeightMatrix().getAlphabet());
 			double entropyElsewhere = DistributionTools.totalEntropy(elsewhere);
-			
 			
 			for (Motif m : this.motifs) {
 				double[] entropies = new double[m.getWeightMatrix().columns()];
@@ -433,7 +450,7 @@ public class MotifSetSummary {
 					
 					//print out the header row first
 					for (int i = 0; i < motifDistances.columns(); i++) {
-						System.out.print(separator+otherMotifs[i].getName());
+						System.out.print(separator+otherMotifs[i].getName()+"("+otherMotifToFileMap.get(otherMotifs[i]).getName()+")");
 					}
 					System.out.println();
 					
@@ -644,12 +661,14 @@ public class MotifSetSummary {
 			}
 			if (calcAvgMetaMotifScore) {
 				for (int mm = 0; mm < metamotifs.length; mm++) {
-					headerCols.add("hitavg_" + metamotifs[mm].getName());
+					headerCols.add("hitavg_" + metamotifs[mm].getName() + 
+							"("+metaMotifToFileMap.get(metamotifs[mm]).getName()+")");
 				}
 			}
 			if (calcMaxMetaMotifScore) {
 				for (int mm = 0; mm < metamotifs.length; mm++) {
-					headerCols.add("hitmax_" + metamotifs[mm].getName());
+					headerCols.add("hitmax_" + metamotifs[mm].getName() + 
+							"("+metaMotifToFileMap.get(metamotifs[mm]).getName()+")");
 				}
 			}
 		}
