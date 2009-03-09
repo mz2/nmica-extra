@@ -309,6 +309,7 @@ public class MotifSetSummary {
 			for (int i = 0; i < indices.length; i++) {
 				selMotifs[i] = motifs[indices[i]];
 			}
+			motifs = selMotifs;
 		}
 		
 		if (merged) {
