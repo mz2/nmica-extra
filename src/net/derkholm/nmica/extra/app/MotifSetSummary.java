@@ -308,7 +308,7 @@ public class MotifSetSummary {
 		this.minColPerPos  = i;
 	}
 	
-	@Option(help="Output aligned input motifs", userLevel = UserLevel.DEBUG)
+	@Option(help="Output aligned input motifs", userLevel = UserLevel.DEBUG, optional=true)
 	public void setOutputAligned(File f) {
 		this.outputAlignedFile = f;
 	}
