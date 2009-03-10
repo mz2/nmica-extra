@@ -329,7 +329,7 @@ public class MotifSetSummary {
 			motifs = selMotifs;
 		}
 		
-		if (merged) {
+		if (merged && (motifs.length > 1)) {
 			MotifAlignment alignment = new MotifAlignment(motifs, mc);
 			alignment = new MotifAlignment(alignment.motifs(), mc);
 			alignment = new MotifAlignment(alignment.motifs(), mc);
