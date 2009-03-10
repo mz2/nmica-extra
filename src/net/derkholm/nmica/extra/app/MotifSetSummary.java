@@ -15,6 +15,7 @@ import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.matrix.Matrix2D;
 import net.derkholm.nmica.model.metamotif.Dirichlet;
 import net.derkholm.nmica.model.metamotif.DirichletParamEstimator;
+import net.derkholm.nmica.model.metamotif.IllegalAlphaParameterException;
 import net.derkholm.nmica.model.metamotif.MetaMotif;
 import net.derkholm.nmica.model.metamotif.MetaMotifIOTools;
 import net.derkholm.nmica.motif.Motif;
@@ -627,7 +628,14 @@ public class MotifSetSummary {
 				for (int i = 0; i < ds.length; i++) {
 					ds[i] = motifs[m].getWeightMatrix().getColumn(i);
 				}
-				Dirichlet dd = DirichletParamEstimator.mle(ds,0.01);
+				Dirichlet dd;
+				try {
+					dd = DirichletParamEstimator.mle(ds,0.01);
+				} catch (IllegalAlphaParameterException e) {
+					System.err.printf(
+							"Could not estimate background for motif %s", motifs[m].getName());
+					dd = new Dirichlet((FiniteAlphabet)motifs[m].getWeightMatrix().getAlphabet());
+				}
 				Dirichlet symmDD = MetaMotifBackgroundParameterEstimator
 										.symmetricDirichlet(ds, 0.1, 10, 0.01);
 
