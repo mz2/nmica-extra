@@ -3,8 +3,10 @@ package net.derkholm.nmica.extra.app;
 import hep.aida.bin.StaticBin1D;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -90,6 +92,7 @@ public class MotifSetSummary {
 	
 	HashMap<MetaMotif, File> metaMotifToFileMap = new HashMap<MetaMotif, File>();
 	HashMap<Motif, File> otherMotifToFileMap = new HashMap<Motif, File>();
+	private File outputAlignedFile;
 	
 	@Option(help = "Input motif set file(s)")
 	public void setMotifs(File[] files) throws Exception {
@@ -305,6 +308,10 @@ public class MotifSetSummary {
 		this.minColPerPos  = i;
 	}
 	
+	@Option(help="Output aligned input motifs", userLevel = UserLevel.DEBUG)
+	public void setOutputAligned(File f) {
+		this.outputAlignedFile = f;
+	}
 	
 	//no need to make this configurable
 	//@Option(help="Metamotif name in header field name")
@@ -335,6 +342,12 @@ public class MotifSetSummary {
 			alignment = new MotifAlignment(alignment.motifs(), mc);
 			alignment = new MotifAlignment(alignment.motifs(), mc);
 			alignment = alignment.alignmentWithZeroOffset();
+			if (outputAlignedFile != null) {
+				MotifIOTools.writeMotifSetXML(
+					new BufferedOutputStream(new FileOutputStream(outputAlignedFile)), 
+					new Motif[] {alignment.averageMotif()});
+			}
+			
 			try {
 				alignment = alignment.trimToColumnsPerPosition(minColPerPos);
 			} catch (NoPositionFoundException e) {
@@ -575,7 +588,6 @@ public class MotifSetSummary {
 		double[] gcContents = new double[this.motifs.length];
 		
 		if (gcContent) {
-			
 			for (int m = 0; m < this.motifs.length; m++) {
 				double gc = 0;
 				double total = 0;
@@ -592,13 +604,11 @@ public class MotifSetSummary {
 						total = distrib.getWeight(sym);
 					}
 				}
-				
 				gcContents[m] = gc / total;
 			}
 		}
 		
 		if (avgLength) {
-			
 			double[] lengths = new double[motifs.length];
 			for (int i = 0; i < lengths.length; i++)
 				lengths[i] = motifs[i].getWeightMatrix().columns();
@@ -741,6 +751,7 @@ public class MotifSetSummary {
 			
 			System.out.println();
 		}
+		
 	}
 	
 	private Distribution[] allDists() {
