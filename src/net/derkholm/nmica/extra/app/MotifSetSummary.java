@@ -24,6 +24,7 @@ import net.derkholm.nmica.motif.MotifPair;
 import net.derkholm.nmica.motif.MotifTools;
 import net.derkholm.nmica.motif.SquaredDifferenceMotifComparitor;
 import net.derkholm.nmica.motif.align.MotifAlignment;
+import net.derkholm.nmica.motif.align.NoPositionFoundException;
 import net.derkholm.nmica.seq.WmTools;
 
 import org.biojava.bio.dist.Distribution;
@@ -333,7 +334,13 @@ public class MotifSetSummary {
 			alignment = new MotifAlignment(alignment.motifs(), mc);
 			alignment = new MotifAlignment(alignment.motifs(), mc);
 			alignment = alignment.alignmentWithZeroOffset();
-			alignment = alignment.trimToColumnsPerPosition(minColPerPos);
+			try {
+				alignment = alignment.trimToColumnsPerPosition(minColPerPos);
+			} catch (NoPositionFoundException e) {
+				System.err.printf(
+					"WARNING! No position was found with at least %d columns. " +
+					"Will output the alignment without trimming.", minColPerPos);
+			}
 			motifs = new Motif[] {alignment.averageMotif()};
 		}
 		
