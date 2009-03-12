@@ -68,6 +68,7 @@ public class MotifGrep {
 	private boolean outputAll = true;
 	private String[] removedKeys;
 	private boolean negate;
+	private boolean matchFactors;
 	
 	@Option(help = "List of motif names to match against. "
 			+ "Note that this is done by exact comparison, "
@@ -117,7 +118,12 @@ public class MotifGrep {
 	public void setMatchName(boolean bool) {
 		this.matchName = bool;
 	}
-
+	
+	@Option(help = "Include the 'factors' annotation in regular expression matching (default=false)", optional = true)
+	public void setMatchFactors(boolean bool) {
+		this.matchFactors = bool;
+	}
+	
 	@Option(help = "Include the species name in regular expression matching (default=false)", optional = true)
 	public void setMatchSpecies(boolean bool) {
 		this.matchSpecies = bool;
@@ -276,6 +282,14 @@ public class MotifGrep {
 							&& m.getAnnotation().containsProperty("species")
 							&& (pattern.matcher((CharSequence) m
 									.getAnnotation().getProperty("species"))
+									.find())) {
+						om.add(m);
+						continue;
+					}
+					if (matchFactors
+							&& m.getAnnotation().containsProperty("factors")
+							&& (pattern.matcher((CharSequence) m
+									.getAnnotation().getProperty("factors"))
 									.find())) {
 						om.add(m);
 						continue;
