@@ -470,6 +470,7 @@ public class MotifSetSummary {
 						SquaredDifferenceMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs, otherMotifs);
 					
 					//print out the header row first
+					System.out.print("name");
 					for (int i = 0; i < motifDistances.columns(); i++) {
 						System.out.print(separator+otherMotifs[i].getName()+"("+otherMotifToFileMap.get(otherMotifs[i]).getName()+")");
 					}
@@ -744,8 +745,10 @@ public class MotifSetSummary {
 			
 			if (metamotifs != null) {
 				for (int mm = 0; mm < metamotifs.length; mm++) {
-					System.out.print(metaMotifAvgHits[m][mm] + separator);
-					System.out.print(metaMotifBestHits[m][mm] + separator);
+					if (calcAvgMetaMotifScore)
+						System.out.print(metaMotifAvgHits[m][mm] + separator);
+					if (calcMaxMetaMotifScore)
+						System.out.print(metaMotifBestHits[m][mm] + separator);
 				}
 			}
 			
