@@ -361,6 +361,9 @@ public class MotifSetSummary {
 		if (pseudoCount > 0) {
 			for (Motif m : motifs)
 				MotifTools.addPseudoCounts(m,pseudoCount);
+			if (otherMotifs != null) 
+				for (Motif m : otherMotifs)
+					MotifTools.addPseudoCounts(m, pseudoCount);
 		} if (pseudoCount < 0) {
 			System.out.println(
 					"ERROR: -pseudoCount = " + 
