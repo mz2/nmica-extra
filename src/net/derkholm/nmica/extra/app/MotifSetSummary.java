@@ -752,7 +752,7 @@ public class MotifSetSummary {
 		
 	}
 	
-	private static double weightMatrixAverageColumnEntropy(
+	public static double weightMatrixAverageColumnEntropy(
 			WeightMatrix weightMatrix, Distribution elsewhere) {
 		double[] entropies = new double[weightMatrix.columns()];
 		double entropyElsewhere = DistributionTools.totalEntropy(elsewhere);
@@ -767,7 +767,7 @@ public class MotifSetSummary {
 		return bin.mean();
 	}
 
-	private static double weightMatrixTotalEntropy(WeightMatrix weightMatrix, Distribution elsewhere) {
+	public static double weightMatrixTotalEntropy(WeightMatrix weightMatrix, Distribution elsewhere) {
 		double[] entropies = new double[weightMatrix.columns()];
 		double entropyElsewhere = DistributionTools.totalEntropy(elsewhere);
 		

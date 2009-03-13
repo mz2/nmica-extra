@@ -26,6 +26,7 @@ import net.derkholm.nmica.motif.align.MotifAlignment;
 
 import org.biojava.bio.dist.Distribution;
 import org.biojava.bio.dist.SimpleDistribution;
+import org.biojava.bio.dist.UniformDistribution;
 import org.biojava.bio.dp.WeightMatrix;
 import org.biojava.bio.symbol.FiniteAlphabet;
 import org.biojava.bio.symbol.IllegalAlphabetException;
@@ -69,6 +70,7 @@ public class MotifGrep {
 	private String[] removedKeys;
 	private boolean negate;
 	private boolean matchFactors;
+	private double entropyCutoff;
 	
 	@Option(help = "List of motif names to match against. "
 			+ "Note that this is done by exact comparison, "
@@ -207,6 +209,13 @@ public class MotifGrep {
 		this.negate = b;
 	}
 	
+	@Option(
+		help = "Motifs whose weightmatrix have at least the specified entropy are returned", 
+		optional=true)
+	public void setEntropyAbove(double d) {
+		this.entropyCutoff = d;
+	}
+	
 	/**
 	 * @param args
 	 */
@@ -241,7 +250,8 @@ public class MotifGrep {
 					}
 				}
 			}
-		} else if (list != null) {
+		} 
+		else if (list != null) {
 			BufferedReader br = new BufferedReader(new FileReader(list));
 			for (String line = br.readLine(); line != null; line = br
 					.readLine()) {
@@ -253,7 +263,8 @@ public class MotifGrep {
 					}
 				}
 			}
-		} else if (pattern != null) {
+		} 
+		else if (pattern != null) {
 			for (Motif m : motifs) {
 				if (replaceWithStr != null) {
 					Matcher matcher = pattern.matcher(m.getName());
@@ -296,7 +307,8 @@ public class MotifGrep {
 					}
 				}
 			}
-		} else if (indices != null) {
+		} 
+		else if (indices != null) {
 			for (int i : indices) {
 				om.add(motifs[i]);
 			}
@@ -310,7 +322,18 @@ public class MotifGrep {
 					om.add(motifs[i]);
 				}
 			}
-		} else { // just add every motif from input to the output set
+		} 
+		else if (entropyCutoff > 0) {
+			
+			for (Motif m : motifs) {
+				WeightMatrix wm = m.getWeightMatrix();
+				Distribution elsewhere = new UniformDistribution((FiniteAlphabet)wm.getAlphabet());
+				if (MotifSetSummary.weightMatrixTotalEntropy(wm,elsewhere) > entropyCutoff) {
+					om.add(m);
+				}
+			}
+		}
+		else { // just add every motif from input to the output set
 			for (Motif m : motifs)
 				om.add(m);
 		}
