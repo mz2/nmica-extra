@@ -296,6 +296,7 @@ public class ModelScoreEvaluator {
 					uncountedExpectation, 
 					edgePruneThreshold, 
 					background.getAlphabet(),
+					minLength,
 					maxLength);
 			mmFacettes[0].setMixTransferFunction(mixTransferFunction);
 		}			

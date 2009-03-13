@@ -424,18 +424,10 @@ public class MotifSetSummary {
 			perMotifTotalEntropy) {
 			int mI = 0;
 			Distribution elsewhere = new UniformDistribution((FiniteAlphabet)motifs[0].getWeightMatrix().getAlphabet());
-			double entropyElsewhere = DistributionTools.totalEntropy(elsewhere);
 			
 			for (Motif m : this.motifs) {
-				double[] entropies = new double[m.getWeightMatrix().columns()];
-				for (int i = 0; i < entropies.length; i++) {
-					Distribution distribution = m.getWeightMatrix().getColumn(i);
-					entropies[i] = entropyElsewhere - DistributionTools.totalEntropy(distribution);
-				}
-				StaticBin1D bin = new StaticBin1D();
-				bin.addAllOf(new DoubleArrayList(entropies));
-				allTotalEntropies[mI] = bin.sum();
-				allEntropies[mI++] = bin.mean();				
+				allTotalEntropies[mI] = MotifSetSummary.weightMatrixTotalEntropy(m.getWeightMatrix(), elsewhere);
+				allEntropies[mI++] = MotifSetSummary.weightMatrixAverageColumnEntropy(m.getWeightMatrix(), elsewhere);
 			}
 		}
 		
@@ -760,8 +752,38 @@ public class MotifSetSummary {
 		
 	}
 	
+	private static double weightMatrixAverageColumnEntropy(
+			WeightMatrix weightMatrix, Distribution elsewhere) {
+		double[] entropies = new double[weightMatrix.columns()];
+		double entropyElsewhere = DistributionTools.totalEntropy(elsewhere);
+		
+		for (int i = 0; i < entropies.length; i++) {
+			Distribution distribution = weightMatrix.getColumn(i);
+			entropies[i] = entropyElsewhere - DistributionTools.totalEntropy(distribution);
+		}
+		StaticBin1D bin = new StaticBin1D();
+		bin.addAllOf(new DoubleArrayList(entropies));
+		
+		return bin.mean();
+	}
+
+	private static double weightMatrixTotalEntropy(WeightMatrix weightMatrix, Distribution elsewhere) {
+		double[] entropies = new double[weightMatrix.columns()];
+		double entropyElsewhere = DistributionTools.totalEntropy(elsewhere);
+		
+		for (int i = 0; i < entropies.length; i++) {
+			Distribution distribution = weightMatrix.getColumn(i);
+			entropies[i] = entropyElsewhere - DistributionTools.totalEntropy(distribution);
+		}
+		StaticBin1D bin = new StaticBin1D();
+		bin.addAllOf(new DoubleArrayList(entropies));
+		
+		return bin.sum();
+	}
+
 	private Distribution[] allDists() {
 		List<Distribution> dists = new ArrayList<Distribution>();
+		
 		for (Motif m : motifs)
 			for (int i = 0; i < m.getWeightMatrix().columns(); i++)
 				dists.add(m.getWeightMatrix().getColumn(i));
