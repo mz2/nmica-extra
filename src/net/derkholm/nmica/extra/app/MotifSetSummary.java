@@ -50,7 +50,7 @@ import cern.colt.list.DoubleArrayList;
 @NMExtraApp(launchName = "nmmotifsum")
 public class MotifSetSummary {
 	private static final double VERY_NEGATIVE_DOUBLE = -500000000.0;
-	private static final int MAX_HEADER_COLUMN_LENGTH = 256;
+	private static final int MAX_HEADER_COLUMN_LENGTH = 128;
 	private Motif[] motifs;
 	private Motif[] otherMotifs;
 	
@@ -396,7 +396,8 @@ public class MotifSetSummary {
 					System.out.println(m.getName() + separator + 
 										i + separator + 
 										(entropyElsewhere - 
-										 DistributionTools.totalEntropy(m.getWeightMatrix().getColumn(i))));
+										 DistributionTools.totalEntropy(
+												 m.getWeightMatrix().getColumn(i))));
 				}
 			
 			System.exit(0);	
