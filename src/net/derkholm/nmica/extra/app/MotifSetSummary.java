@@ -50,6 +50,7 @@ import cern.colt.list.DoubleArrayList;
 @NMExtraApp(launchName = "nmmotifsum")
 public class MotifSetSummary {
 	private static final double VERY_NEGATIVE_DOUBLE = -500000000.0;
+	private static final int MAX_HEADER_COLUMN_LENGTH = 256;
 	private Motif[] motifs;
 	private Motif[] otherMotifs;
 	
@@ -695,6 +696,15 @@ public class MotifSetSummary {
 		}
 		
 		if (printHeader) {
+			//first cap the header column lengths (so R doesn't complain...)
+			for (int i = 0; i < headerCols.size(); i++) {
+				String str = headerCols.get(i);
+				if (str.length() >= MAX_HEADER_COLUMN_LENGTH) {
+					str = str.substring(MAX_HEADER_COLUMN_LENGTH);
+					headerCols.set(i, str);
+				}
+			}
+			
 			for (int i = 0; i < headerCols.size(); i++) {
 				if (i < (headerCols.size() - 1))
 					System.out.print(headerCols.get(i) + separator);
