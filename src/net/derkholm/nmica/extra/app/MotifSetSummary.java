@@ -50,7 +50,7 @@ import cern.colt.list.DoubleArrayList;
 @NMExtraApp(launchName = "nmmotifsum")
 public class MotifSetSummary {
 	private static final double VERY_NEGATIVE_DOUBLE = -500000000.0;
-	private static final int MAX_HEADER_COLUMN_LENGTH = 128;
+	
 	private Motif[] motifs;
 	private Motif[] otherMotifs;
 	
@@ -94,6 +94,8 @@ public class MotifSetSummary {
 	HashMap<MetaMotif, File> metaMotifToFileMap = new HashMap<MetaMotif, File>();
 	HashMap<Motif, File> otherMotifToFileMap = new HashMap<Motif, File>();
 	private File outputAlignedFile;
+
+	private int maxHeaderColWidth = 192;
 	
 	@Option(help = "Input motif set file(s)")
 	public void setMotifs(File[] files) throws Exception {
@@ -316,6 +318,11 @@ public class MotifSetSummary {
 		this.outputAlignedFile = f;
 	}
 	
+	@Option(help="Maximum header column width in characters (default = 192)", optional=true, userLevel = UserLevel.DEBUG)
+	public void setMaxHeaderColWidth(int i) {
+		this.maxHeaderColWidth = i;
+	}
+	
 	//no need to make this configurable
 	//@Option(help="Metamotif name in header field name")
 	//public void setMetamotifName(boolean b) {
@@ -523,8 +530,8 @@ public class MotifSetSummary {
 				for (int i = 0; i < motifs.length; i++) {
 					String namestr = motifs[i].getName();
 					
-					if (namestr.length() >= MAX_HEADER_COLUMN_LENGTH) {
-						namestr = namestr.substring(0,MAX_HEADER_COLUMN_LENGTH);
+					if (namestr.length() >= maxHeaderColWidth) {
+						namestr = namestr.substring(0,maxHeaderColWidth);
 					}
 					System.out.print(separator+namestr);
 				}
@@ -740,8 +747,8 @@ public class MotifSetSummary {
 			//first cap the header column lengths (so R doesn't complain...)
 			for (int i = 0; i < headerCols.size(); i++) {
 				String str = headerCols.get(i);
-				if (str.length() >= MAX_HEADER_COLUMN_LENGTH) {
-					str = str.substring(0,MAX_HEADER_COLUMN_LENGTH);
+				if (str.length() >= maxHeaderColWidth) {
+					str = str.substring(0,maxHeaderColWidth);
 					headerCols.set(i, str);
 				}
 			}
@@ -797,6 +804,7 @@ public class MotifSetSummary {
 						System.out.print(metaMotifBestHits[m][n] + separator);
 				}
 			}
+			
 			if (metamotifs != null) {
 				for (int mm = 0; mm < metamotifs.length; mm++) {
 					if (calcAvgMetaMotifScore)
