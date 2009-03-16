@@ -755,7 +755,7 @@ public class MotifSetSummary {
 			
 			if (otherMotifs != null &! pairedOutput) {
 				System.err.println("Printing out distances with other motifs");
-				for (int n = 0; n < metamotifs.length; n++) {
+				for (int n = 0; n < otherMotifs.length; n++) {
 					System.out.print(otherMotifBestHits[m][n] + separator);
 				}
 			}
