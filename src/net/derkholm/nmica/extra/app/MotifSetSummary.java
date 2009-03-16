@@ -450,8 +450,10 @@ public class MotifSetSummary {
 		}
 		
 		if (bestHits) {
-			if (otherMotifs != null) {
-				if (pairedOutput) {
+			if (otherMotifs != null) 
+			{
+				if (pairedOutput) 
+				{
 					MotifPair[] mpairs = SquaredDifferenceMotifComparitor.getMotifComparitor().bestHits(motifs, otherMotifs);
 					if (printHeader) {
 						System.out.println("motif1" + separator + "motif2" + separator + "score");
@@ -461,14 +463,23 @@ public class MotifSetSummary {
 						System.out.print(mp.getM2().getName() + separator);
 						System.out.print(mp.getScore() + "\n");
 					}
-				} else {
+				} 
+				else {
 					Matrix2D motifDistances = 
 						SquaredDifferenceMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs, otherMotifs);
 					
 					//print out the header row first
 					System.out.print("name");
 					for (int i = 0; i < motifDistances.columns(); i++) {
-						System.out.print(separator+otherMotifs[i].getName()+"("+otherMotifToFileMap.get(otherMotifs[i]).getName()+")");
+						String namestr = otherMotifs[i].getName() + 
+											"(" + otherMotifToFileMap.get(otherMotifs[i]).getName() + ")";
+						
+						if (namestr.length() >= MAX_HEADER_COLUMN_LENGTH) {
+							namestr = namestr.substring(MAX_HEADER_COLUMN_LENGTH);
+						}
+						
+						System.out.print(
+							separator+namestr);
 					}
 					System.out.println();
 					
@@ -486,8 +497,10 @@ public class MotifSetSummary {
 					}
 					
 				}
-			} else {
-				Matrix2D motifDistances = SquaredDifferenceMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs);
+			} else 
+			{
+				Matrix2D motifDistances = 
+					SquaredDifferenceMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs);
 				
 				//header
 				for (int i = 0; i < motifs.length; i++) {
