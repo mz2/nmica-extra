@@ -442,6 +442,9 @@ public class MotifSetSummary {
 		
 		double[][] metaMotifBestHits = new double[this.motifs.length][]; 
 		double[][] metaMotifAvgHits = new double[this.motifs.length][];
+		double[][] otherMotifBestHits = new double[this.motifs.length][];
+		List<String> headerCols = new ArrayList<String>();
+		
 		
 		if (bestHits || bestReciprocalHits) {
 			if (bestHits && bestReciprocalHits) {
@@ -453,9 +456,11 @@ public class MotifSetSummary {
 		if (bestHits) {
 			if (otherMotifs != null) 
 			{
+				//paired output cannot be combined with calculating other motifs.
 				if (pairedOutput) 
 				{
-					MotifPair[] mpairs = SquaredDifferenceMotifComparitor.getMotifComparitor().bestHits(motifs, otherMotifs);
+					MotifPair[] mpairs = SquaredDifferenceMotifComparitor
+											.getMotifComparitor().bestHits(motifs, otherMotifs);
 					if (printHeader) {
 						System.out.println("motif1" + separator + "motif2" + separator + "score");
 					}
@@ -464,43 +469,53 @@ public class MotifSetSummary {
 						System.out.print(mp.getM2().getName() + separator);
 						System.out.print(mp.getScore() + "\n");
 					}
-				} 
+				}
+				//not paired output with other motifs = table of distances with each column being one of the 'other' motifs
 				else {
+					
 					Matrix2D motifDistances = 
-						SquaredDifferenceMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs, otherMotifs);
+						SquaredDifferenceMotifComparitor
+							.getMotifComparitor().bestHitsMatrix(motifs, otherMotifs);
 					
 					//print out the header row first
-					System.out.print("name");
-					for (int i = 0; i < motifDistances.columns(); i++) {
-						String namestr = otherMotifs[i].getName() + 
-											"(" + otherMotifToFileMap.get(otherMotifs[i]).getName() + ")";
+					//System.out.print("name");
+					//
+					
+					//for (int i = 0; i < motifDistances.columns(); i++) {
+						//String namestr = otherMotifs[i].getName() + 
+						//					"(" + otherMotifToFileMap.get(otherMotifs[i]).getName() + ")";
 						
-						if (namestr.length() >= MAX_HEADER_COLUMN_LENGTH) {
-							namestr = namestr.substring(0,MAX_HEADER_COLUMN_LENGTH);
+						//if (namestr.length() >= MAX_HEADER_COLUMN_LENGTH) {
+						//	namestr = namestr.substring(0,MAX_HEADER_COLUMN_LENGTH);
 							//System.err.printf("Outputting %s%n", namestr);
-						}
+						//}
 						
-						System.out.print(
-							separator+namestr);
-					}
-					System.out.println();
+						//headerCols.add(namestr);
+						//System.out.print(separator+namestr);
+					//}
+					//System.out.println();
 					
 					for (int i = 0; i < motifDistances.rows(); i++) {
 						//print out the motif name and then iterate
-						System.out.print(motifs[i].getName() + separator);
+						//System.out.print(motifs[i].getName() + separator);
 						
 						for (int j = 0; j < motifDistances.columns(); j++) {
 							double d = motifDistances.get(i, j);
-							if (j < (motifDistances.columns()-1))
-								System.out.print(d + separator);
-							else
-								System.out.print(d + "\n");
+							otherMotifBestHits[i][j] = d;
+							//if (j < (motifDistances.columns()-1))
+							//	System.out.print(d + separator);
+							//else
+							//	System.out.print(d + "\n");
 						}
 					}
 					
 				}
-			} else 
-			{
+			} 
+			
+			//print the distance matrix of motifs against themselves 
+			//again, a separate output mode from all the rest, 
+			//cannot be combined with calculating other features
+			else {
 				Matrix2D motifDistances = 
 					SquaredDifferenceMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs);
 				
@@ -517,6 +532,7 @@ public class MotifSetSummary {
 				
 				for (int i = 0; i < motifDistances.rows(); i++) {
 					//print out the motif name and then iterate
+					
 					System.out.print(motifs[i].getName() + separator);
 					for (int j = 0; j < motifDistances.columns(); j++) {
 						double d = motifDistances.get(i, j);
@@ -588,7 +604,6 @@ public class MotifSetSummary {
 		double[] gappedPalindromicities3 = new double[motifs.length];
 		double[] selfRepeatednesses = new double[motifs.length];
 		
-		List<String> headerCols = new ArrayList<String>();
 		
 		if (palindromicity) {
 			for (int m = 0; m < palindromicities.length; m++) {
@@ -694,6 +709,13 @@ public class MotifSetSummary {
 			headerCols.add("bg_asymm_4");
 		}
 		
+		if (otherMotifs != null) {
+			for (int m = 0; m < otherMotifs.length; m++) {
+				headerCols.add("besthit_" + otherMotifs[m].getName() + "("  + otherMotifToFileMap.get(otherMotifs[m].getName()) + ")");
+			}
+			
+		}
+		
 		if (metamotifs != null) {
 			if (calcAvgMetaMotifScore == false && calcMaxMetaMotifScore == false) {
 				
@@ -767,6 +789,14 @@ public class MotifSetSummary {
 				}
 			}
 			
+			if (otherMotifs != null &! pairedOutput) {
+				for (int n = 0; n < metamotifs.length; n++) {
+					if (calcAvgMetaMotifScore)
+						System.out.print(metaMotifAvgHits[m][n] + separator);
+					if (calcMaxMetaMotifScore)
+						System.out.print(metaMotifBestHits[m][n] + separator);
+				}
+			}
 			if (metamotifs != null) {
 				for (int mm = 0; mm < metamotifs.length; mm++) {
 					if (calcAvgMetaMotifScore)
