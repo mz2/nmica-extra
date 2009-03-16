@@ -475,7 +475,7 @@ public class MotifSetSummary {
 											"(" + otherMotifToFileMap.get(otherMotifs[i]).getName() + ")";
 						
 						if (namestr.length() >= MAX_HEADER_COLUMN_LENGTH) {
-							namestr = namestr.substring(MAX_HEADER_COLUMN_LENGTH);
+							namestr = namestr.substring(0,MAX_HEADER_COLUMN_LENGTH);
 						}
 						
 						System.out.print(
@@ -504,14 +504,18 @@ public class MotifSetSummary {
 				
 				//header
 				for (int i = 0; i < motifs.length; i++) {
-					System.out.print(separator+motifs[i].getName());
+					String namestr = motifs[i].getName();
+					
+					if (namestr.length() >= MAX_HEADER_COLUMN_LENGTH) {
+						namestr = namestr.substring(0,MAX_HEADER_COLUMN_LENGTH);
+					}
+					System.out.print(separator+namestr);
 				}
 				System.out.println();
 				
 				for (int i = 0; i < motifDistances.rows(); i++) {
 					//print out the motif name and then iterate
 					System.out.print(motifs[i].getName() + separator);
-					
 					for (int j = 0; j < motifDistances.columns(); j++) {
 						double d = motifDistances.get(i, j);
 						if (j < (motifDistances.columns()-1))
@@ -713,7 +717,7 @@ public class MotifSetSummary {
 			for (int i = 0; i < headerCols.size(); i++) {
 				String str = headerCols.get(i);
 				if (str.length() >= MAX_HEADER_COLUMN_LENGTH) {
-					str = str.substring(MAX_HEADER_COLUMN_LENGTH);
+					str = str.substring(0,MAX_HEADER_COLUMN_LENGTH);
 					headerCols.set(i, str);
 				}
 			}
