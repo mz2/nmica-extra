@@ -135,6 +135,7 @@ public class MotifSetSummary {
 		List<Motif> motifList = new ArrayList<Motif>();
 		
 		for (File f : files) {
+			System.err.printf("Reading file %f%n");
 			Motif[] ms = MotifIOTools.loadMotifSetXML(
 					new BufferedInputStream(new FileInputStream(f)));
 			for (Motif m : ms) {
@@ -391,12 +392,10 @@ public class MotifSetSummary {
 			System.out.println(entropyElsewhere);
 			for (Motif m : motifs)
 				for (int i = 0; i < m.getWeightMatrix().columns(); i++) {
-					System.out.println(
-										m.getName() + separator + 
+					System.out.println(m.getName() + separator + 
 										i + separator + 
-										(entropyElsewhere - DistributionTools.totalEntropy(m.getWeightMatrix().getColumn(i))
-									)
-								);
+										(entropyElsewhere - 
+										 DistributionTools.totalEntropy(m.getWeightMatrix().getColumn(i))));
 				}
 			
 			System.exit(0);	
