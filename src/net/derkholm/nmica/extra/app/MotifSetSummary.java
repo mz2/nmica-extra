@@ -477,7 +477,7 @@ public class MotifSetSummary {
 						
 						if (namestr.length() >= MAX_HEADER_COLUMN_LENGTH) {
 							namestr = namestr.substring(0,MAX_HEADER_COLUMN_LENGTH);
-							System.err.printf("Outputting %s%n", namestr);
+							//System.err.printf("Outputting %s%n", namestr);
 						}
 						
 						System.out.print(
