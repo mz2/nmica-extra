@@ -480,7 +480,6 @@ public class MotifSetSummary {
 				}
 				//not paired output with other motifs = table of distances with each column being one of the 'other' motifs
 				else {
-					
 					Matrix2D motifDistances = 
 						SquaredDifferenceMotifComparitor
 							.getMotifComparitor().bestHitsMatrix(motifs, otherMotifs);
@@ -506,6 +505,7 @@ public class MotifSetSummary {
 					for (int i = 0; i < motifDistances.rows(); i++) {
 						//print out the motif name and then iterate
 						//System.out.print(motifs[i].getName() + separator);
+						System.err.printf("Calculating distances for row %d%n", i);
 						otherMotifBestHits[i] = new double[motifDistances.columns()];
 						for (int j = 0; j < motifDistances.columns(); j++) {
 							double d = motifDistances.get(i, j);
@@ -798,6 +798,7 @@ public class MotifSetSummary {
 			}
 			
 			if (otherMotifs != null &! pairedOutput) {
+				System.err.println("Printing out distances with other motifs");
 				for (int n = 0; n < metamotifs.length; n++) {
 					System.out.print(otherMotifBestHits[m][n] + separator);
 				}
