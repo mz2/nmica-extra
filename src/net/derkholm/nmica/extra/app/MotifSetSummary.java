@@ -187,7 +187,8 @@ public class MotifSetSummary {
 		this.pseudoCount = d;
 	}
 
-	@Option(help = "Output as paired distances (default) rather than as a distance matrix",optional=true)
+	@Option(help = "Output as paired distances (default) " +
+			"rather than as a distance matrix",optional=true)
 	public void setPairedOutput(boolean b) {
 		this.pairedOutput = b;
 	}
@@ -798,10 +799,7 @@ public class MotifSetSummary {
 			
 			if (otherMotifs != null &! pairedOutput) {
 				for (int n = 0; n < metamotifs.length; n++) {
-					if (calcAvgMetaMotifScore)
-						System.out.print(metaMotifAvgHits[m][n] + separator);
-					if (calcMaxMetaMotifScore)
-						System.out.print(metaMotifBestHits[m][n] + separator);
+					System.out.print(otherMotifBestHits[m][n] + separator);
 				}
 			}
 			
