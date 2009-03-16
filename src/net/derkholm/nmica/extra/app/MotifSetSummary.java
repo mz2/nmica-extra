@@ -505,7 +505,7 @@ public class MotifSetSummary {
 					for (int i = 0; i < motifDistances.rows(); i++) {
 						//print out the motif name and then iterate
 						//System.out.print(motifs[i].getName() + separator);
-						
+						otherMotifBestHits[i] = new double[motifDistances.columns()];
 						for (int j = 0; j < motifDistances.columns(); j++) {
 							double d = motifDistances.get(i, j);
 							otherMotifBestHits[i][j] = d;
