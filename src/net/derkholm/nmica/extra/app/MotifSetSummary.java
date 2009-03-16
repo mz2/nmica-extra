@@ -462,11 +462,9 @@ public class MotifSetSummary {
 		}
 		
 		if (bestHits) {
-			if (otherMotifs != null) 
-			{
+			if (otherMotifs != null) {
 				//paired output cannot be combined with calculating other motifs.
-				if (pairedOutput) 
-				{
+				if (pairedOutput) {
 					MotifPair[] mpairs = SquaredDifferenceMotifComparitor
 											.getMotifComparitor().bestHits(motifs, otherMotifs);
 					if (printHeader) {
@@ -477,6 +475,9 @@ public class MotifSetSummary {
 						System.out.print(mp.getM2().getName() + separator);
 						System.out.print(mp.getScore() + "\n");
 					}
+					
+					//exit because can't be combine with other output forms
+					System.exit(0);
 				}
 				//not paired output with other motifs = table of distances with each column being one of the 'other' motifs
 				else {
@@ -484,36 +485,12 @@ public class MotifSetSummary {
 						SquaredDifferenceMotifComparitor
 							.getMotifComparitor().bestHitsMatrix(motifs, otherMotifs);
 					
-					//print out the header row first
-					//System.out.print("name");
-					//
-					
-					//for (int i = 0; i < motifDistances.columns(); i++) {
-						//String namestr = otherMotifs[i].getName() + 
-						//					"(" + otherMotifToFileMap.get(otherMotifs[i]).getName() + ")";
-						
-						//if (namestr.length() >= MAX_HEADER_COLUMN_LENGTH) {
-						//	namestr = namestr.substring(0,MAX_HEADER_COLUMN_LENGTH);
-							//System.err.printf("Outputting %s%n", namestr);
-						//}
-						
-						//headerCols.add(namestr);
-						//System.out.print(separator+namestr);
-					//}
-					//System.out.println();
 					
 					for (int i = 0; i < motifDistances.rows(); i++) {
-						//print out the motif name and then iterate
-						//System.out.print(motifs[i].getName() + separator);
-						System.err.printf("Calculating distances for row %d%n", i);
 						otherMotifBestHits[i] = new double[motifDistances.columns()];
 						for (int j = 0; j < motifDistances.columns(); j++) {
 							double d = motifDistances.get(i, j);
 							otherMotifBestHits[i][j] = d;
-							//if (j < (motifDistances.columns()-1))
-							//	System.out.print(d + separator);
-							//else
-							//	System.out.print(d + "\n");
 						}
 					}
 					
@@ -524,39 +501,17 @@ public class MotifSetSummary {
 			//again, a separate output mode from all the rest, 
 			//cannot be combined with calculating other features
 			else {
-				Matrix2D motifDistances = 
-					SquaredDifferenceMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs);
-				
-				//header
-				for (int i = 0; i < motifs.length; i++) {
-					String namestr = motifs[i].getName();
-					
-					if (namestr.length() >= maxHeaderColWidth) {
-						namestr = namestr.substring(0,maxHeaderColWidth);
-					}
-					System.out.print(separator+namestr);
-				}
-				System.out.println();
-				
-				for (int i = 0; i < motifDistances.rows(); i++) {
-					//print out the motif name and then iterate
-					
-					System.out.print(motifs[i].getName() + separator);
-					for (int j = 0; j < motifDistances.columns(); j++) {
-						double d = motifDistances.get(i, j);
-						if (j < (motifDistances.columns()-1))
-							System.out.print(d + separator);
-						else
-							System.out.print(d + "\n");
-					}
-				}
+				printSelfSimilaryMatrix(motifs, separator);
+				//exit because can't be combine with other output forms
+				System.exit(0);
 			}
-			
-			System.exit(0);
 		}
 		
 		if (bestReciprocalHits) {
-			MotifPair[] mpairs = SquaredDifferenceMotifComparitor.getMotifComparitor().bestReciprocalHits(motifs, otherMotifs);
+			MotifPair[] mpairs = 
+				SquaredDifferenceMotifComparitor
+					.getMotifComparitor()
+						.bestReciprocalHits(motifs, otherMotifs);
 			
 			for (MotifPair mp : mpairs) {
 				System.out.print(mp.getM1().getName() + separator);
@@ -564,6 +519,7 @@ public class MotifSetSummary {
 				System.out.print(mp.getScore() + "\n");
 			}
 			
+			//exit because can't be combine with other output forms
 			System.exit(0);
 		}
 		
@@ -815,6 +771,37 @@ public class MotifSetSummary {
 			
 			System.out.println();
 		}
+		
+	}
+
+	private void printSelfSimilaryMatrix(Motif[] motifs, String separator) throws Exception {
+		Matrix2D motifDistances = 
+			SquaredDifferenceMotifComparitor.getMotifComparitor().bestHitsMatrix(motifs);
+		
+		//header
+		for (int i = 0; i < motifs.length; i++) {
+			String namestr = motifs[i].getName();
+			
+			if (namestr.length() >= maxHeaderColWidth) {
+				namestr = namestr.substring(0,maxHeaderColWidth);
+			}
+			System.out.print(separator+namestr);
+		}
+		System.out.println();
+		
+		for (int i = 0; i < motifDistances.rows(); i++) {
+			//print out the motif name and then iterate
+			
+			System.out.print(motifs[i].getName() + separator);
+			for (int j = 0; j < motifDistances.columns(); j++) {
+				double d = motifDistances.get(i, j);
+				if (j < (motifDistances.columns()-1))
+					System.out.print(d + separator);
+				else
+					System.out.print(d + "\n");
+			}
+		}
+		
 		
 	}
 	
