@@ -135,7 +135,7 @@ public class MotifSetSummary {
 		List<Motif> motifList = new ArrayList<Motif>();
 		
 		for (File f : files) {
-			System.err.printf("Reading file %f%n",f.getPath());
+			System.err.printf("Reading file %s%n",f.getPath());
 			Motif[] ms = MotifIOTools.loadMotifSetXML(
 					new BufferedInputStream(new FileInputStream(f)));
 			for (Motif m : ms) {
@@ -195,7 +195,7 @@ public class MotifSetSummary {
 		List<MetaMotif> metamotifList = new ArrayList<MetaMotif>();
 		
 		for (File f : files) {
-			System.err.printf("Reading metamotif file %f%n",f.getPath());
+			System.err.printf("Reading metamotif file %s%n",f.getPath());
 			try { 
 				MetaMotif[] ms = MetaMotifIOTools.loadMetaMotifSetXML(
 						new BufferedInputStream(new FileInputStream(f)));
