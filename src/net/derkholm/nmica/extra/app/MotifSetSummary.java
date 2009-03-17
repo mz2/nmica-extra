@@ -768,6 +768,7 @@ public class MotifSetSummary {
 			if (otherMotifs != null &! pairedOutput) {
 				if (somethingPrinted) System.out.print(separator);
 				for (int n = 0; n < otherMotifs.length; n++) {
+					System.err.printf("m:%d n:%d",m,n);
 					if (n < (otherMotifs.length-1)) {
 						System.out.print(otherMotifBestHits[m][n] + separator);
 					} else {
