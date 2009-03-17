@@ -720,53 +720,82 @@ public class MotifSetSummary {
 		
 		for (int m = 0; m < motifs.length; m++) {
 			Motif mot = motifs[m];
+			boolean somethingPrinted = false;
 			
 			if (showName) {
-				System.out.print(mot.getName() + separator);
+				System.out.print(mot.getName());
+				somethingPrinted = true;
 			}
 			if (length) {
+				if (somethingPrinted) System.out.print(separator);
 				System.out.print(allLengths[m] + separator);
+				somethingPrinted = true;
 			}
 			
 			if (perMotifAvgEntropy) {
-				//headerCols.add("avg-entropy");
-				System.out.print(allEntropies[m] + separator);
+				if (somethingPrinted) System.out.print(separator);
+				System.out.print(allEntropies[m]);
+				somethingPrinted = true;
 			}
 			
 			if (perMotifTotalEntropy) {
-				//headerCols.add("total-entropy");
-				System.out.print(allTotalEntropies[m] + separator);
+				if (somethingPrinted) System.out.print(separator);
+				System.out.print(allTotalEntropies[m]);
+				somethingPrinted = true;
 			}
 			
 			if (palindromicity) {
-				System.out.print(palindromicities[m] + separator);
+				if (somethingPrinted) System.out.print(separator);
 				System.out.print(gappedPalindromicities1[m] + separator);
 				System.out.print(gappedPalindromicities2[m] + separator);
 				System.out.print(gappedPalindromicities3[m] + separator);
 				System.out.print(selfRepeatednesses[m] + separator);
+				somethingPrinted = true;
 			}
 			
 			if (bg) {
-				System.out.print(symmBGParams[m] + separator);
+				if (somethingPrinted) System.out.print(separator);
 				for (int i = 0; i < alphab.size(); i++) {
-					System.out.print(asymmBGParams[m][i] + separator);
+					if (i < (alphab.size()-1)) {
+						System.out.print(asymmBGParams[m][i] + separator);
+					} else {
+						System.out.print(asymmBGParams[m][i]);
+					}
 				}
+				somethingPrinted = true;
 			}
 			
 			if (otherMotifs != null &! pairedOutput) {
-				System.err.println("Printing out distances with other motifs");
+				if (somethingPrinted) System.out.print(separator);
 				for (int n = 0; n < otherMotifs.length; n++) {
-					System.out.print(otherMotifBestHits[m][n] + separator);
+					if (n < (otherMotifs.length-1)) {
+						System.out.print(otherMotifBestHits[m][n] + separator);
+					} else {
+						System.out.print(otherMotifBestHits[m][n]);
+					}
 				}
+				somethingPrinted = true;
 			}
 			
 			if (metamotifs != null) {
+				if (somethingPrinted) System.out.print(separator);
 				for (int mm = 0; mm < metamotifs.length; mm++) {
-					if (calcAvgMetaMotifScore)
-						System.out.print(metaMotifAvgHits[m][mm] + separator);
-					if (calcMaxMetaMotifScore)
-						System.out.print(metaMotifBestHits[m][mm] + separator);
+					if (calcAvgMetaMotifScore) {
+						if (mm < (metamotifs.length-1))
+							System.out.print(metaMotifAvgHits[m][mm] + separator);
+						else
+							System.out.print(metaMotifAvgHits[m][mm]);
+						
+					}
+					if (calcMaxMetaMotifScore) {
+						if (mm < (metamotifs.length-1))
+							System.out.print(metaMotifBestHits[m][mm] + separator);
+						else
+							System.out.print(metaMotifBestHits[m][mm]);
+					}
 				}
+				
+				somethingPrinted = true;
 			}
 			
 			System.out.println();
