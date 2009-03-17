@@ -757,7 +757,7 @@ public class MotifSetSummary {
 			
 			if (bg) {
 				if (somethingPrinted) System.out.print(separator);
-				System.out.println(symmBGParams[m] + separator);
+				System.out.print(symmBGParams[m] + separator);
 				
 				for (int i = 0; i < alphab.size(); i++) {
 					if (i < (alphab.size()-1)) {
