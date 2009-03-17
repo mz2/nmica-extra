@@ -487,6 +487,7 @@ public class MotifSetSummary {
 					
 					
 					for (int i = 0; i < motifDistances.rows(); i++) {
+						System.err.printf("Row: %d columns: %d%n", i, motifDistances.columns());
 						otherMotifBestHits[i] = new double[motifDistances.columns()];
 						for (int j = 0; j < motifDistances.columns(); j++) {
 							double d = motifDistances.get(i, j);
@@ -768,7 +769,7 @@ public class MotifSetSummary {
 			if (otherMotifs != null &! pairedOutput) {
 				if (somethingPrinted) System.out.print(separator);
 				for (int n = 0; n < otherMotifs.length; n++) {
-					System.err.printf("m:%d n:%d obj:%s",m,n,otherMotifBestHits.toString());
+					System.err.printf("m:%d n:%d obj:%s%n",m,n,otherMotifBestHits.toString());
 					if (n < (otherMotifs.length-1)) {
 						System.out.print(otherMotifBestHits[m][n] + separator);
 					} else {
