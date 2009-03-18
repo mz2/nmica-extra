@@ -730,7 +730,7 @@ public class MotifSetSummary {
 			}
 			if (length) {
 				if (somethingPrinted) System.out.print(separator);
-				System.out.print(allLengths[m] + separator);
+				System.out.print(allLengths[m]);
 				somethingPrinted = true;
 			}
 			
