@@ -370,11 +370,18 @@ public class MotifSetSummary {
 		}
 		
 		if (pseudoCount > 0) {
-			for (Motif m : motifs)
+			for (Motif m : motifs) {
+				System.err.printf(
+					"Adding pseudocount to %s%n", m.getName());
 				MotifTools.addPseudoCounts(m,pseudoCount);
-			if (otherMotifs != null) 
-				for (Motif m : otherMotifs)
+			}
+			if (otherMotifs != null) { 
+				for (Motif m : otherMotifs) {
+					System.err.printf(
+						"Adding pseudocount to motif from other motif set %s%n",m.getName());
 					MotifTools.addPseudoCounts(m, pseudoCount);
+				}
+			}
 		} if (pseudoCount < 0) {
 			System.out.println(
 					"ERROR: -pseudoCount = " + 
