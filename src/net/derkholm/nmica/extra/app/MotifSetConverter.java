@@ -28,12 +28,15 @@ public class MotifSetConverter {
 		TRANSFAC
 	}
 
-	@Option(help = "Output filename")
+	@Option(help = "Output filename", optional = true)
 	public void setOut(String str) throws FileNotFoundException {
-		this.outputStream = new BufferedOutputStream(new FileOutputStream(new File(str)));
+		this.outputStream = 
+			new BufferedOutputStream(new FileOutputStream(new File(str)));
 	}
 	
-	@Option(help = "Output format (default = TRANSFAC)", userLevel = UserLevel.EXPERT)
+	@Option(help = "Output format (default = TRANSFAC)", 
+			userLevel = UserLevel.EXPERT, 
+			optional = true)
 	public void setFormat(OutputFormat format) {
 		this.outputFormat = format;
 	}
