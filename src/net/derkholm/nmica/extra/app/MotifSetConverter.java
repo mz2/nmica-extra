@@ -22,7 +22,7 @@ import org.bjv2.util.cli.UserLevel;
 @NMExtraApp(launchName = "nmconvertxms", vm = VirtualMachine.SERVER)
 public class MotifSetConverter {
 	private OutputStream outputStream = System.out;
-	private OutputFormat outputFormat;
+	private OutputFormat outputFormat = OutputFormat.TRANSFAC;
 	
 	private enum OutputFormat {
 		TRANSFAC
@@ -33,7 +33,7 @@ public class MotifSetConverter {
 		this.outputStream = new BufferedOutputStream(new FileOutputStream(new File(str)));
 	}
 	
-	@Option(help = "Output format", userLevel = UserLevel.EXPERT)
+	@Option(help = "Output format (default = TRANSFAC)", userLevel = UserLevel.EXPERT)
 	public void setFormat(OutputFormat format) {
 		this.outputFormat = format;
 	}
