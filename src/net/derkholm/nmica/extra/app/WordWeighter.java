@@ -3,6 +3,7 @@ package net.derkholm.nmica.extra.app;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
+import java.util.List;
 import java.util.StringTokenizer;
 
 import javax.xml.stream.XMLInputFactory;
@@ -13,6 +14,7 @@ import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.model.motif.Mosaic;
 import net.derkholm.nmica.model.motif.MosaicIO;
 import net.derkholm.nmica.model.motif.MosaicSequenceBackground;
+import net.derkholm.nmica.model.motif.extra.ScoredString;
 
 import org.biojava.bio.dist.Distribution;
 import org.biojava.bio.seq.DNATools;
@@ -67,8 +69,18 @@ public class WordWeighter {
 			System.out.println(line + "\t" + ww);
 		}
 	}
+	
+	public void setBackgroundScoreForScoredStrings(List<ScoredString> strings, MosaicSequenceBackground background) throws Exception {
+		this.backgroundModel = background;
+		Distribution[] mosaic = background.getBackgroundDistributions();
+		
+		for (ScoredString str : strings) {
+			double bgscore = 0.0;
+			for (Distribution d : mosaic) {bgscore += weightWord(DNATools.createDNA(str.getString()), d);}
+		}
+	}
 
-	private double weightWord(SymbolList word, Distribution dist)
+	public double weightWord(SymbolList word, Distribution dist)
 		throws Exception {
 		
 		int order = dist.getAlphabet().getAlphabets().size();

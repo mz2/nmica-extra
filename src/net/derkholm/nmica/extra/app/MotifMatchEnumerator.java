@@ -4,10 +4,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
-import net.derkholm.nmica.maths.NativeMath;
+import net.derkholm.nmica.model.motif.extra.ScoredString;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 
@@ -23,7 +25,9 @@ import org.bjv2.util.cli.Option;
 public class MotifMatchEnumerator {
 
 	private double scoreThreshold = -6.0;
-	private WeightMatrix wm;
+	private Motif motif;
+	private boolean storeHits;
+	private List<ScoredString> storedHits;
 	private final static Symbol[] ALPHA = {DNATools.a(), DNATools.c(), DNATools.g(), DNATools.t()};
 	
 	@Option(help="The bit score threshold (default = -6.0)", optional=true)
@@ -31,8 +35,8 @@ public class MotifMatchEnumerator {
 		this.scoreThreshold = d;
 	}
 	
-	@Option(help="Input motif set (in the XMS format)", optional=true)
-	public void setMotifs(File f) throws FileNotFoundException, Exception {
+	@Option(help="Input motif set in the XMS format. Needs to contain exactly one motif.", optional=true)
+	public void setMotif(File f) throws FileNotFoundException, Exception {
 		Motif[] motifSet = MotifIOTools.loadMotifSetXML(new BufferedReader(new FileReader(f)));
 		
 		if (motifSet.length != 1) {
@@ -40,14 +44,28 @@ public class MotifMatchEnumerator {
 			System.exit(1);
 		}
 		
-		wm = motifSet[0].getWeightMatrix();
+		if (motifSet.length > 0) {
+			System.err.printf("One motif expected in the input set. Got %d%n", motifSet.length);
+			System.exit(1);
+		}
+		motif = motifSet[0];
+	}
+	
+	@Option(help="Store results", optional=true)
+	public void setStoreHits(boolean b) {
+		this.storeHits = b;
+		this.storedHits = new ArrayList<ScoredString>();
+	}
+	
+	public List<ScoredString> storedHits() {
+		return this.storedHits;
 	}
 	
 	/**
 	 * @param args
 	 */
 	public void main(String[] args) throws Exception {
-		rec(wm, new Symbol[wm.columns()], 0, 0);
+		rec(motif.getWeightMatrix(), new Symbol[motif.getWeightMatrix().columns()], 0, 0);
 	}
 
 	private void rec(WeightMatrix wm, Symbol[] word, int index, double score)
@@ -55,9 +73,9 @@ public class MotifMatchEnumerator {
 	{
 		if (index == word.length) {
 			StringBuilder sb = new StringBuilder();
-			for (Symbol s : word) {
-				sb.append(s.getName().charAt(0));
-			}
+
+			for (Symbol s : word) {sb.append(s.getName().charAt(0));}
+			if (storeHits) {storedHits.add(new ScoredString(sb.toString(), score));}
 			sb.append('\t');
 			sb.append(score);
 			System.out.println(sb.toString());
@@ -75,5 +93,12 @@ public class MotifMatchEnumerator {
 				}
 			}
 		}
+	}
+
+	public void enumerateMatches(Motif m, double minThreshold) throws Exception {
+		this.motif = m;
+		this.setScoreThreshold(minThreshold);
+		this.setStoreHits(true);
+		this.main(null);
 	}
 }

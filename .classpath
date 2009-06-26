@@ -8,10 +8,11 @@
 			<attribute name="optional" value="true"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="lib/biojava.jar"/>
-	<classpathentry kind="lib" path="lib/bjv2-core-0.1.jar"/>
-	<classpathentry kind="lib" path="lib/stax-api-1.0.1.jar"/>
-	<classpathentry kind="lib" path="lib/colt.jar"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/nmica-dev"/>
+	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/bytecode.jar"/>
+	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/biojava.jar"/>
+	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/bjv2-core-0.1.jar"/>
+	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/colt.jar"/>
+	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/stax-api-1.0.1.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

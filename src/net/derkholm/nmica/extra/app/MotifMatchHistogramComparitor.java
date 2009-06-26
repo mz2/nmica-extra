@@ -27,6 +27,8 @@ public class MotifMatchHistogramComparitor {
 	private double confidence = 0.01;
 	private File theoreticalFile;
 	private File realFile;
+	private List<HEl> reference;
+	private List<HEl> real;
 	
 	@Option(help="Bucket size in bits (default=1.0)", optional=true)
 	public void setBucketSize(double bucketSize) {
@@ -39,15 +41,25 @@ public class MotifMatchHistogramComparitor {
 	}
 	
 	@Option(help="Theoretical distribution (output format of nmweightwords)")
-	public void setTheoretical(File f) {
+	public void setTheoretical(File f) throws Exception {
 		this.theoreticalFile = f;
+		this.reference = bucket(theoreticalFile);
 	}
 	
 	@Option(help="Observed distribution in input sequences " +
 			"as tab separated records with sequence identifier and score per line " +
 			"(e.g. first and sixth column of a GFF)")
-	public void setObserved(File f) {
+	public void setObserved(File f) throws Exception {
 		this.realFile = f;
+		this.real = bucket(realFile);
+	}
+	
+	public void setReference(List<HEl> list) {
+		this.reference = list;
+	}
+	
+	public void setReal(List<HEl> list) {
+		this.real = list;
 	}
 
 	private List<HEl> bucket(File f)
@@ -62,6 +74,16 @@ public class MotifMatchHistogramComparitor {
 			if (t.hasMoreTokens()) {
 				weight = Double.parseDouble(t.nextToken());
 			}
+			bl.add(new HEl(bucket, weight));
+		}
+		return bl;
+	}
+	
+	private List<HEl> bucket(List<ScoredSequenceHit> hits) {
+		List<HEl> bl = new ArrayList<HEl>();
+		for (ScoredSequenceHit hit : hits) {
+			int bucket = (int) Math.floor(Math.abs(hit.score()) / bucketSize);
+			double weight = hit.weight();
 			bl.add(new HEl(bucket, weight));
 		}
 		return bl;
@@ -91,8 +113,6 @@ public class MotifMatchHistogramComparitor {
 	}
 	
 	public void main(String[] args) throws Exception {
-		List<HEl> reference = bucket(theoreticalFile);
-		List<HEl> real = bucket(realFile);
 		int buckets = 1 + Math.max(max(reference), max(real));
 		double[] refHist = hist(reference, buckets);
 		double refTot = 0;
@@ -121,12 +141,20 @@ public class MotifMatchHistogramComparitor {
 	}
 	
 	private static class HEl {
-		public final int bucket;
-		public final double weight;
+		private final int bucket;
+		private final double weight;
 		
 		HEl(int bucket, double weight) {
 			this.bucket = bucket;
 			this.weight = weight;
+		}
+		
+		public int bucket() {
+			return bucket;
+		}
+		
+		public double weight() {
+			return weight;
 		}
 	}
 }

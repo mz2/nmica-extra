@@ -1,8 +1,12 @@
 package net.derkholm.nmica.extra.app;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -32,7 +36,10 @@ public class MotifAligner {
 	
 	private Motif[] motifs;
 	private String outputType = "align_cons";
+	
 	private String outFile;
+	private PrintStream outputStream = System.out;
+	
 	private MotifComparitorIFace mc = SquaredDifferenceMotifComparitor.getMotifComparitor();
 	private int minColPerPos = 2;
 	private boolean outputSingleMotif;
@@ -53,6 +60,12 @@ public class MotifAligner {
 			optional=true)
 	public void setAddName(boolean b) {
 		this.addName = b;
+	}
+	
+	@Option(help="Output file", optional=true)
+	public void setOut(String str) throws FileNotFoundException {
+		this.outFile = str;
+		this.outputStream = new PrintStream(new FileOutputStream(new File(str)));
 	}
 	
 	@Option(help="Add a freeform prefix to motif names",
@@ -180,11 +193,11 @@ public class MotifAligner {
 		
 		if (outputType.equals("avg"))
 			MotifIOTools.writeMotifSetXML(
-					System.out,
+					outputStream,
 					new Motif[] {alignment.averageMotif()});
 		if (outputType.equals("all"))
 			MotifIOTools.writeMotifSetXML(
-					System.out, 
+					outputStream, 
 					alignment.motifs());
 		else if (outputType.equals("metamotif")) {
 			//System.err.println(alignment.alignmentConsensusString());
@@ -195,14 +208,14 @@ public class MotifAligner {
 				
 				MetaMotifIOTools.
 					writeMetaMotifSetToMotifSetWithAnnotations(
-						System.out, 
+						outputStream, 
 						new MetaMotif[] {mm});
 			} catch (InvalidMetaMotifException e) {
 				System.err.printf("Will output the input motif as a metamotif " +
 				"with the per-column precision of %.3f.%n, (pseudocount=%.3f)",singleMotifPrecision, singleMotifPseudoCount);
 				MetaMotifIOTools.
 					writeMetaMotifSetToMotifSetWithAnnotations(
-						System.out, 
+						outputStream, 
 						new MetaMotif[] {
 								new MetaMotif(motifs[0],
 														this.singleMotifPrecision, 
@@ -210,12 +223,12 @@ public class MotifAligner {
 			}
 			
 		} else if (outputType.equals("cons"))
-			System.out.println(alignment.consensusString());
+			outputStream.println(alignment.consensusString());
 		else if (outputType.equals("align_cons"))
-			System.out.println(alignment.alignmentConsensusString());
+			outputStream.println(alignment.alignmentConsensusString());
 
 		System.err.println("Done.");
-		System.out.close();
+		outputStream.close();
 		System.exit(0);
 	}
 	

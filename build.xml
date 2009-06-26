@@ -39,7 +39,8 @@
     <property name="manifest.dir" value="./manifest" />
     <property name="resources.dir" value="./resources" />
     <property name="nmica.dev.home" value="${env.NMICA_DEV_HOME}" />
-    <property name="classpath" value="${lib.dir}/nmica.jar:${lib.dir}/biojava.jar:${lib.dir}/bytecode.jar:${lib.dir}/bjv2-core-0.1.jar:${lib.dir}/stax-api-1.0.1.jar:${lib.dir}/colt.jar:${nmica.dev.home}/lib/nmica.jar" />
+    <property name="nmica.home" value="${env.NMICA_HOME}" />
+    <property name="classpath" value="${nmica.home}/lib/biojava.jar:${nmica.home}/lib/bytecode.jar:${nmica.home}/lib/bjv2-core-0.1.jar:${nmica.home}/lib/stax-api-1.0.1.jar:${nmica.home}/lib/colt.jar:${nmica.home}/lib/nmica.jar" />
  
     <!-- Main build directory -->
     <property name="build.dir" value="./ant-build" />
@@ -78,7 +79,7 @@
     <echo message="ICC available: ${native.has_icc}" />
     <echo message="Java         : ${env.JAVA_HOME}" />
     <echo message="Byte order: ${sun.cpu.endian} endian" />
-    <echo message="${nmica.dev.home}" />
+    <echo message="${nmica.home}" />
   </target>
 
 
