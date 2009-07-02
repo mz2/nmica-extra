@@ -1,10 +1,13 @@
 package net.derkholm.nmica.extra.app;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.OutputStream;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -19,7 +22,6 @@ import net.derkholm.nmica.model.MotifHitRecord;
 import net.derkholm.nmica.model.motif.Mosaic;
 import net.derkholm.nmica.model.motif.MosaicIO;
 import net.derkholm.nmica.model.motif.MosaicSequenceBackground;
-import net.derkholm.nmica.model.motif.extra.BucketComparisonElement;
 import net.derkholm.nmica.model.motif.extra.ScoredString;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
@@ -174,5 +176,14 @@ public class MotifSetCutoffAssigner {
 			System.err.printf("Cutoff for %s:%f%n",m.getName(),cutoff);
 			m.setThreshold(cutoff);
 		}
+		
+		OutputStream os = null;
+		if (outputMotifFile == null) {
+			os = System.out;
+		} else {
+			os = new BufferedOutputStream(new FileOutputStream(outputMotifFile));
+		}
+		
+		MotifIOTools.writeMotifSetXML(os, motifs);
 	}
 }
