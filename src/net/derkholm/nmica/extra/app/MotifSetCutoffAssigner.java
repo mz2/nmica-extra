@@ -6,6 +6,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -18,6 +19,7 @@ import net.derkholm.nmica.model.MotifHitRecord;
 import net.derkholm.nmica.model.motif.Mosaic;
 import net.derkholm.nmica.model.motif.MosaicIO;
 import net.derkholm.nmica.model.motif.MosaicSequenceBackground;
+import net.derkholm.nmica.model.motif.extra.BucketComparisonElement;
 import net.derkholm.nmica.model.motif.extra.ScoredString;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
@@ -42,12 +44,13 @@ public class MotifSetCutoffAssigner {
 	private double minThreshold = -10.0;
 	private File histogramOutputFile = null;
 	private double bucketSize = 1.0;
+	
 	private File outputMotifFile = null; // when null, will output to original
 	// file
 	private double confidenceThreshold = 0.05;
 	private HashSequenceDB sequences;
-	private Hashtable<Motif, MotifHitRecord> motifHitMap = new Hashtable<Motif, MotifHitRecord>();
-	private Hashtable<Motif, ScoredString> enumSeqMap = new Hashtable<Motif,ScoredString>();
+	private Hashtable<Motif, List<MotifHitRecord>> motifHitMap = new Hashtable<Motif, List<MotifHitRecord>>();
+	private Hashtable<Motif, List<ScoredString>> enumSeqMap = new Hashtable<Motif,List<ScoredString>>();
 	private MosaicSequenceBackground backgroundModel;
 	
 	@Option(help = "Input motifs")
@@ -126,15 +129,29 @@ public class MotifSetCutoffAssigner {
 		scanner.setScoreThreshold(minThreshold);
 		scanner.scan(sequences, motifs);
 		List<MotifHitRecord> hitRecords = scanner.hitRecords();
+		for (Motif m : motifs) {
+			motifHitMap.put(m, new ArrayList<MotifHitRecord>());
+			for (MotifHitRecord rec : hitRecords) {
+				if (rec.getMotif() == m) {
+					motifHitMap.get(m).add(rec);					
+				}
+			}
+		}
+		
+		hitRecords = null;
 		scanner = null;
 		
-		System.err.printf("Enumerating sequence words from background model and weighting them according to the background model...%n");
+		System.err.printf(
+			"Enumerating sequence words from background model " +
+			"and weighting them according to the background model...%n");
+		
 		MotifMatchEnumerator motifEnumerator = new MotifMatchEnumerator();
 		WordWeighter weighter = new WordWeighter();
 		for (Motif m : motifs) {
 			motifEnumerator.enumerateMatches(m, minThreshold);
 			List<ScoredString> enums = motifEnumerator.storedHits();
 			weighter.setBackgroundScoreForScoredStrings(enums, backgroundModel);
+			enumSeqMap.put(m, enums);
 		}
 		motifEnumerator = null;
 		weighter = null;
@@ -143,7 +160,19 @@ public class MotifSetCutoffAssigner {
 		MotifMatchHistogramComparitor histogramComparitor = new MotifMatchHistogramComparitor();
 		histogramComparitor.setBucketSize(bucketSize);
 		histogramComparitor.setConfidence(confidenceThreshold);
-		histogramComparitor.main(null);
 		
+		for (Motif m : motifs) {
+			List<MotifHitRecord> realHits = motifHitMap.get(m);
+			List<ScoredString> expHits = enumSeqMap.get(m);
+			
+			histogramComparitor.setConfidence(confidenceThreshold);
+			histogramComparitor.setReal((List)realHits);
+			histogramComparitor.setReference((List)expHits);
+			
+			double cutoff = histogramComparitor
+								.determineCutoff(confidenceThreshold);
+			System.err.printf("Cutoff for %s:%f%n",m.getName(),cutoff);
+			m.setThreshold(cutoff);
+		}
 	}
 }

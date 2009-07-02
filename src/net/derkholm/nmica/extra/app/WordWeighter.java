@@ -76,7 +76,10 @@ public class WordWeighter {
 		
 		for (ScoredString str : strings) {
 			double bgscore = 0.0;
-			for (Distribution d : mosaic) {bgscore += weightWord(DNATools.createDNA(str.getString()), d);}
+			for (Distribution d : mosaic) {
+				bgscore += weightWord(DNATools.createDNA(str.getString()), d);
+			}
+			str.setBgScore(bgscore);
 		}
 	}
 

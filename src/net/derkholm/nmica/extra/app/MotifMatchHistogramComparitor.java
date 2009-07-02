@@ -9,15 +9,14 @@ import java.util.StringTokenizer;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
+import net.derkholm.nmica.model.HistogramElementIFace;
+import net.derkholm.nmica.model.ScoredSequenceHit;
+import net.derkholm.nmica.model.motif.extra.BucketComparison;
+import net.derkholm.nmica.model.motif.extra.BucketComparisonElement;
+import net.derkholm.nmica.model.motif.extra.HistogramElement;
 
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
-
-import biobits.utils.Collects;
-import biobits.utils.Function;
-import biobits.utils.Function2;
-
-import cern.jet.stat.Gamma;
 
 
 @App(overview="Compare real and theoretical motif-score distributions", generateStub=true)
@@ -27,8 +26,16 @@ public class MotifMatchHistogramComparitor {
 	private double confidence = 0.01;
 	private File theoreticalFile;
 	private File realFile;
-	private List<HEl> reference;
-	private List<HEl> real;
+	private List<HistogramElementIFace> reference;
+	private List<HistogramElementIFace> real;
+	
+	public MotifMatchHistogramComparitor() {
+	}
+	
+	public MotifMatchHistogramComparitor(List<ScoredSequenceHit> reference, List<ScoredSequenceHit> real) {
+		this.setReference(reference);
+		this.setReal(real);
+	}
 	
 	@Option(help="Bucket size in bits (default=1.0)", optional=true)
 	public void setBucketSize(double bucketSize) {
@@ -54,107 +61,86 @@ public class MotifMatchHistogramComparitor {
 		this.real = bucket(realFile);
 	}
 	
-	public void setReference(List<HEl> list) {
-		this.reference = list;
+	@SuppressWarnings("unchecked")
+	public void setReference(List<ScoredSequenceHit> list) {
+		this.reference = (List)list;
+		//System.err.println("Setting reference");
+		this.assignBucketFor(list);
 	}
 	
-	public void setReal(List<HEl> list) {
-		this.real = list;
+	@SuppressWarnings("unchecked")
+	public void setReal(List<ScoredSequenceHit> list) {
+		this.real = (List)list;
+		//System.err.println("Setting real");
+		this.assignBucketFor(list);
 	}
 
-	private List<HEl> bucket(File f)
+	private List<HistogramElementIFace> bucket(File f)
 		throws Exception {
-		List<HEl> bl = new ArrayList<HEl>();
+		List<HistogramElementIFace> bl = new ArrayList<HistogramElementIFace>();
 		BufferedReader br = new BufferedReader(new FileReader(f));
 		for (String line = br.readLine(); line != null; line = br.readLine()) {
 			StringTokenizer t = new StringTokenizer(line);
 			t.nextToken();
-			int bucket = (int) Math.floor(Math.abs(Double.parseDouble(t.nextToken())) / bucketSize);
+			int bucket = (int) 
+				Math.floor(
+					Math.abs(Double.parseDouble(t.nextToken())) / bucketSize);
 			double weight = 1.0;
 			if (t.hasMoreTokens()) {
 				weight = Double.parseDouble(t.nextToken());
 			}
-			bl.add(new HEl(bucket, weight));
+			bl.add(new HistogramElement(bucket, weight));
 		}
 		return bl;
 	}
 	
-	private List<HEl> bucket(List<ScoredSequenceHit> hits) {
-		List<HEl> bl = new ArrayList<HEl>();
+	private void assignBucketFor(List<ScoredSequenceHit> hits) {
+		//System.err.println("Assigning bucket for " + hits.size() + " hits");
 		for (ScoredSequenceHit hit : hits) {
+			//System.err.println(hit.hitWeight());
 			int bucket = (int) Math.floor(Math.abs(hit.score()) / bucketSize);
-			double weight = hit.weight();
-			bl.add(new HEl(bucket, weight));
+			hit.setBucket(bucket);
 		}
-		return bl;
 	}
 	
-	private static final Function2<Integer, Integer, Integer> MAX = new Function2<Integer, Integer, Integer>() {
-		public Integer apply(Integer param1, Integer param2) {
-			return Math.max(param1, param2);
+	public List<BucketComparisonElement> compare() {
+		List<BucketComparisonElement> buckets = new ArrayList<BucketComparisonElement>();
+		BucketComparison bucketComparison = new BucketComparison(reference, real, bucketSize);
+
+		for (int b = 0; b < bucketComparison.buckets(); ++b) {
+			//System.err.println(bucketComparison.outputString(b, this.confidence));
+			buckets.add(bucketComparison.compare(b, this.confidence));
 		}
-	};
-	
-	private Integer max(List<HEl> l) {
-		Function<HEl, Integer> b = new Function<HEl, Integer>() {
-			public Integer apply(HEl param1) {
-				return param1.bucket;
-			}
-		};
-		return Collects.reduce(Collects.map(b, l), MAX);
-	}
-	
-	private double[] hist(Iterable<HEl> i, int buckets) {
-		double[] h = new double[buckets];
-		for (HEl el : i) {
-			h[el.bucket] += el.weight;
-		}
-		return h;
+		
+		return buckets;
 	}
 	
 	public void main(String[] args) throws Exception {
-		int buckets = 1 + Math.max(max(reference), max(real));
-		double[] refHist = hist(reference, buckets);
-		double refTot = 0;
-		for (double r : refHist) {
-			refTot += r;
+		BucketComparison bucketComparison = new BucketComparison(reference, real, bucketSize);
+
+		for (int b = 0; b < bucketComparison.buckets(); ++b) {
+			bucketComparison.outputString(b, confidence);
 		}
-		double[] realHist = hist(real, buckets);
-		for (int b = 0; b < buckets; ++b) {
-			double refFrac = refHist[b] / refTot;
-			double mode = (1.0 * realHist[b]) / real.size();
+	}
+
+	public double determineCutoff(double confidenceThreshold) {
+		List<BucketComparisonElement> elems = compare();
+		
+		int bucketsIgnored = 0;
+		for (int i = 0; i < elems.size(); i++) {
+			BucketComparisonElement e = elems.get(i);
 			
-			int alpha = (int) realHist[b] + 1;
-            int beta = real.size() - (int) realHist[b] + 1;
-            
-            double barMin = 0;
-            double barMax = 1.0;
-            while (barMin < mode && Gamma.incompleteBeta(alpha, beta, barMin) < confidence) {
-                barMin += 0.00001;
-            }
-            while (barMax > mode && Gamma.incompleteBeta(alpha, beta, barMax)> (1.0 - confidence)) {
-                barMax -= 0.00001;
-            }
-            
-            System.out.printf("%d\t%g\t%g\t%g\t%g%n", b, refFrac, mode, barMin, barMax);
+			if (e.getBarMax() > confidenceThreshold) {
+				if (i > 0 || (bucketsIgnored > 1)) {
+					return -bucketSize * (i - 1);
+				} else {
+					bucketsIgnored++;
+				}
+			}
 		}
+		
+		System.err.println("Could not determine cutoff. Will return NaN.");
+		return Double.NaN;
 	}
-	
-	private static class HEl {
-		private final int bucket;
-		private final double weight;
-		
-		HEl(int bucket, double weight) {
-			this.bucket = bucket;
-			this.weight = weight;
-		}
-		
-		public int bucket() {
-			return bucket;
-		}
-		
-		public double weight() {
-			return weight;
-		}
-	}
+
 }

@@ -1,16 +1,18 @@
 package net.derkholm.nmica.model.motif.extra;
 
-import net.derkholm.nmica.extra.app.ScoredSequenceHit;
+import net.derkholm.nmica.model.ScoredSequenceHit;
+
 
 public class ScoredString implements ScoredSequenceHit {
 	
 	protected String string;
 	protected double score;
 	protected double bgScore;
+	protected int bucket;
 	
 	public ScoredString(String string, double score) {
 		this.string = string;
-		this.score = score;
+		this.score = Math.abs(score);
 	}
 
 	public String getString() {
@@ -34,15 +36,23 @@ public class ScoredString implements ScoredSequenceHit {
 	}
 
 	public void setBgScore(double bgScore) {
-		this.bgScore = bgScore;
+		this.bgScore = Math.abs(bgScore);
 	}
 
 	public double score() {
 		return score;
 	}
 
-	public double weight() {
-		return bgScore;
+	public double hitWeight() {
+		return Math.abs(bgScore);
+	}
+
+	public void setBucket(int bucket) {
+		this.bucket = bucket;
+	}
+
+	public int bucket() {
+		return this.bucket;
 	}
 	
 	
