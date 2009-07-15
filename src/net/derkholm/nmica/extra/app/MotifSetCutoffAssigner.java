@@ -54,6 +54,7 @@ public class MotifSetCutoffAssigner {
 	private Hashtable<Motif, List<MotifHitRecord>> motifHitMap = new Hashtable<Motif, List<MotifHitRecord>>();
 	private Hashtable<Motif, List<ScoredString>> enumSeqMap = new Hashtable<Motif,List<ScoredString>>();
 	private MosaicSequenceBackground backgroundModel;
+	private double defaultThreshold;
 	
 	@Option(help = "Input motifs")
 	public void setMotifs(File motifFile) {
@@ -70,8 +71,13 @@ public class MotifSetCutoffAssigner {
 	}
 
 	@Option(help = "Suboptimal score threshold (default=-10.0)", userLevel = UserLevel.DEBUG, optional = true)
-	public void setMinThreshold(double threshold) {
+	public void setSuboptimalThreshold(double threshold) {
 		this.minThreshold = threshold;
+	}
+	
+	@Option(help = "Default score threshold applied to motifs for which threshold could not be determined (an annotation will also be added)")
+	public void setDefaultThreshold(double d) {
+		this.defaultThreshold = d;
 	}
 
 	@Option(help="Background model in the NMICA background model XML format")
@@ -174,6 +180,10 @@ public class MotifSetCutoffAssigner {
 			double cutoff = histogramComparitor
 								.determineCutoff(confidenceThreshold);
 			System.err.printf("Cutoff for %s:%f%n",m.getName(),cutoff);
+			if (Double.isNaN(cutoff)) {
+				m.setThreshold(this.defaultThreshold);
+				m.getAnnotation().setProperty("default_threshold_used", "" + this.defaultThreshold);
+			}
 			m.setThreshold(cutoff);
 		}
 		
