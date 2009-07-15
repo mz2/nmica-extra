@@ -75,7 +75,8 @@ public class MotifSetCutoffAssigner {
 		this.minThreshold = threshold;
 	}
 	
-	@Option(help = "Default score threshold applied to motifs for which threshold could not be determined (an annotation will also be added)")
+	@Option(help = "Default score threshold applied to motifs for which threshold could not be determined " +
+			"(an annotation 'default_threshold_used' will also be added to these cases)", optional = true)
 	public void setDefaultThreshold(double d) {
 		this.defaultThreshold = d;
 	}
