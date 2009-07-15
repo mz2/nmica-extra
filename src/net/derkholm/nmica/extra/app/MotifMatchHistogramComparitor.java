@@ -23,7 +23,7 @@ import org.bjv2.util.cli.Option;
 @NMExtraApp(launchName="nmhistcomp", vm=VirtualMachine.SERVER)
 public class MotifMatchHistogramComparitor {
 	private double bucketSize = 1.0;
-	private double confidence = 0.01;
+	private double confidence = 0.05;
 	private File theoreticalFile;
 	private File realFile;
 	private List<HistogramElementIFace> reference;
@@ -132,7 +132,7 @@ public class MotifMatchHistogramComparitor {
 			
 			if (e.getBarMax() > confidenceThreshold) {
 				if (i > 0 || (bucketsIgnored > 1)) {
-					return -bucketSize * (i - 1);
+					return -bucketSize * (i);
 				} else {
 					bucketsIgnored++;
 				}
