@@ -1,12 +1,11 @@
 package net.derkholm.nmica.extra.app;
 
-import biobits.utils.IOTools;
-
 import java.io.BufferedReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 
 import org.biojava.bio.Annotation;
@@ -29,10 +28,10 @@ import org.biojava.bio.symbol.SymbolList;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
-@App(overview = "Get noncoding sequences from Ensembl for motif discovery", 
-		generateStub = true)
-// @NMExtraApp(launchName = "nmgetensemblseq", 
-//			vm = VirtualMachine.SERVER)
+import biobits.utils.IOTools;
+
+@App(overview = "Get noncoding sequences from Ensembl for motif discovery", generateStub = true)
+@NMExtraApp(launchName = "nmensemblseq", vm = VirtualMachine.SERVER)
 public class RetrieveEnsemblSequences {
 	
 	/* Sequence region processing */
