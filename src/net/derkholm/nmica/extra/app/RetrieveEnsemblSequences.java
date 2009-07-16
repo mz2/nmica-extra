@@ -1,22 +1,45 @@
 package net.derkholm.nmica.extra.app;
 
-import net.derkholm.nmica.build.NMExtraApp;
+import biobits.utils.IOTools;
+
+import java.io.BufferedReader;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import net.derkholm.nmica.build.VirtualMachine;
 
+import org.biojava.bio.Annotation;
+import org.biojava.bio.seq.DNATools;
+import org.biojava.bio.seq.Feature;
+import org.biojava.bio.seq.FeatureFilter;
+import org.biojava.bio.seq.FeatureHolder;
+import org.biojava.bio.seq.Sequence;
+import org.biojava.bio.seq.StrandedFeature;
+import org.biojava.bio.seq.db.SequenceDB;
+import org.biojava.bio.seq.db.ensembl.EnsemblConnection;
+import org.biojava.bio.seq.impl.SimpleSequence;
+import org.biojava.bio.seq.io.FastaFormat;
+import org.biojava.bio.symbol.Location;
+import org.biojava.bio.symbol.LocationTools;
+import org.biojava.bio.symbol.RangeLocation;
+import org.biojava.bio.symbol.SimpleSymbolList;
+import org.biojava.bio.symbol.Symbol;
+import org.biojava.bio.symbol.SymbolList;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
 @App(overview = "Get noncoding sequences from Ensembl for motif discovery", 
 		generateStub = true)
-@NMExtraApp(launchName = "nmgetensemblseq", 
-			vm = VirtualMachine.SERVER)
+// @NMExtraApp(launchName = "nmgetensemblseq", 
+//			vm = VirtualMachine.SERVER)
 public class RetrieveEnsemblSequences {
 	
 	/* Sequence region processing */
 	private boolean repeatMask = true;
 	private boolean excludeTranslations = true;
-	private int featherTranslationsBy = 0;
-	private int featherRegionsBy = 0;
+	private int featherTranslationsBy;
+	private int featherRegionsBy;
 
 	/* Sequence filtering properties 
 	 * id = list of identifiers
@@ -61,13 +84,13 @@ public class RetrieveEnsemblSequences {
 		this.ids = ids;
 	}
 	
-	@Option(help="Identifier type to use when filtering sequences identifiers (default = ensembl_gene, possible values: ensembl_gene|stable_id)")
+	@Option(help="Identifier type to use when filtering sequences identifiers (default = ensembl_gene, possible values: ensembl_gene|stable_id)", optional=true)
 	public void setIdType(String idType) {
 		this.idType = idType;
 	}
 	
 	@Option(help="Get three prime UTR sequences. " +
-			"Example: '-threePrimeUTR -200 200' gets you sequence regions " +
+			"Example: '-threePrimeUTR 200 200' gets you sequence regions " +
 			"from 200bp upstream to 200bp downstream of transcription " +
 			"start sites.", optional=true)
 	public void setThreePrimeUTR(String[] coordStrs) {
@@ -81,7 +104,7 @@ public class RetrieveEnsemblSequences {
 	}
 	
 	@Option(help="Get five prime UTR sequences. " +
-			"Example: '-threePrimeUTR -200 200' gets you sequence regions " +
+			"Example: '-threePrimeUTR 200 200' gets you sequence regions " +
 			"from 200bp upstream to 200bp downstream of transcription " +
 			"start sites.", optional=true)
 	public void setFivePrimeUTR(String[] coordStrs) {
@@ -125,11 +148,103 @@ public class RetrieveEnsemblSequences {
 	}
 	
 	public void main(String[] argv) throws Exception {
-		String dbURL = String.format("jdbc:mysql:/%s:%d/%s", this.host, this.port, this.database);
-		//EnsemblConnection conn = new EnsemblConnection(dbURL, username, password, schemaVersion);
+		String dbURL = String.format("jdbc:mysql://%s:%d/%s", this.host, this.port, this.database);
 		
-		System.out.println(">foo\nactacatcatgggacata\n");
+		EnsemblConnection conn = new EnsemblConnection(dbURL, username, password, schemaVersion);
+		SequenceDB seqDB = conn.getDefaultSequenceDB();
 		
-		//sequence retrieval Ensembl magic goes here.
+		BufferedReader br = IOTools.inputBufferedReader(argv);
+		
+
+		for (String gene : ids) {
+			FeatureHolder transcripts = seqDB.filter(new FeatureFilter.ByAnnotation("ensembl.gene_id", gene));
+			Sequence chr = null;
+			boolean reverse = false;
+			List<Location> dumpLocs = new ArrayList<Location>();
+			for (Iterator<?> fi = transcripts.features(); fi.hasNext(); ) {
+				StrandedFeature transcript = (StrandedFeature) fi.next();
+				chr = transcript.getSequence();
+				if (transcript.getStrand() != StrandedFeature.NEGATIVE) {
+					int start = transcript.getLocation().getMin();
+					int end = transcript.getLocation().getMax();
+					if (fivePrimeBegin > 0 || fivePrimeEnd > 0) {
+						dumpLocs.add(new RangeLocation(start - fivePrimeBegin, start + fivePrimeEnd));
+					}
+					if (threePrimeBegin > 0 || threePrimeEnd > 0) {
+						dumpLocs.add(new RangeLocation(end - threePrimeBegin, end + threePrimeEnd));
+					}
+				} else {
+					int start = transcript.getLocation().getMax();
+					int end = transcript.getLocation().getMin();
+					if (fivePrimeBegin > 0 || fivePrimeEnd > 0) {
+						dumpLocs.add(new RangeLocation(start - fivePrimeEnd, start + fivePrimeBegin));
+					}
+					if (threePrimeBegin > 0 || threePrimeEnd > 0) {
+						dumpLocs.add(new RangeLocation(end - threePrimeEnd, end + threePrimeBegin));
+					}
+					reverse = true;
+				}
+			}
+			
+			if (chr == null) {
+				System.err.printf("Not dumping anything for %s%n", gene);
+				continue;
+			} 
+			
+			Location dumpLoc = LocationTools.union(dumpLocs);
+			
+			if (excludeTranslations) {
+				FeatureHolder translations = chr.filter(new FeatureFilter.And(new FeatureFilter.ByType("translation"), new FeatureFilter.OverlapsLocation(dumpLoc)));
+				List<Location> transLocs = new ArrayList<Location>();
+				for (Iterator<?> i = translations.features(); i.hasNext(); ) {
+					transLocs.add(((Feature) i.next()).getLocation());
+				}
+				Location transMask = feather(LocationTools.union(transLocs), featherTranslationsBy);
+				dumpLoc = LocationTools.subtract(dumpLoc, transMask);
+			}
+			
+			Location mask = Location.empty;
+			if (repeatMask) {
+				FeatureHolder repeats = chr.filter(new FeatureFilter.And(new FeatureFilter.ByType("repeat"), new FeatureFilter.OverlapsLocation(dumpLoc)));
+				List<Location> repLocs = new ArrayList<Location>();
+				for (Iterator<?> i = repeats.features(); i.hasNext(); ) {
+					repLocs.add(((Feature) i.next()).getLocation());
+				}
+				mask = LocationTools.union(repLocs);
+			}
+			
+			for (Iterator<?> bi = dumpLoc.blockIterator(); bi.hasNext(); ) {
+				Location bloc = (Location) bi.next();
+				if (bloc.getMax() - bloc.getMin() < 20) {
+					continue;
+				} else {
+					List<Symbol> sl = new ArrayList<Symbol>();
+					for (int i = bloc.getMin(); i <= bloc.getMax(); ++i) {
+						if (!mask.contains(i)) {
+							sl.add(chr.symbolAt(i));
+						} else {
+							sl.add(DNATools.n());
+						}
+					}
+					SymbolList ssl = new SimpleSymbolList(DNATools.getDNA(), sl);
+					if (reverse) {
+						ssl = DNATools.reverseComplement(ssl);
+					}
+					Sequence dump = new SimpleSequence(ssl, null, String.format("%s_%s_%d_%d", gene, chr.getName(), bloc.getMin(), bloc.getMax()), Annotation.EMPTY_ANNOTATION);
+					new FastaFormat().writeSequence(dump, System.out);
+				}
+			}
+			
+		}
+	}
+	
+	private Location feather(Location l, int amount) {
+		List<Location> spans = new ArrayList<Location>();
+		for (Iterator<?> bi = l.blockIterator(); bi.hasNext(); ) {
+			Location bloc = (Location) bi.next();
+			spans.add(new RangeLocation(bloc.getMin() - amount, bloc.getMax() + amount));
+		}
+		return LocationTools.union(spans);
 	}
 }
+
