@@ -1,9 +1,14 @@
 package net.derkholm.nmica.extra.app;
 
 import java.io.BufferedReader;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
+import javax.sql.DataSource;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
@@ -25,6 +30,7 @@ import org.biojava.bio.symbol.RangeLocation;
 import org.biojava.bio.symbol.SimpleSymbolList;
 import org.biojava.bio.symbol.Symbol;
 import org.biojava.bio.symbol.SymbolList;
+import org.biojava.utils.JDBCPooledDataSource;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -78,7 +84,7 @@ public class RetrieveEnsemblSequences {
 		this.featherRegionsBy = i;
 	}
 	
-	@Option(help="Filter returned sequence set based on identifiers")
+	@Option(help="Filter returned sequence set based on identifiers", optional = true)
 	public void setFilterById(String[] ids) {
 		this.ids = ids;
 	}
@@ -136,7 +142,7 @@ public class RetrieveEnsemblSequences {
 		this.port = port;
 	}
 		
-	@Option(help="Ensembl database to retrieve sequences from (e.g. 'danio_rerio_core_54_8')", optional=true)
+	@Option(help="Ensembl database to retrieve sequences from (e.g. 'danio_rerio_core_54_8')")
 	public void setDatabase(String db) {
 		this.database = db;
 	}
@@ -154,7 +160,28 @@ public class RetrieveEnsemblSequences {
 		
 		BufferedReader br = IOTools.inputBufferedReader(argv);
 		
-
+		if (ids == null) {
+			List<String> idsList = new ArrayList<String>();
+			DataSource db = JDBCPooledDataSource.getDataSource(
+					"org.gjt.mm.mysql.Driver",
+	                dbURL,
+	                username,
+	                password);
+			Connection con = db.getConnection();
+			PreparedStatement get_geneStableId = con.prepareStatement(
+					"select stable_id from gene_stable_id;"
+		    );
+			
+			ResultSet rs = get_geneStableId.executeQuery();
+			
+			while (rs.next()) {
+				idsList.add(rs.getString(1));
+			}
+			rs.close();
+			
+			ids = idsList.toArray(new String[idsList.size()]);
+		}
+		
 		for (String gene : ids) {
 			FeatureHolder transcripts = seqDB.filter(new FeatureFilter.ByAnnotation("ensembl.gene_id", gene));
 			Sequence chr = null;

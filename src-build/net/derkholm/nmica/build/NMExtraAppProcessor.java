@@ -84,6 +84,10 @@ public class NMExtraAppProcessor implements AnnotationProcessor {
 								"${NMICA_HOME}/lib/wstx-lgpl-3.0.2.jar:" +
 								"${NMICA_HOME}/lib/nmica.jar:" +
 								"${APP_DIR}/lib/biojava-ensembl.jar:" +
+								"${APP_DIR}/lib/commons-dbcp-1.2.2.jar:" + 
+								"${APP_DIR}/lib/commons-pool-1.1.jar:" +
+								"${APP_DIR}/lib/commons-collections-2.1.jar:" + 
+								"${APP_DIR}/lib/mysql-connector-java-3.1.14-bin.jar:" +
 								"${APP_DIR}/lib/nmica-extra.jar%n");
 						pw.printf("%n");
 						pw.printf("${JAVA_CMD} ${JVM} ${JVMOPTS} -classpath ${APP_CLASSPATH} -Djava.library.path=${NMICA_HOME}/native -Dchangeless.no_dire_warning=true ${MAINCLASS} \"$@\"%n");

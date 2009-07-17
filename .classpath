@@ -14,5 +14,6 @@
 	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/bjv2-core-0.1.jar"/>
 	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/colt.jar"/>
 	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/stax-api-1.0.1.jar"/>
+	<classpathentry kind="lib" path="lib/biojava-ensembl.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
