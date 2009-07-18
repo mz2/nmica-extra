@@ -1,6 +1,9 @@
 package net.derkholm.nmica.extra.app;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -64,6 +67,7 @@ public class RetrieveEnsemblSequences {
 	private String database;
 	private int port = 5306;
 	private int schemaVersion = 54;
+	private File outputFile;
 
 	@Option(help = "Repeat mask the sequences (default=true)", optional = true)
 	public void setRepeatMask(boolean b) {
@@ -95,6 +99,11 @@ public class RetrieveEnsemblSequences {
 		this.idType = idType;
 	}
 
+	@Option(help = "Output FASTA file", optional=true)
+	public void setOut(File f) {
+		this.outputFile = f;
+	}
+	
 	@Option(help = "Get three prime UTR sequences. "
 			+ "Example: '-threePrimeUTR 200 200' gets you sequence regions "
 			+ "from 200bp upstream to 200bp downstream of transcription "
@@ -277,7 +286,13 @@ public class RetrieveEnsemblSequences {
 							.format("%s_%s_%d_%d", gene, chr.getName(), bloc
 									.getMin(), bloc.getMax()),
 							Annotation.EMPTY_ANNOTATION);
-					new FastaFormat().writeSequence(dump, System.out);
+					
+					
+					if (outputFile == null) {
+						new FastaFormat().writeSequence(dump, System.out);						
+					} else {
+						new FastaFormat().writeSequence(dump, new PrintStream(new FileOutputStream(outputFile)));
+					}
 				}
 			}
 
