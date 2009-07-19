@@ -7,6 +7,7 @@ import java.io.PrintStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -34,8 +35,11 @@ import org.biojava.bio.symbol.SimpleSymbolList;
 import org.biojava.bio.symbol.Symbol;
 import org.biojava.bio.symbol.SymbolList;
 import org.biojava.utils.JDBCPooledDataSource;
+import org.biojava.utils.xml.Initializable;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
+
+import com.sun.tools.javac.code.Type;
 
 import biobits.utils.IOTools;
 
@@ -68,6 +72,11 @@ public class RetrieveEnsemblSequences {
 	private int port = 5306;
 	private int schemaVersion = 54;
 	private File outputFile;
+	private Connection connection;
+	private PreparedStatement get_geneStableId;
+	private PreparedStatement get_xref;
+	private PreparedStatement get_gsiForTranscript;
+	private PreparedStatement get_gsiForTranslation;
 
 	@Option(help = "Repeat mask the sequences (default=true)", optional = true)
 	public void setRepeatMask(boolean b) {
@@ -94,7 +103,7 @@ public class RetrieveEnsemblSequences {
 		this.ids = ids;
 	}
 
-	@Option(help = "Identifier type to use when filtering sequences identifiers (default = ensembl_gene, possible values: ensembl_gene|stable_id)", optional = true)
+	@Option(help = "Identifier type to use when filtering sequences identifiers (default = ensembl_gene, possible values: ensembl_gene|stable_id|display_label)", optional = true)
 	public void setIdType(String idType) {
 		this.idType = idType;
 	}
@@ -117,8 +126,8 @@ public class RetrieveEnsemblSequences {
 			System.exit(1);
 		}
 
-		this.threePrimeBegin = Integer.parseInt(coordStrs[0]);
-		this.threePrimeEnd = Integer.parseInt(coordStrs[1]);
+		this.threePrimeBegin = Integer.parseInt(coordStrs[0].replace("n", "-"));
+		this.threePrimeEnd = Integer.parseInt(coordStrs[1].replace("n", "-"));
 	}
 
 	@Option(help = "Get five prime UTR sequences. "
@@ -134,8 +143,8 @@ public class RetrieveEnsemblSequences {
 			System.exit(2);
 		}
 
-		this.fivePrimeBegin = Integer.parseInt(coordStrs[0]);
-		this.fivePrimeEnd = Integer.parseInt(coordStrs[1]);
+		this.fivePrimeBegin = Integer.parseInt(coordStrs[0].replace("n", "-"));
+		this.fivePrimeEnd = Integer.parseInt(coordStrs[1].replace("n","-"));
 	}
 
 	@Option(help = "Ensembl username (default=anonymous)", optional = true)
@@ -169,8 +178,11 @@ public class RetrieveEnsemblSequences {
 	}
 
 	public void main(String[] argv) throws Exception {
-		String dbURL = String.format("jdbc:mysql://%s:%d/%s", this.host,
-				this.port, this.database);
+		this.initPreparedStatements();
+		String dbURL = String.format("jdbc:mysql://%s:%d/%s", 
+				this.host,
+				this.port, 
+				this.database);
 
 		EnsemblConnection conn = new EnsemblConnection(dbURL, username,
 				password, schemaVersion);
@@ -192,10 +204,19 @@ public class RetrieveEnsemblSequences {
 				idsList.add(rs.getString(1));
 			}
 			rs.close();
-
 			ids = idsList.toArray(new String[idsList.size()]);
 		}
 
+		if (!this.idType.equals("ensembl_gene")) {
+			List<String> idList = new ArrayList<String>();
+			for (String str : ids) {
+				String ensId = ensemblIDForGeneName(str);
+				idList .add(ensId);
+				System.err.printf("%s -> %s",str, ensId);
+			}
+			ids = idList.toArray(new String[idList.size()]);
+		}
+		
 		for (String gene : ids) {
 			System.err.println("" + gene);
 			FeatureHolder transcripts = seqDB
@@ -307,5 +328,102 @@ public class RetrieveEnsemblSequences {
 					+ amount));
 		}
 		return LocationTools.union(spans);
+	}
+	
+	public Connection connection() throws Exception {
+		if (this.connection == null) {
+			DataSource db = JDBCPooledDataSource.getDataSource(
+	                "org.gjt.mm.mysql.Driver",
+	                String.format("jdbc:mysql://%s:%d/%s", this.host,
+	        				this.port, this.database),
+	                username,
+	                password);
+			this.connection = db.getConnection();
+		}
+		return connection;
+	}
+
+	
+	
+	public String ensemblIDForGeneName(String name) throws SQLException {
+		{
+			get_geneStableId.setString(1, name);
+			ResultSet rs = get_geneStableId.executeQuery();
+			boolean success = rs.next();
+			rs.close();
+			if (success) {
+				return name;
+			}
+		}
+
+		{
+			get_xref.setString(1, name);
+			ResultSet rs = get_xref.executeQuery();
+			int tid = -1;
+			int tlid = -1;
+			while (rs.next()) {
+				int id = rs.getInt(1);
+				String type = rs.getString(2);
+				if (type.equalsIgnoreCase("transcript")) {
+					tid = id;
+				} else if (type.equalsIgnoreCase("translation")) {
+					tlid = id;
+				}
+			}
+			rs.close();
+			
+			if (tid > 0) {
+				get_gsiForTranscript.setInt(1, tid);
+				rs = get_gsiForTranscript.executeQuery();
+				rs.next();
+				String retString = rs.getString(1);
+				rs.close();
+				return retString;
+			} else if (tlid > 0) {
+				get_gsiForTranslation.setInt(1, tlid);
+				rs = get_gsiForTranslation.executeQuery();
+				rs.next();
+				String retString = rs.getString(1);
+				rs.close();
+				return retString;
+			} else {
+				return null;
+			}
+		}
+	}
+	
+	private void initPreparedStatements() throws SQLException, Exception {
+		this.get_geneStableId = connection().prepareStatement(
+				"select gene_id from gene_stable_id where stable_id = ?"
+	    );
+		
+		if (idType.equals("display_label")) {
+			this.get_xref = connection().prepareStatement(
+				"select ensembl_id, ensembl_object_type " +
+				"  from xref, object_xref " +
+				" where object_xref.xref_id = xref.xref_id and " +
+				"       xref.display_label = ?"
+			);
+		} else {
+			this.get_xref = connection().prepareStatement(
+					"select ensembl_id, ensembl_object_type " +
+					"  from xref, object_xref " +
+					" where object_xref.xref_id = xref.xref_id and " +
+					"       xref.dbprimary_acc = ?"
+		    );
+		}
+		this.get_gsiForTranscript = connection().prepareStatement(
+				"select stable_id " +
+				"  from gene_stable_id, transcript " +
+				" where gene_stable_id.gene_id = transcript.gene_id and " +
+				"       transcript.transcript_id = ?"
+		);
+		this.get_gsiForTranslation = connection().prepareStatement(
+				"select stable_id " +
+				"  from gene_stable_id, transcript, translation " +
+				" where gene_stable_id.gene_id = transcript.gene_id and " +
+				"       transcript.transcript_id = translation.transcript_id and " +
+				"       translation.translation_id = ?"
+		);
 	}
 }

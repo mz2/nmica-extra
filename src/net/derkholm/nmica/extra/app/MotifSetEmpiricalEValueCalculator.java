@@ -4,12 +4,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Random;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.matrix.Matrix2D;
 import net.derkholm.nmica.matrix.SimpleMatrix2D;
+import net.derkholm.nmica.model.motif.extra.ScoredHit;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 import net.derkholm.nmica.seq.WmTools;
@@ -40,13 +43,19 @@ public class MotifSetEmpiricalEValueCalculator {
 	private File seqs;
 	private int bootstraps = 10000;
 	private double pthresh = 1.0;
+
+	private boolean collectHits;
+
+	private ArrayList<ScoredHit> collectedHits;
+
+	private boolean positiveHits;
 	
 	@Option(help="Number of bootstraps", optional=true)
 	public void setBootstraps(int bootstraps) {
 		this.bootstraps = bootstraps;
 	}
 	
-	@Option(help="Probability threshold", optional=true)
+	@Option(help="Probability threshold (default = 1.0)", optional=true)
 	public void setThreshold(double d) {
 		this.pthresh = d;
 	}
@@ -58,9 +67,28 @@ public class MotifSetEmpiricalEValueCalculator {
 		this.motifs = MotifIOTools.loadMotifSetXML(min);
 	}
 
-	@Option(help="Sequences", optional=true)
+	@Option(help="Sequences to score", optional=true)
 	public void setSeqs(File seqs) {
 		this.seqs = seqs;
+	}
+	
+	public void setCollectHits(boolean b) {
+		this.collectHits = b;
+		if (collectHits) {
+			if (this.collectedHits == null) {
+				this.collectedHits = new ArrayList<ScoredHit>();
+			}
+		}
+	}
+	
+	public List<ScoredHit> collectedHits() {
+		return this.collectedHits;
+	}
+	
+	/* Only used when collectHits = true. Assigns a label to the hits 
+	 * (whether they're from the positive or the negative set) */
+	public void setPositiveHits(boolean b) {
+		this.positiveHits = b;
 	}
 
 	/**
@@ -95,7 +123,22 @@ public class MotifSetEmpiricalEValueCalculator {
 					}
 				}
 				
-				System.out.printf("%s\t%s\t%g\t%g\t%g%n", m.getName(), seq.getName(), max, (1.0 * gte) / bootstraps, Math.log10((1.0 * gte) / bootstraps));
+				if (!collectHits) {
+					System.out.printf("%s\t%s\t%g\t%g\t%g%n", 
+							m.getName(), 
+							seq.getName(), 
+							max, 
+							(1.0 * gte) / bootstraps, 
+							Math.log10((1.0 * gte) / bootstraps));					
+				} else {
+					collectedHits.add(
+						new ScoredHit(
+							m.getName(),
+							seq.getName(),
+							positiveHits,
+							max,
+							(1.0 * gte) / bootstraps));
+				}
 			}
 		}
 	}
