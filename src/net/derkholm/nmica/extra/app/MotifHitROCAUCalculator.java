@@ -54,8 +54,7 @@ public class MotifHitROCAUCalculator {
 		this.test = b;
 	}
 	
-	@Option(help=
-			"Input score list is in E-value format: motif \\t seq \\t eval", 
+	@Option(help="Input score list is in E-value format: motif \\t seq \\t eval", 
 			optional=true)
 	public void setEvalsRaw(boolean b) {
 		this.evalsRaw = b;
@@ -241,7 +240,8 @@ public class MotifHitROCAUCalculator {
 	public void main(String[] args)
 		throws Exception
 	{
-		if (motifs != null && positiveSeqs != null && negativeSeqs != null) {
+		if ((motifs != null) && (positiveSeqs != null) && (negativeSeqs != null)) {
+			System.err.println("Calculating e-values...");
 			MotifSetEmpiricalEValueCalculator eValueCalc = new MotifSetEmpiricalEValueCalculator();
 			eValueCalc.setBootstraps(this.bootstraps);
 			eValueCalc.setCollectHits(true);
@@ -250,17 +250,25 @@ public class MotifHitROCAUCalculator {
 			
 			eValueCalc.setPositiveHits(true);
 			eValueCalc.setSeqs(positiveSeqs);
+			System.err.println("Calculating positive hits...");
 			eValueCalc.calculate();
+			System.err.println("Filtering positive hits...");
 			this.setPositiveHits(new ArrayList<ScoredHit>(eValueCalc.collectedHits()));
 			
 			eValueCalc.clearCollectedHits();
+
+			
 			eValueCalc.setPositiveHits(false);
 			eValueCalc.setSeqs(negativeSeqs);
+			System.err.println("Calculating negative hits...");
 			eValueCalc.calculate();
+			System.err.println("Filtering negative hits...");
 			this.setNegativeHits(new ArrayList<ScoredHit>(eValueCalc.collectedHits()));
 			
 		} else if (positives != null && negatives != null) {
+			System.err.println("Filtering positive hits...");
 			this.setPositiveHits(read(positives, true));
+			System.err.println("Filtering negative hits...");
 			this.setNegativeHits(read(negatives, false));			
 		} else {
 			System.err.println(
