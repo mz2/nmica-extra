@@ -48,6 +48,7 @@ public class MotifHitROCAUCalculator {
 	private File negativeSeqs;
 	private File positives;
 	private File negatives;
+	private int threads;
 	
 	@Option(help="Permute labels again (test)", optional=true)
 	public void setPermuteLabels(boolean b) {
@@ -130,6 +131,15 @@ public class MotifHitROCAUCalculator {
 
 	private void setNegativeHits(List<ScoredHit> hits) {
 		this.negativeHits = filter(hits, false);
+	}
+	
+	@Option(help="Number of threads (default = 1)", optional = true)
+	public void setThreads(int threads) {
+		if (threads < 1) {
+			System.err.println("-threads needs to be >= 1");
+			System.exit(1);
+		}
+		this.threads = threads;
 	}
 	
 	private List<ScoredHit> filter(List<ScoredHit> hits, boolean label) {
@@ -243,6 +253,7 @@ public class MotifHitROCAUCalculator {
 		if ((motifs != null) && (positiveSeqs != null) && (negativeSeqs != null)) {
 			System.err.println("Calculating e-values...");
 			MotifSetEmpiricalEValueCalculator eValueCalc = new MotifSetEmpiricalEValueCalculator();
+			eValueCalc.setThreads(threads);
 			eValueCalc.setBootstraps(this.bootstraps);
 			eValueCalc.setCollectHits(true);
 			
