@@ -130,10 +130,10 @@ public class MotifHitROCAUCalculator {
 		this.negatives = f;
 	}
 	
-	@Option(help="Number of threads (default = 1)", optional = true)
 	private int threads = 1;
 	private ExecutorService threadPool;
-	
+
+	@Option(help="Number of threads (default = 1)", optional = true)
 	public void setThreads(int threads) {
 		if (threads < 1) {
 			System.err.println("-threads needs to be >= 1");
