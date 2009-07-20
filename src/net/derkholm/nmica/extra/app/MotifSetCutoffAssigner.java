@@ -157,8 +157,15 @@ public class MotifSetCutoffAssigner {
 
 		System.err.printf("Scanning motifs against sequences...%n");
 		
+		List<Future<Boolean>> scanFutures = new ArrayList<Future<Boolean>>();
 		for (Motif m : motifs) {
-			threadPool.execute(new ScanTask(m, motifHitMap,minThreshold));
+			scanFutures.add(threadPool.submit(new ScanTask(m, motifHitMap,minThreshold)));
+		}
+		for (Future<Boolean> sf : scanFutures) {
+			if (!sf.get().booleanValue()) {
+				System.err.println("Unexpected failure: one of the scanning tasks failed.");
+				System.exit(2);
+			}
 		}
 		
 		System.err.printf(
@@ -205,7 +212,7 @@ public class MotifSetCutoffAssigner {
 		threadPool.shutdown();
 	}
 	
-	private class ScanTask implements Runnable {
+	private class ScanTask implements Callable<Boolean> {
 		private final ConcurrentHashMap<Motif,List<MotifHitRecord>>  motifHitMap;
 		private final Motif motif;
 		private double minThreshold;
@@ -219,7 +226,7 @@ public class MotifSetCutoffAssigner {
 			this.minThreshold = minThreshold;
 		}
 		
-		public void run() {
+		public Boolean call() {
 			MotifScanner scanner = new MotifScanner();
 			scanner.setStoreHits(true);
 			scanner.setScoreThreshold(minThreshold);
@@ -227,7 +234,7 @@ public class MotifSetCutoffAssigner {
 				System.err.printf("Scanning sequences against %s%n...", motif.getName());
 				scanner.scan(sequences, new Motif[]{motif});
 			} catch (Exception e) {
-				throw new BioError("Scanning failed");
+				throw new BioError("Scanning failed for motif " + this.motif);
 			}
 			List<MotifHitRecord> hitRecords = scanner.hitRecords();
 			motifHitMap.put(motif, new ArrayList<MotifHitRecord>());
@@ -236,6 +243,8 @@ public class MotifSetCutoffAssigner {
 					motifHitMap.get(motif).add(rec);					
 				}
 			}
+			
+			return new Boolean(true);
 		}
 	}
 	
