@@ -232,6 +232,7 @@ public class MotifSetCutoffAssigner {
 				double minThreshold) throws FileNotFoundException, ChangeVetoException, NoSuchElementException, BioException {
 			this.motif = motif;
 			this.seqFile = seqFile;
+			
 			HashSequenceDB seqDB = sequences = new HashSequenceDB();
 			SequenceIterator si = SeqIOTools.readFastaDNA(new BufferedReader(new FileReader(seqFile)));
 			while (si.hasNext()) {sequences.addSequence(si.nextSequence());}
