@@ -85,18 +85,17 @@ public class MotifSetEmpiricalEValueCalculator {
 		return this.collectedHits;
 	}
 	
+	public void clearCollectedHits() {
+		this.collectedHits = new ArrayList<ScoredHit>();
+	}
+	
 	/* Only used when collectHits = true. Assigns a label to the hits 
 	 * (whether they're from the positive or the negative set) */
 	public void setPositiveHits(boolean b) {
 		this.positiveHits = b;
 	}
 
-	/**
-	 * @param args
-	 */
-	public void main(String[] args) 
-		throws Exception
-	{
+	public void calculate() throws Exception {
 		AlphabetIndex index = AlphabetManager.getAlphabetIndex(DNATools.getDNA());
 		
 		for (Motif m : motifs) {
@@ -141,6 +140,14 @@ public class MotifSetEmpiricalEValueCalculator {
 				}
 			}
 		}
+	}
+	/**
+	 * @param args
+	 */
+	public void main(String[] args) 
+		throws Exception
+	{
+		this.calculate();
 	}
 
 	private double maxScore(Scanner s, byte[] sin)
@@ -289,4 +296,6 @@ public class MotifSetEmpiricalEValueCalculator {
 	    }
 	    return bsl;
 	}
+
+
 }

@@ -3,6 +3,7 @@ package net.derkholm.nmica.extra.app;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -19,6 +20,8 @@ import java.util.TreeSet;
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.maths.MathsTools;
 import net.derkholm.nmica.model.motif.extra.ScoredHit;
+import net.derkholm.nmica.motif.Motif;
+import net.derkholm.nmica.motif.MotifIOTools;
 
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
@@ -39,7 +42,12 @@ public class MotifHitROCAUCalculator {
 	private List<ScoredHit> negativeHits;
 	private HashMap<String,List<ScoredHit>> motifPositiveHitMap = new HashMap<String,List<ScoredHit>>();
 	private HashMap<String,List<ScoredHit>> motifNegativeHitMap = new HashMap<String,List<ScoredHit>>();
-	private TreeSet<String> motifNames;
+	private Collection<String> motifNames;
+	private File motifs;
+	private File positiveSeqs;
+	private File negativeSeqs;
+	private File positives;
+	private File negatives;
 	
 	@Option(help="Permute labels again (test)", optional=true)
 	public void setPermuteLabels(boolean b) {
@@ -47,14 +55,13 @@ public class MotifHitROCAUCalculator {
 	}
 	
 	@Option(help=
-			"Input score list is in E-value format, " +
-			"but use raw score anyway", 
+			"Input score list is in E-value format: motif \\t seq \\t eval", 
 			optional=true)
 	public void setEvalsRaw(boolean b) {
 		this.evalsRaw = b;
 	}
 	
-	@Option(help="Input score list is in E-value format", 
+	@Option(help="Input score list is in E-value format: motif \\t seq \\t maxscore \\t eval", 
 			optional=true)
 	public void setEvals(boolean b) {
 		this.evals = b;
@@ -92,11 +99,37 @@ public class MotifHitROCAUCalculator {
 		}
 	}
 	
-	public void setPositiveHits(List<ScoredHit> hits) {
-		this.positiveHits = filter(hits, true);
+	@Option(help="Motif set file (optional - you can either give input with -motifs and -seqs or with )", optional=true)
+	public void setMotifs(File f) 
+		throws Exception {
+		this.motifs = f;
+	}
+
+	@Option(help="Positive sequences to score", optional=true)
+	public void setPositiveSeqs(File seqs) {
+		this.positiveSeqs = seqs;
+	}
+
+	@Option(help="Negative sequences to score", optional=true)
+	public void setNegativeSeqs(File seqs) {
+		this.positiveSeqs = seqs;
+	}
+
+	@Option(help="Positive hits. Default input format: motif \\t seq \\t maxscore \\t eval", optional=true)
+	public void setPositive(File f) {
+		this.positives = f;
 	}
 	
-	public void setNegativeHits(List<ScoredHit> hits) {
+	@Option(help="Negative hits. Default input format: motif \\t seq \\t maxscore \\t eval", optional=true)
+	public void setNegative(File f) {
+		this.negatives = f;
+	}
+	
+	private void setPositiveHits(List<ScoredHit> hits) {
+		this.positiveHits = filter(hits, true);
+	}
+
+	private void setNegativeHits(List<ScoredHit> hits) {
 		this.negativeHits = filter(hits, false);
 	}
 	
@@ -208,15 +241,46 @@ public class MotifHitROCAUCalculator {
 	public void main(String[] args)
 		throws Exception
 	{
-		List<ScoredHit> positiveHits = read(new File(args[0]), true);
-		List<ScoredHit> negativeHits = read(new File(args[1]), false);
-		
-		this.motifNames = new TreeSet<String>();
-		for (ScoredHit hit : positiveHits) {
-			motifNames.add(hit.getMotifName());
+		if (motifs != null && positiveSeqs != null && negativeSeqs != null) {
+			MotifSetEmpiricalEValueCalculator eValueCalc = new MotifSetEmpiricalEValueCalculator();
+			eValueCalc.setBootstraps(this.bootstraps);
+			eValueCalc.setCollectHits(true);
+			
+			eValueCalc.setMotifs(new FileReader(motifs));
+			
+			eValueCalc.setPositiveHits(true);
+			eValueCalc.setSeqs(positiveSeqs);
+			eValueCalc.calculate();
+			this.setPositiveHits(new ArrayList<ScoredHit>(eValueCalc.collectedHits()));
+			
+			eValueCalc.clearCollectedHits();
+			eValueCalc.setPositiveHits(false);
+			eValueCalc.setSeqs(negativeSeqs);
+			eValueCalc.calculate();
+			this.setNegativeHits(new ArrayList<ScoredHit>(eValueCalc.collectedHits()));
+			
+		} else if (positives != null && negatives != null) {
+			this.setPositiveHits(read(positives, true));
+			this.setNegativeHits(read(negatives, false));			
+		} else {
+			System.err.println(
+				"You have to either specify -motifs,-positiveSeqs,-negativeSeqs OR -positives,-negatives");
+			System.exit(1);
 		}
-		for (ScoredHit hit : negativeHits) {
-			motifNames.add(hit.getMotifName());
+		
+		if (motifs == null) {
+			this.motifNames = new TreeSet<String>();
+			for (ScoredHit hit : positiveHits) {
+				motifNames.add(hit.getMotifName());
+			}
+			for (ScoredHit hit : negativeHits) {
+				motifNames.add(hit.getMotifName());
+			}
+		} else {
+			List<String> motifNs = new ArrayList<String>();
+			Motif[] motifSet = MotifIOTools.loadMotifSetXML(new FileReader(motifs));
+			for (Motif m : motifSet) motifNs.add(m.getName());
+			motifNames = motifNs;
 		}
 		
 		motifPositiveHitMap = mapHitsToMotifs(positiveHits, motifNames);
