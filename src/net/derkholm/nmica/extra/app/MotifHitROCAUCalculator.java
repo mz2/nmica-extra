@@ -111,7 +111,7 @@ public class MotifHitROCAUCalculator {
 
 	@Option(help="Negative sequences to score", optional=true)
 	public void setNegativeSeqs(File seqs) {
-		this.positiveSeqs = seqs;
+		this.negativeSeqs = seqs;
 	}
 
 	@Option(help="Positive hits. Default input format: motif \\t seq \\t maxscore \\t eval", optional=true)
