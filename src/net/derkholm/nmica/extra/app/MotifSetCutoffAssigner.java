@@ -11,6 +11,7 @@ import java.io.OutputStream;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
@@ -31,9 +32,12 @@ import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 
 import org.biojava.bio.BioError;
+import org.biojava.bio.BioException;
 import org.biojava.bio.seq.SequenceIterator;
 import org.biojava.bio.seq.db.HashSequenceDB;
+import org.biojava.bio.seq.db.SequenceDB;
 import org.biojava.bio.seq.io.SeqIOTools;
+import org.biojava.utils.ChangeVetoException;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 import org.bjv2.util.cli.UserLevel;
@@ -55,7 +59,7 @@ public class MotifSetCutoffAssigner {
 	private File outputMotifFile = null; // when null, will output to original
 	// file
 	private double confidenceThreshold = 0.05;
-	private HashSequenceDB sequences;
+	private File sequences;
 	private ConcurrentHashMap<Motif, List<MotifHitRecord>> motifHitMap = new ConcurrentHashMap<Motif, List<MotifHitRecord>>();
 	private ConcurrentHashMap<Motif, List<ScoredString>> enumSeqMap = new ConcurrentHashMap<Motif,List<ScoredString>>();
 	private MosaicSequenceBackground backgroundModel;
@@ -69,12 +73,8 @@ public class MotifSetCutoffAssigner {
 	}
 
 	@Option(help = "Input sequences")
-	public void setSeqs(Reader r) throws Exception {
-		sequences = new HashSequenceDB();
-		SequenceIterator si = SeqIOTools.readFastaDNA(new BufferedReader(r));
-		while (si.hasNext()) {
-			sequences.addSequence(si.nextSequence());
-		}
+	public void setSeqs(File f) throws Exception {
+		sequences = f;
 	}
 
 	@Option(help = "Suboptimal score threshold (default=-10.0)", userLevel = UserLevel.DEBUG, optional = true)
@@ -159,7 +159,12 @@ public class MotifSetCutoffAssigner {
 		
 		List<Future<Boolean>> scanFutures = new ArrayList<Future<Boolean>>();
 		for (Motif m : motifs) {
-			scanFutures.add(threadPool.submit(new ScanTask(m, motifHitMap,minThreshold)));
+			
+			scanFutures.add(threadPool.submit(
+					new ScanTask(
+							m, 
+							sequences, 
+							motifHitMap,minThreshold)));
 		}
 		for (Future<Boolean> sf : scanFutures) {
 			if (!sf.get().booleanValue()) {
@@ -213,16 +218,24 @@ public class MotifSetCutoffAssigner {
 		MotifIOTools.writeMotifSetXML(os, motifs);
 	}
 	
-	private class ScanTask implements Callable<Boolean> {
+	private static class ScanTask implements Callable<Boolean> {
 		private final ConcurrentHashMap<Motif,List<MotifHitRecord>>  motifHitMap;
+		private File seqFile;
+		private HashSequenceDB sequences;
 		private final Motif motif;
 		private double minThreshold;
 		
 		public ScanTask(
 				Motif motif, 
+				File seqFile,
 				ConcurrentHashMap<Motif,List<MotifHitRecord>> motifHitMap,
-				double minThreshold) {
+				double minThreshold) throws FileNotFoundException, ChangeVetoException, NoSuchElementException, BioException {
 			this.motif = motif;
+			this.seqFile = seqFile;
+			HashSequenceDB seqDB = sequences = new HashSequenceDB();
+			SequenceIterator si = SeqIOTools.readFastaDNA(new BufferedReader(new FileReader(seqFile)));
+			while (si.hasNext()) {sequences.addSequence(si.nextSequence());}
+			
 			this.motifHitMap = motifHitMap;
 			this.minThreshold = minThreshold;
 		}
@@ -231,6 +244,7 @@ public class MotifSetCutoffAssigner {
 			MotifScanner scanner = new MotifScanner();
 			scanner.setStoreHits(true);
 			scanner.setScoreThreshold(minThreshold);
+			scanner.setFormat(MotifScanner.Format.GFF);
 			try {
 				System.err.printf("Scanning sequences against %s...%n", motif.getName());
 				scanner.scan(sequences, new Motif[]{motif});
