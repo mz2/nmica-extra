@@ -231,7 +231,7 @@ public class MotifSetCutoffAssigner {
 			scanner.setStoreHits(true);
 			scanner.setScoreThreshold(minThreshold);
 			try {
-				System.err.printf("Scanning sequences against %s%n...", motif.getName());
+				System.err.printf("Scanning sequences against %s...%n", motif.getName());
 				scanner.scan(sequences, new Motif[]{motif});
 			} catch (Exception e) {
 				throw new BioError("Scanning failed for motif " + this.motif);
