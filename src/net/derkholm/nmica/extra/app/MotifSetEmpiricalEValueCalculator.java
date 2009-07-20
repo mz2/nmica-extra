@@ -289,6 +289,10 @@ public class MotifSetEmpiricalEValueCalculator {
 			System.err.println("Retrieving hit list for " + i++ + "th entry");
 			this.collectedHits.addAll(hitList.get());
 		}
+		
+		System.err.println("Shutting down thread pool");
+		threadPool.shutdown();
+		System.err.println("Thread pool shutdown complete.");
 	}
 	
 	/**
