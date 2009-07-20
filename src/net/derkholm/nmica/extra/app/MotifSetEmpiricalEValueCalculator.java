@@ -112,7 +112,7 @@ public class MotifSetEmpiricalEValueCalculator {
 		this.threads = threads;
 	}
 	
-	private static class EValueTask implements Callable {
+	private static class EValueTask implements Callable<List<ScoredHit>> {
 		private Random r = new Random();
 		private final Motif motif;
 		private final File seqs;
