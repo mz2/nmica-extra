@@ -10,9 +10,9 @@ import java.io.FileReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -30,6 +30,7 @@ import net.derkholm.nmica.model.motif.MosaicSequenceBackground;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 
+import org.biojava.bio.BioError;
 import org.biojava.bio.seq.SequenceIterator;
 import org.biojava.bio.seq.db.HashSequenceDB;
 import org.biojava.bio.seq.io.SeqIOTools;
@@ -55,8 +56,8 @@ public class MotifSetCutoffAssigner {
 	// file
 	private double confidenceThreshold = 0.05;
 	private HashSequenceDB sequences;
-	private Hashtable<Motif, List<MotifHitRecord>> motifHitMap = new Hashtable<Motif, List<MotifHitRecord>>();
-	private Hashtable<Motif, List<ScoredString>> enumSeqMap = new Hashtable<Motif,List<ScoredString>>();
+	private ConcurrentHashMap<Motif, List<MotifHitRecord>> motifHitMap = new ConcurrentHashMap<Motif, List<MotifHitRecord>>();
+	private ConcurrentHashMap<Motif, List<ScoredString>> enumSeqMap = new ConcurrentHashMap<Motif,List<ScoredString>>();
 	private MosaicSequenceBackground backgroundModel;
 	private double defaultThreshold;
 	private int threads = 1;
@@ -147,23 +148,18 @@ public class MotifSetCutoffAssigner {
 			e.printStackTrace();
 		}
 
-		System.err.printf("Scanning motifs from against sequences...%n");
-		MotifScanner scanner = new MotifScanner();
-		scanner.setStoreHits(true);
-		scanner.setScoreThreshold(minThreshold);
-		scanner.scan(sequences, motifs);
-		List<MotifHitRecord> hitRecords = scanner.hitRecords();
-		for (Motif m : motifs) {
-			motifHitMap.put(m, new ArrayList<MotifHitRecord>());
-			for (MotifHitRecord rec : hitRecords) {
-				if (rec.getMotif() == m) {
-					motifHitMap.get(m).add(rec);					
-				}
-			}
+		if (this.threads > motifs.length) {
+			System.err.println("Specified number of threads is larger than the number of motifs in the input. " +
+					"Will use only " + motifs.length + " threads.");
 		}
+		this.threadPool = Executors.newFixedThreadPool(this.threads);
 		
-		hitRecords = null;
-		scanner = null;
+
+		System.err.printf("Scanning motifs against sequences...%n");
+		
+		for (Motif m : motifs) {
+			threadPool.execute(new ScanTask(m, motifHitMap,minThreshold));
+		}
 		
 		System.err.printf(
 			"Enumerating sequence words from background model " +
@@ -181,13 +177,6 @@ public class MotifSetCutoffAssigner {
 		weighter = null;
 		
 		System.err.println("Comparing expected and observed score histograms...");
-		
-		if (this.threads > motifs.length) {
-			System.err.println("Specified number of threads is larger than the number of motifs in the input. " +
-					"Will use only " + motifs.length + " threads.");
-		}
-		
-		this.threadPool = Executors.newFixedThreadPool(this.threads);
 		
 		List<Future<Motif>> motifFutures = new ArrayList<Future<Motif>>();
 		for (Motif m : motifs) {
@@ -214,6 +203,40 @@ public class MotifSetCutoffAssigner {
 		
 		MotifIOTools.writeMotifSetXML(os, motifs);
 		threadPool.shutdown();
+	}
+	
+	private class ScanTask implements Runnable {
+		private final ConcurrentHashMap<Motif,List<MotifHitRecord>>  motifHitMap;
+		private final Motif motif;
+		private double minThreshold;
+		
+		public ScanTask(
+				Motif motif, 
+				ConcurrentHashMap<Motif,List<MotifHitRecord>> motifHitMap,
+				double minThreshold) {
+			this.motif = motif;
+			this.motifHitMap = motifHitMap;
+			this.minThreshold = minThreshold;
+		}
+		
+		public void run() {
+			MotifScanner scanner = new MotifScanner();
+			scanner.setStoreHits(true);
+			scanner.setScoreThreshold(minThreshold);
+			try {
+				System.err.printf("Scanning sequences against %s%n...", motif.getName());
+				scanner.scan(sequences, new Motif[]{motif});
+			} catch (Exception e) {
+				throw new BioError("Scanning failed");
+			}
+			List<MotifHitRecord> hitRecords = scanner.hitRecords();
+			motifHitMap.put(motif, new ArrayList<MotifHitRecord>());
+			for (MotifHitRecord rec : hitRecords) {
+				if (rec.getMotif() == motif) {
+					motifHitMap.get(motif).add(rec);					
+				}
+			}
+		}
 	}
 	
 	private static class CutoffTask implements Callable<Motif> {
