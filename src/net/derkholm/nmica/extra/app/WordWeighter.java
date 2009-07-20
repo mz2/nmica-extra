@@ -11,10 +11,10 @@ import javax.xml.stream.XMLStreamReader;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
+import net.derkholm.nmica.model.analysis.ScoredString;
 import net.derkholm.nmica.model.motif.Mosaic;
 import net.derkholm.nmica.model.motif.MosaicIO;
 import net.derkholm.nmica.model.motif.MosaicSequenceBackground;
-import net.derkholm.nmica.model.motif.extra.ScoredString;
 
 import org.biojava.bio.dist.Distribution;
 import org.biojava.bio.seq.DNATools;

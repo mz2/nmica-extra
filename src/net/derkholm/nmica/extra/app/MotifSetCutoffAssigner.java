@@ -19,10 +19,10 @@ import javax.xml.stream.XMLStreamReader;
 import net.derkholm.nmica.apps.MotifScanner;
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.model.MotifHitRecord;
+import net.derkholm.nmica.model.analysis.ScoredString;
 import net.derkholm.nmica.model.motif.Mosaic;
 import net.derkholm.nmica.model.motif.MosaicIO;
 import net.derkholm.nmica.model.motif.MosaicSequenceBackground;
-import net.derkholm.nmica.model.motif.extra.ScoredString;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 

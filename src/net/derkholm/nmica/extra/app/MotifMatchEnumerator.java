@@ -9,7 +9,7 @@ import java.util.List;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
-import net.derkholm.nmica.model.motif.extra.ScoredString;
+import net.derkholm.nmica.model.analysis.ScoredString;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 

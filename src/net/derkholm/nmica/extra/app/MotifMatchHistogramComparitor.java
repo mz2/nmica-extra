@@ -11,9 +11,9 @@ import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.model.HistogramElementIFace;
 import net.derkholm.nmica.model.ScoredSequenceHit;
-import net.derkholm.nmica.model.motif.extra.BucketComparison;
-import net.derkholm.nmica.model.motif.extra.BucketComparisonElement;
-import net.derkholm.nmica.model.motif.extra.HistogramElement;
+import net.derkholm.nmica.model.analysis.BucketComparison;
+import net.derkholm.nmica.model.analysis.BucketComparisonElement;
+import net.derkholm.nmica.model.analysis.HistogramElement;
 
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;

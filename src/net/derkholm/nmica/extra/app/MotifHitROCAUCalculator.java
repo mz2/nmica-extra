@@ -16,10 +16,16 @@ import java.util.List;
 import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.maths.MathsTools;
-import net.derkholm.nmica.model.motif.extra.ScoredHit;
+import net.derkholm.nmica.model.analysis.MotifROCAUCSummary;
+import net.derkholm.nmica.model.analysis.ScoredHit;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 
@@ -48,7 +54,6 @@ public class MotifHitROCAUCalculator {
 	private File negativeSeqs;
 	private File positives;
 	private File negatives;
-	private int threads;
 	
 	@Option(help="Permute labels again (test)", optional=true)
 	public void setPermuteLabels(boolean b) {
@@ -126,6 +131,9 @@ public class MotifHitROCAUCalculator {
 	}
 	
 	@Option(help="Number of threads (default = 1)", optional = true)
+	private int threads = 1;
+	private ExecutorService threadPool;
+	
 	public void setThreads(int threads) {
 		if (threads < 1) {
 			System.err.println("-threads needs to be >= 1");
@@ -269,7 +277,6 @@ public class MotifHitROCAUCalculator {
 			this.setPositiveHits(new ArrayList<ScoredHit>(eValueCalc.collectedHits()));
 			
 			eValueCalc.clearCollectedHits();
-
 			
 			eValueCalc.setPositiveHits(false);
 			eValueCalc.setSeqs(negativeSeqs);
@@ -289,6 +296,7 @@ public class MotifHitROCAUCalculator {
 			System.exit(1);
 		}
 		
+
 		if (motifs == null) {
 			this.motifNames = new TreeSet<String>();
 			for (ScoredHit hit : positiveHits) {
@@ -303,48 +311,32 @@ public class MotifHitROCAUCalculator {
 			for (Motif m : motifSet) motifNs.add(m.getName());
 			motifNames = motifNs;
 		}
+		int motifCount = motifNames.size();
 		
 		motifPositiveHitMap = mapHitsToMotifs(positiveHits, motifNames);
 		motifNegativeHitMap = mapHitsToMotifs(negativeHits, motifNames);
 		
-		List<MotifROCAUCSummary> summaries = new ArrayList<MotifROCAUCSummary>();
+		List<Future<MotifROCAUCSummary>> summaryFutures = new ArrayList<Future<MotifROCAUCSummary>>();
+		
+		if (threads > motifCount) {
+			System.err.println("Specified number of threads is larger than the number of motifs in the input. " +
+					"Will use only " + motifCount + " threads.");
+		}
+		
+		threadPool = Executors.newFixedThreadPool(threads);
 		
 		for (String motifName : motifNames) {
 			List<ScoredHit> l = new ArrayList<ScoredHit>();
 			l.addAll(motifPositiveHitMap.get(motifName));
 			l.addAll(motifNegativeHitMap.get(motifName));
 			
-			int numTrue = 0, numFalse = 0;
-			for (ScoredHit s : l) {
-				if (s.isPositive()) {
-					++numTrue;
-				} else {
-					++numFalse;
-				}
-			}
-			
-			Collections.shuffle(l); // destabilize;
-			Collections.sort(l, new Comparator<ScoredHit>() {
-				public int compare(ScoredHit arg0, ScoredHit arg1) {
-					return MathsTools.sign(arg1.getScore() - arg0.getScore());
-				}
-			});
-			
-			if (test) {
-				Collections.shuffle(l);
-			}
-			double auc = rocAuc2(l, numTrue, numFalse);
-			int over = 0;
-			for (int b = 0; b < bootstraps; ++b) {
-				Collections.shuffle(l);
-				if (rocAuc2(l, numTrue, numFalse) >= auc) {
-					++over;
-				}
-			}
-			summaries.add(new MotifROCAUCSummary(motifName, auc, (1.0 * over) / bootstraps));
+			summaryFutures.add(threadPool.submit(new ROCAUCTask(motifName, l, bootstraps, test)));
 		}
 		
+		List<MotifROCAUCSummary> summaries = new ArrayList<MotifROCAUCSummary>();
+		for (Future<MotifROCAUCSummary> sum : summaryFutures) {summaries.add(sum.get());}
 		Collections.sort(summaries);
+		
 		for (MotifROCAUCSummary sum : summaries) {
 			System.out.printf(
 				"%s\t%g\t%g%n", 
@@ -352,82 +344,73 @@ public class MotifHitROCAUCalculator {
 				sum.getAuc(),
 				sum.getBootstrapFraction());
 		}
-		System.err.println("Done.");
+		
+		threadPool.shutdown();
 	}
 	
-	private double rocAuc(Collection<ScoredHit> l, int tot) {
-		int numSeen = 0;
-		int numTrue = 0;
-		double auc = 0.0;
-		for (ScoredHit sh : l) {
-			++numSeen;
-			if (sh.isPositive()) {
-				++numTrue;
-				auc += (1.0 / tot) * ((1.0 * numTrue) / numSeen);
-			}
-		}
-		return  auc;
-	}
-	
-	private double rocAuc2(Collection<ScoredHit> l, int trues, int falses) {
-		int numTrue = 0;
-		int numFalse = 0;
-		double auc = 0.0;
-		for (ScoredHit sh : l) {
-			if (sh.isPositive()) {
-				++numTrue;
-				auc += (1.0 / trues) * ((1.0 * numFalse) / falses);
-			} else {
-				++numFalse;
-			}
-		}
-		return  1.0 - auc;
-	}
-	
-	public class MotifROCAUCSummary implements Comparable {
+	private static class ROCAUCTask implements Callable<MotifROCAUCSummary> {
 		private String motifName;
-		private double auc;
-		private double bootstrapFraction;
-
-		public MotifROCAUCSummary(String motifName, double auc, double bootstrapFraction) {
+		private int bootstraps;
+		private final List<ScoredHit> hits;
+		private boolean test;
+		
+		public ROCAUCTask(String motifName, List<ScoredHit> hits, int numBootstraps, boolean test) {
+			this.hits = hits;
 			this.motifName = motifName;
-			this.auc = auc;
-			this.bootstrapFraction = bootstrapFraction;
+			this.bootstraps = numBootstraps;
+			this.test = test;
 		}
-
-		public String getMotifName() {
-			return motifName;
-		}
-
-		public void setMotifName(String motifName) {
-			this.motifName = motifName;
-		}
-
-		public double getAuc() {
-			return auc;
-		}
-
-		public void setAuc(double auc) {
-			this.auc = auc;
-		}
-
-		public double getBootstrapFraction() {
-			return bootstrapFraction;
-		}
-
-		public void setBootstrapFraction(double bootstrapFraction) {
-			this.bootstrapFraction = bootstrapFraction;
-		}
-
-		public int compareTo(Object o) {
-			if (!(o instanceof MotifROCAUCSummary)) {
-				throw new IllegalArgumentException(
-					"Trying to compare a MotifROCAUCSummary instance against a " + 
-					o.getClass().getCanonicalName());
+		
+		
+		public MotifROCAUCSummary call() throws Exception {
+			
+			
+			int numTrue = 0, numFalse = 0;
+			for (ScoredHit s : hits) {
+				if (s.isPositive()) {
+					++numTrue;
+				} else {
+					++numFalse;
+				}
 			}
 			
-			MotifROCAUCSummary sum = (MotifROCAUCSummary) o;
-			return Double.compare(this.getAuc(), sum.getAuc());
+			Collections.shuffle(hits); // destabilize;
+			Collections.sort(hits, new Comparator<ScoredHit>() {
+				public int compare(ScoredHit arg0, ScoredHit arg1) {
+					return MathsTools.sign(arg1.getScore() - arg0.getScore());
+				}
+			});
+			
+			if (test) {
+				Collections.shuffle(hits);
+			}
+			
+			double auc = rocAuc2(hits, numTrue, numFalse);
+			int over = 0;
+			for (int b = 0; b < bootstraps; ++b) {
+				Collections.shuffle(hits);
+				if (rocAuc2(hits, numTrue, numFalse) >= auc) {
+					++over;
+				}
+			}
+			return new MotifROCAUCSummary(motifName, auc, (1.0 * over) / bootstraps);
+		}
+		
+		private double rocAuc2(Collection<ScoredHit> l, int trues, int falses) {
+			int numTrue = 0;
+			int numFalse = 0;
+			double auc = 0.0;
+			for (ScoredHit sh : l) {
+				if (sh.isPositive()) {
+					++numTrue;
+					auc += (1.0 / trues) * ((1.0 * numFalse) / falses);
+				} else {
+					++numFalse;
+				}
+			}
+			return  1.0 - auc;
 		}
 	}
+	
+	
 }

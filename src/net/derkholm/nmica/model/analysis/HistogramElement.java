@@ -1,4 +1,4 @@
-package net.derkholm.nmica.model.motif.extra;
+package net.derkholm.nmica.model.analysis;
 
 import net.derkholm.nmica.model.HistogramElementIFace;
 

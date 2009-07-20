@@ -16,7 +16,7 @@ import java.util.concurrent.Future;
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.matrix.Matrix2D;
 import net.derkholm.nmica.matrix.SimpleMatrix2D;
-import net.derkholm.nmica.model.motif.extra.ScoredHit;
+import net.derkholm.nmica.model.analysis.ScoredHit;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 import net.derkholm.nmica.seq.WmTools;
@@ -210,7 +210,6 @@ public class MotifSetEmpiricalEValueCalculator {
 
 		public List<ScoredHit> call() throws Exception {
 			List<ScoredHit> hits = new ArrayList<ScoredHit>();
-			
 			Scanner fScanner = makeScanner(index, motif.getWeightMatrix());
 			Scanner rScanner = makeScanner(index, WmTools.reverseComplement(motif.getWeightMatrix()));
 			for (SequenceIterator si = SeqIOTools.readFastaDNA(new BufferedReader(new FileReader(seqs))); si.hasNext(); ) {
@@ -286,13 +285,10 @@ public class MotifSetEmpiricalEValueCalculator {
 		
 		int i = 0;
 		for (Future<List<ScoredHit>> hitList : scoredHitFutures) {
-			System.err.println("Retrieving hit list for " + i++ + "th entry");
 			this.collectedHits.addAll(hitList.get());
 		}
 		
-		System.err.println("Shutting down thread pool");
 		threadPool.shutdown();
-		System.err.println("Thread pool shutdown complete.");
 	}
 	
 	/**
