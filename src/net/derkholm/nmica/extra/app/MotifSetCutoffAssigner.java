@@ -55,6 +55,7 @@ public class MotifSetCutoffAssigner {
 	private Hashtable<Motif, List<ScoredString>> enumSeqMap = new Hashtable<Motif,List<ScoredString>>();
 	private MosaicSequenceBackground backgroundModel;
 	private double defaultThreshold;
+	private int threads;
 	
 	@Option(help = "Input motifs")
 	public void setMotifs(File motifFile) {
@@ -142,10 +143,10 @@ public class MotifSetCutoffAssigner {
 			motifHitMap.put(m, new ArrayList<MotifHitRecord>());
 			for (MotifHitRecord rec : hitRecords) {
 				if (rec.getMotif() == m) {
-					System.err.println("Added " + rec);
 					motifHitMap.get(m).add(rec);					
 				}
 			}
+			System.err.printf("Number of hits for motif %s:%i%n",motifHitMap.get(m).size());
 		}
 		
 		hitRecords = null;
