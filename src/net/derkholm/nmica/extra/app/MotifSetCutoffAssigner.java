@@ -238,12 +238,14 @@ public class MotifSetCutoffAssigner {
 				throw new BioError("Scanning failed for motif " + this.motif);
 			}
 			List<MotifHitRecord> hitRecords = scanner.hitRecords();
-			motifHitMap.put(motif, new ArrayList<MotifHitRecord>());
+			
 			for (MotifHitRecord rec : hitRecords) {
+				System.err.println(rec.getScore());
 				if (rec.getMotif() == motif) {
-					motifHitMap.get(motif).add(rec);					
+					hitRecords.add(rec);					
 				}
 			}
+			motifHitMap.put(motif, hitRecords);
 			
 			return new Boolean(true);
 		}
