@@ -130,6 +130,12 @@ public class MotifSetEmpiricalEValueCalculator {
 							(1.0 * gte) / bootstraps, 
 							Math.log10((1.0 * gte) / bootstraps));					
 				} else {
+					System.err.printf("%s\t%s\t%g\t%g\t%g%n", 
+							m.getName(), 
+							seq.getName(), 
+							max, 
+							(1.0 * gte) / bootstraps, 
+							Math.log10((1.0 * gte) / bootstraps));	
 					collectedHits.add(
 						new ScoredHit(
 							m.getName(),
