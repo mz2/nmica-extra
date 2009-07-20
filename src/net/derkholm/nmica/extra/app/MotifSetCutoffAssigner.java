@@ -10,13 +10,8 @@ import java.io.FileReader;
 import java.io.OutputStream;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
@@ -31,13 +26,9 @@ import net.derkholm.nmica.model.motif.MosaicSequenceBackground;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 
-import org.biojava.bio.BioError;
-import org.biojava.bio.BioException;
 import org.biojava.bio.seq.SequenceIterator;
 import org.biojava.bio.seq.db.HashSequenceDB;
-import org.biojava.bio.seq.db.SequenceDB;
 import org.biojava.bio.seq.io.SeqIOTools;
-import org.biojava.utils.ChangeVetoException;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 import org.bjv2.util.cli.UserLevel;
@@ -59,13 +50,11 @@ public class MotifSetCutoffAssigner {
 	private File outputMotifFile = null; // when null, will output to original
 	// file
 	private double confidenceThreshold = 0.05;
-	private File sequences;
-	private ConcurrentHashMap<Motif, List<MotifHitRecord>> motifHitMap = new ConcurrentHashMap<Motif, List<MotifHitRecord>>();
-	private ConcurrentHashMap<Motif, List<ScoredString>> enumSeqMap = new ConcurrentHashMap<Motif,List<ScoredString>>();
+	private HashSequenceDB sequences;
+	private Hashtable<Motif, List<MotifHitRecord>> motifHitMap = new Hashtable<Motif, List<MotifHitRecord>>();
+	private Hashtable<Motif, List<ScoredString>> enumSeqMap = new Hashtable<Motif,List<ScoredString>>();
 	private MosaicSequenceBackground backgroundModel;
 	private double defaultThreshold;
-	private int threads = 1;
-	private ExecutorService threadPool;
 	
 	@Option(help = "Input motifs")
 	public void setMotifs(File motifFile) {
@@ -73,8 +62,12 @@ public class MotifSetCutoffAssigner {
 	}
 
 	@Option(help = "Input sequences")
-	public void setSeqs(File f) throws Exception {
-		sequences = f;
+	public void setSeqs(Reader r) throws Exception {
+		sequences = new HashSequenceDB();
+		SequenceIterator si = SeqIOTools.readFastaDNA(new BufferedReader(r));
+		while (si.hasNext()) {
+			sequences.addSequence(si.nextSequence());
+		}
 	}
 
 	@Option(help = "Suboptimal score threshold (default=-10.0)", userLevel = UserLevel.DEBUG, optional = true)
@@ -124,15 +117,6 @@ public class MotifSetCutoffAssigner {
 	public void setOut(File f) {
 		this.outputMotifFile = f;
 	}
-	
-	@Option(help="Number of threads (default = 1)", optional = true)
-	public void setThreads(int threads) {
-		if (threads < 1) {
-			System.err.println("-threads needs to be >= 1");
-			System.exit(1);
-		}
-		this.threads  = threads;
-	}
 
 	public void main(String[] args) throws Exception {
 		Motif[] motifs = null;
@@ -148,31 +132,23 @@ public class MotifSetCutoffAssigner {
 			e.printStackTrace();
 		}
 
-		if (this.threads > motifs.length) {
-			System.err.println("Specified number of threads is larger than the number of motifs in the input. " +
-					"Will use only " + motifs.length + " threads.");
-		}
-		this.threadPool = Executors.newFixedThreadPool(this.threads);
-		
-
-		System.err.printf("Scanning motifs against sequences...%n");
-		
-		List<Future<Boolean>> scanFutures = new ArrayList<Future<Boolean>>();
+		System.err.printf("Scanning motifs from against sequences...%n");
+		MotifScanner scanner = new MotifScanner();
+		scanner.setStoreHits(true);
+		scanner.setScoreThreshold(minThreshold);
+		scanner.scan(sequences, motifs);
+		List<MotifHitRecord> hitRecords = scanner.hitRecords();
 		for (Motif m : motifs) {
-			
-			scanFutures.add(threadPool.submit(
-					new ScanTask(
-							m, 
-							sequences, 
-							motifHitMap,minThreshold)));
-		}
-		for (Future<Boolean> sf : scanFutures) {
-			if (!sf.get().booleanValue()) {
-				System.err.println("Unexpected failure: one of the scanning tasks failed.");
-				System.exit(2);
+			motifHitMap.put(m, new ArrayList<MotifHitRecord>());
+			for (MotifHitRecord rec : hitRecords) {
+				if (rec.getMotif() == m) {
+					motifHitMap.get(m).add(rec);					
+				}
 			}
 		}
-		threadPool.shutdown();
+		
+		hitRecords = null;
+		scanner = null;
 		
 		System.err.printf(
 			"Enumerating sequence words from background model " +
@@ -190,23 +166,27 @@ public class MotifSetCutoffAssigner {
 		weighter = null;
 		
 		System.err.println("Comparing expected and observed score histograms...");
-		this.threadPool = Executors.newFixedThreadPool(this.threads);
-		List<Future<Motif>> motifFutures = new ArrayList<Future<Motif>>();
-		for (Motif m : motifs) {
-			threadPool.submit(new CutoffTask(
-					m, 
-					motifHitMap.get(m), 
-					enumSeqMap.get(m), 
-					bucketSize, 
-					confidenceThreshold, 
-					defaultThreshold));
-		}
+		MotifMatchHistogramComparitor histogramComparitor = new MotifMatchHistogramComparitor();
+		histogramComparitor.setBucketSize(bucketSize);
+		histogramComparitor.setConfidence(confidenceThreshold);
 		
-		for (Future<Motif> mf : motifFutures) {
-			Motif m = mf.get();
-			System.err.printf("%s\t%f%n",m.getName(),m.getThreshold());
+		for (Motif m : motifs) {
+			List<MotifHitRecord> realHits = motifHitMap.get(m);
+			List<ScoredString> expHits = enumSeqMap.get(m);
+			
+			histogramComparitor.setConfidence(confidenceThreshold);
+			histogramComparitor.setReal((List)realHits);
+			histogramComparitor.setReference((List)expHits);
+			
+			double cutoff = histogramComparitor
+								.determineCutoff(confidenceThreshold);
+			System.err.printf("Cutoff for %s:%f%n",m.getName(),cutoff);
+			if (Double.isNaN(cutoff)) {
+				m.setThreshold(this.defaultThreshold);
+				m.getAnnotation().setProperty("default_threshold_used", "" + this.defaultThreshold);
+			}
+			m.setThreshold(cutoff);
 		}
-		threadPool.shutdown();
 		
 		OutputStream os = null;
 		if (outputMotifFile == null) {
@@ -217,96 +197,4 @@ public class MotifSetCutoffAssigner {
 		
 		MotifIOTools.writeMotifSetXML(os, motifs);
 	}
-	
-	private static class ScanTask implements Callable<Boolean> {
-		private final ConcurrentHashMap<Motif,List<MotifHitRecord>>  motifHitMap;
-		private File seqFile;
-		private HashSequenceDB sequences;
-		private final Motif motif;
-		private double minThreshold;
-		
-		public ScanTask(
-				Motif motif, 
-				File seqFile,
-				ConcurrentHashMap<Motif,List<MotifHitRecord>> motifHitMap,
-				double minThreshold) throws FileNotFoundException, ChangeVetoException, NoSuchElementException, BioException {
-			this.motif = motif;
-			this.seqFile = seqFile;
-			
-			HashSequenceDB seqDB = sequences = new HashSequenceDB();
-			SequenceIterator si = SeqIOTools.readFastaDNA(new BufferedReader(new FileReader(seqFile)));
-			while (si.hasNext()) {sequences.addSequence(si.nextSequence());}
-			
-			this.motifHitMap = motifHitMap;
-			this.minThreshold = minThreshold;
-		}
-		
-		public Boolean call() {
-			MotifScanner scanner = new MotifScanner();
-			scanner.setStoreHits(true);
-			scanner.setScoreThreshold(minThreshold);
-			scanner.setFormat(MotifScanner.Format.GFF);
-			try {
-				System.err.printf("Scanning sequences against %s...%n", motif.getName());
-				scanner.scan(sequences, new Motif[]{motif});
-			} catch (Exception e) {
-				throw new BioError("Scanning failed for motif " + this.motif);
-			}
-			List<MotifHitRecord> hitRecords = scanner.hitRecords();
-			
-			for (MotifHitRecord rec : hitRecords) {
-				System.err.println(rec.getScore());
-				if (rec.getMotif() == motif) {
-					hitRecords.add(rec);					
-				}
-			}
-			motifHitMap.put(motif, hitRecords);
-			
-			return new Boolean(true);
-		}
-	}
-	
-	private static class CutoffTask implements Callable<Motif> {
-		private final MotifMatchHistogramComparitor histogramComparitor;
-		private final Motif motif;
-		private final List<MotifHitRecord> realHits;
-		private final List<ScoredString> expHits;
-		private final double confidenceThreshold;
-		private final double defaultThreshold;
-		
-		public CutoffTask(
-				Motif m,
-				List<MotifHitRecord> realHits,
-				List<ScoredString> expHits,
-				double bucketSize, 
-				double confidenceThreshold, 
-				double defaultThreshold) {
-			this.motif = m;
-			this.realHits = realHits;
-			this.expHits = expHits;
-			this.confidenceThreshold = confidenceThreshold;
-			this.defaultThreshold = defaultThreshold;
-			
-			this.histogramComparitor = new MotifMatchHistogramComparitor();
-			histogramComparitor.setBucketSize(bucketSize);
-			histogramComparitor.setConfidence(confidenceThreshold);
-			
-			histogramComparitor.setConfidence(confidenceThreshold);
-			histogramComparitor.setReal((List)realHits);
-			histogramComparitor.setReference((List)expHits);
-		}
-
-		public Motif call() throws Exception {
-			double cutoff = histogramComparitor.determineCutoff(confidenceThreshold);
-
-			if (Double.isNaN(cutoff)) {
-				System.err.printf("Setting default cutoff %f for motif %s%n",cutoff,motif.getName());
-				motif.setThreshold(this.defaultThreshold);
-				motif.getAnnotation().setProperty("default_threshold_used", "" + this.defaultThreshold);
-			}
-			motif.setThreshold(cutoff);
-			return motif;
-		}
-	}
-	
 }
