@@ -12,6 +12,10 @@ import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamReader;
@@ -55,6 +59,8 @@ public class MotifSetCutoffAssigner {
 	private Hashtable<Motif, List<ScoredString>> enumSeqMap = new Hashtable<Motif,List<ScoredString>>();
 	private MosaicSequenceBackground backgroundModel;
 	private double defaultThreshold;
+	private int threads = 1;
+	private ExecutorService threadPool;
 	
 	@Option(help = "Input motifs")
 	public void setMotifs(File motifFile) {
@@ -117,6 +123,15 @@ public class MotifSetCutoffAssigner {
 	public void setOut(File f) {
 		this.outputMotifFile = f;
 	}
+	
+	@Option(help="Number of threads (default = 1)", optional = true)
+	public void setThreads(int threads) {
+		if (threads < 1) {
+			System.err.println("-threads needs to be >= 1");
+			System.exit(1);
+		}
+		this.threads  = threads;
+	}
 
 	public void main(String[] args) throws Exception {
 		Motif[] motifs = null;
@@ -166,26 +181,28 @@ public class MotifSetCutoffAssigner {
 		weighter = null;
 		
 		System.err.println("Comparing expected and observed score histograms...");
-		MotifMatchHistogramComparitor histogramComparitor = new MotifMatchHistogramComparitor();
-		histogramComparitor.setBucketSize(bucketSize);
-		histogramComparitor.setConfidence(confidenceThreshold);
 		
+		if (this.threads > motifs.length) {
+			System.err.println("Specified number of threads is larger than the number of motifs in the input. " +
+					"Will use only " + motifs.length + " threads.");
+		}
+		
+		this.threadPool = Executors.newFixedThreadPool(this.threads);
+		
+		List<Future<Motif>> motifFutures = new ArrayList<Future<Motif>>();
 		for (Motif m : motifs) {
-			List<MotifHitRecord> realHits = motifHitMap.get(m);
-			List<ScoredString> expHits = enumSeqMap.get(m);
-			
-			histogramComparitor.setConfidence(confidenceThreshold);
-			histogramComparitor.setReal((List)realHits);
-			histogramComparitor.setReference((List)expHits);
-			
-			double cutoff = histogramComparitor
-								.determineCutoff(confidenceThreshold);
-			System.err.printf("Cutoff for %s:%f%n",m.getName(),cutoff);
-			if (Double.isNaN(cutoff)) {
-				m.setThreshold(this.defaultThreshold);
-				m.getAnnotation().setProperty("default_threshold_used", "" + this.defaultThreshold);
-			}
-			m.setThreshold(cutoff);
+			threadPool.submit(new CutoffTask(
+					m, 
+					motifHitMap.get(m), 
+					enumSeqMap.get(m), 
+					bucketSize, 
+					confidenceThreshold, 
+					defaultThreshold));
+		}
+		
+		for (Future<Motif> mf : motifFutures) {
+			Motif m = mf.get();
+			System.err.printf("%s\t%f%n",m.getName(),m.getThreshold());
 		}
 		
 		OutputStream os = null;
@@ -196,5 +213,50 @@ public class MotifSetCutoffAssigner {
 		}
 		
 		MotifIOTools.writeMotifSetXML(os, motifs);
+		threadPool.shutdown();
 	}
+	
+	private static class CutoffTask implements Callable<Motif> {
+		private final MotifMatchHistogramComparitor histogramComparitor;
+		private final Motif motif;
+		private final List<MotifHitRecord> realHits;
+		private final List<ScoredString> expHits;
+		private final double confidenceThreshold;
+		private final double defaultThreshold;
+		
+		public CutoffTask(
+				Motif m,
+				List<MotifHitRecord> realHits,
+				List<ScoredString> expHits,
+				double bucketSize, 
+				double confidenceThreshold, 
+				double defaultThreshold) {
+			this.motif = m;
+			this.realHits = realHits;
+			this.expHits = expHits;
+			this.confidenceThreshold = confidenceThreshold;
+			this.defaultThreshold = defaultThreshold;
+			
+			this.histogramComparitor = new MotifMatchHistogramComparitor();
+			histogramComparitor.setBucketSize(bucketSize);
+			histogramComparitor.setConfidence(confidenceThreshold);
+			
+			histogramComparitor.setConfidence(confidenceThreshold);
+			histogramComparitor.setReal((List)realHits);
+			histogramComparitor.setReference((List)expHits);
+		}
+
+		public Motif call() throws Exception {
+			double cutoff = histogramComparitor.determineCutoff(confidenceThreshold);
+
+			if (Double.isNaN(cutoff)) {
+				System.err.printf("Setting default cutoff %f for motif %s%n",cutoff,motif.getName());
+				motif.setThreshold(this.defaultThreshold);
+				motif.getAnnotation().setProperty("default_threshold_used", "" + this.defaultThreshold);
+			}
+			motif.setThreshold(cutoff);
+			return motif;
+		}
+	}
+	
 }
