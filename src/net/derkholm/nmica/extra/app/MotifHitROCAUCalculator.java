@@ -125,14 +125,6 @@ public class MotifHitROCAUCalculator {
 		this.negatives = f;
 	}
 	
-	private void setPositiveHits(List<ScoredHit> hits) {
-		this.positiveHits = filter(hits, true);
-	}
-
-	private void setNegativeHits(List<ScoredHit> hits) {
-		this.negativeHits = filter(hits, false);
-	}
-	
 	@Option(help="Number of threads (default = 1)", optional = true)
 	public void setThreads(int threads) {
 		if (threads < 1) {
@@ -141,6 +133,16 @@ public class MotifHitROCAUCalculator {
 		}
 		this.threads = threads;
 	}
+	
+	private void setPositiveHits(List<ScoredHit> hits) {
+		this.positiveHits = filter(hits, true);
+	}
+
+	private void setNegativeHits(List<ScoredHit> hits) {
+		this.negativeHits = filter(hits, false);
+	}
+	
+	
 	
 	private List<ScoredHit> filter(List<ScoredHit> hits, boolean label) {
 		List<ScoredHit> filteredHits = new ArrayList<ScoredHit>();
