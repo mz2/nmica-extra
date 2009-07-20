@@ -142,6 +142,7 @@ public class MotifSetCutoffAssigner {
 			motifHitMap.put(m, new ArrayList<MotifHitRecord>());
 			for (MotifHitRecord rec : hitRecords) {
 				if (rec.getMotif() == m) {
+					System.err.println("Added " + rec);
 					motifHitMap.get(m).add(rec);					
 				}
 			}
