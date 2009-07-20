@@ -8,6 +8,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.matrix.Matrix2D;
@@ -94,13 +98,121 @@ public class MotifSetEmpiricalEValueCalculator {
 	public void setPositiveHits(boolean b) {
 		this.positiveHits = b;
 	}
+	
 
-	public void calculate() throws Exception {
-		AlphabetIndex index = AlphabetManager.getAlphabetIndex(DNATools.getDNA());
+	private int threads = 1;
+	private ExecutorService threadPool;
+	
+	@Option(help="Number of threads (default = 1)")
+	public void setThreads(int threads) {
+		if (threads < 1) {
+			System.err.println("-threads needs to be >= 1");
+			System.exit(1);
+		}
+		this.threads = threads;
+	}
+	
+	private static class EValueTask implements Callable {
+		private Random r = new Random();
+		private final Motif motif;
+		private final File seqs;
 		
-		for (Motif m : motifs) {
-			Scanner fScanner = makeScanner(index, m.getWeightMatrix());
-			Scanner rScanner = makeScanner(index, WmTools.reverseComplement(m.getWeightMatrix()));
+		private final AlphabetIndex index;
+		private final double pthresh;
+		private final boolean collectHits;
+		private final int bootstraps;
+		private final boolean positiveHits;
+		
+		public EValueTask(
+				Motif m,
+				File seqs,
+				AlphabetIndex index, 
+				double pthresh,
+				int bootstraps,
+				boolean collectHits,
+				boolean positiveHits) {
+			this.motif = m;
+			this.seqs = seqs;
+			this.index = index;
+			this.pthresh = pthresh;
+			this.collectHits = collectHits;
+			this.bootstraps = bootstraps;
+			this.positiveHits = positiveHits;
+		}
+		
+		private double maxScore(Scanner s, byte[] sin)
+		throws Exception {
+			double max = Double.NEGATIVE_INFINITY;
+			int maxPos = sin.length - s.length();
+			for (int p = 0; p < maxPos; ++p) {
+				max = Math.max(max, s.score(sin, p, false));
+			}
+			double nm = max - s.getMaxScore();
+			return nm;
+		}
+		
+		private byte[] indexSeq(AlphabetIndex index, SymbolList sl)
+		    throws Exception
+		{
+		    Symbol gap = sl.getAlphabet().getGapSymbol();
+		    
+		    byte[] bsl = new byte[sl.length() + 1];
+		    for (int i = 1; i <= sl.length(); ++i) {
+		        Symbol s = sl.symbolAt(i);
+		        if (s == gap) {
+		            bsl[i] = -2;
+		        } else if (s instanceof AtomicSymbol) {
+		            bsl[i] = (byte) index.indexForSymbol(s);
+		        } else {
+		            bsl[i] = -1;
+		        }
+		    }
+		    return bsl;
+		}
+
+	    private Scanner makeScanner(AlphabetIndex index, WeightMatrix wm)
+		throws Exception {
+		    FiniteAlphabet alpha = (FiniteAlphabet) wm.getAlphabet();
+		    Matrix2D bm = new SimpleMatrix2D(alpha.size(), wm.columns());
+		    for (int c = 0; c < wm.columns(); ++c) {
+		        Distribution wmCol = wm.getColumn(c);
+		        
+		        for (Iterator<?> si = alpha.iterator(); si.hasNext(); ) {
+		            Symbol s = (Symbol) si.next();
+		            double baseWeight = wmCol.getWeight(s);
+		            bm.set(index.indexForSymbol(s), c, Math.log(baseWeight) / LOG_2);
+		        }
+		    }
+		    return new Scanner(bm, index, null);
+		}
+	    
+		private void shuffle(byte[] ba) {
+			int len = ba.length;
+			for (int c = len; c > 1; --c) {
+				int alt = r.nextInt(c);
+				byte tmp = ba[c - 1];
+				ba[c - 1] = ba[alt];
+				ba[alt] = tmp;
+			}
+		}
+		
+		private boolean isMaxScoreGreater(Scanner s, byte[] sin, double target)
+		throws Exception {
+			double max = Double.NEGATIVE_INFINITY;
+			int maxPos = sin.length - s.length();
+			for (int p = 0; p < maxPos; ++p) {
+				if(s.score(sin, p, false) - s.getMaxScore() >= target) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		public List<ScoredHit> call() throws Exception {
+			List<ScoredHit> hits = new ArrayList<ScoredHit>();
+			
+			Scanner fScanner = makeScanner(index, motif.getWeightMatrix());
+			Scanner rScanner = makeScanner(index, WmTools.reverseComplement(motif.getWeightMatrix()));
 			for (SequenceIterator si = SeqIOTools.readFastaDNA(new BufferedReader(new FileReader(seqs))); si.hasNext(); ) {
 				Sequence seq = si.nextSequence();
 				byte[] sin = indexSeq(index, seq);
@@ -124,29 +236,61 @@ public class MotifSetEmpiricalEValueCalculator {
 				
 				if (!collectHits) {
 					System.out.printf("%s\t%s\t%g\t%g\t%g%n", 
-							m.getName(), 
+							motif.getName(), 
 							seq.getName(), 
 							max, 
 							(1.0 * gte) / bootstraps, 
 							Math.log10((1.0 * gte) / bootstraps));					
 				} else {
 					System.err.printf("%s\t%s\t%g\t%g\t%g%n", 
-							m.getName(), 
+							motif.getName(), 
 							seq.getName(), 
 							max, 
 							(1.0 * gte) / bootstraps, 
 							Math.log10((1.0 * gte) / bootstraps));	
-					collectedHits.add(
+					hits.add(
 						new ScoredHit(
-							m.getName(),
+							motif.getName(),
 							seq.getName(),
 							positiveHits,
 							max,
 							(1.0 * gte) / bootstraps));
 				}
 			}
+			
+			return hits;
 		}
 	}
+	
+	public void calculate() throws Exception {
+		if (threads > motifs.length) {
+			System.err.println("Specified number of threads is larger than the number of motifs in the input. " +
+					"Will use only " + motifs.length + " threads.");
+		}
+		
+		threadPool = Executors.newFixedThreadPool(threads);
+		
+		AlphabetIndex index = AlphabetManager.getAlphabetIndex(DNATools.getDNA());
+		
+		List<Future<List<ScoredHit>>> scoredHitFutures = new ArrayList<Future<List<ScoredHit>>>();
+		for (Motif m : motifs) {
+			scoredHitFutures.add(threadPool.submit(new EValueTask(
+					m,
+					seqs,
+					index, 
+					pthresh,
+					bootstraps,
+					collectHits,
+					positiveHits)));
+		}
+		
+		int i = 0;
+		for (Future<List<ScoredHit>> hitList : scoredHitFutures) {
+			System.err.println("Retrieving hit list for " + i++ + "th entry");
+			this.collectedHits.addAll(hitList.get());
+		}
+	}
+	
 	/**
 	 * @param args
 	 */
@@ -156,42 +300,6 @@ public class MotifSetEmpiricalEValueCalculator {
 		this.calculate();
 	}
 
-	private double maxScore(Scanner s, byte[] sin)
-		throws Exception
-	{
-		double max = Double.NEGATIVE_INFINITY;
-		int maxPos = sin.length - s.length();
-		for (int p = 0; p < maxPos; ++p) {
-			max = Math.max(max, s.score(sin, p, false));
-		}
-		double nm = max - s.getMaxScore();
-		return nm;
-	}
-	
-	private boolean isMaxScoreGreater(Scanner s, byte[] sin, double target)
-		throws Exception
-	{
-		double max = Double.NEGATIVE_INFINITY;
-		int maxPos = sin.length - s.length();
-		for (int p = 0; p < maxPos; ++p) {
-			if(s.score(sin, p, false) - s.getMaxScore() >= target) {
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	Random r = new Random();
-	private void shuffle(byte[] ba) {
-		int len = ba.length;
-		for (int c = len; c > 1; --c) {
-			int alt = r.nextInt(c);
-			byte tmp = ba[c - 1];
-			ba[c - 1] = ba[alt];
-			ba[alt] = tmp;
-		}
-	}
-	
 	
     private static class Scanner {
         private Matrix2D bm;
@@ -266,42 +374,4 @@ public class MotifSetEmpiricalEValueCalculator {
             return wmScore;
         }
     }
-    
-    private Scanner makeScanner(AlphabetIndex index, WeightMatrix wm)
-    		throws Exception
-    {
-        FiniteAlphabet alpha = (FiniteAlphabet) wm.getAlphabet();
-        Matrix2D bm = new SimpleMatrix2D(alpha.size(), wm.columns());
-        for (int c = 0; c < wm.columns(); ++c) {
-            Distribution wmCol = wm.getColumn(c);
-            
-            for (Iterator<?> si = alpha.iterator(); si.hasNext(); ) {
-                Symbol s = (Symbol) si.next();
-                double baseWeight = wmCol.getWeight(s);
-                bm.set(index.indexForSymbol(s), c, Math.log(baseWeight) / LOG_2);
-            }
-        }
-        return new Scanner(bm, index, null);
-    }
-    
-    private byte[] indexSeq(AlphabetIndex index, SymbolList sl)
-	    throws Exception
-	{
-	    Symbol gap = sl.getAlphabet().getGapSymbol();
-	    
-	    byte[] bsl = new byte[sl.length() + 1];
-	    for (int i = 1; i <= sl.length(); ++i) {
-	        Symbol s = sl.symbolAt(i);
-	        if (s == gap) {
-	            bsl[i] = -2;
-	        } else if (s instanceof AtomicSymbol) {
-	            bsl[i] = (byte) index.indexForSymbol(s);
-	        } else {
-	            bsl[i] = -1;
-	        }
-	    }
-	    return bsl;
-	}
-
-
 }
