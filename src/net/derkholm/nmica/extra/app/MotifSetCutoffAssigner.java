@@ -167,6 +167,7 @@ public class MotifSetCutoffAssigner {
 				System.exit(2);
 			}
 		}
+		threadPool.shutdown();
 		
 		System.err.printf(
 			"Enumerating sequence words from background model " +
@@ -184,7 +185,7 @@ public class MotifSetCutoffAssigner {
 		weighter = null;
 		
 		System.err.println("Comparing expected and observed score histograms...");
-		
+		this.threadPool = Executors.newFixedThreadPool(this.threads);
 		List<Future<Motif>> motifFutures = new ArrayList<Future<Motif>>();
 		for (Motif m : motifs) {
 			threadPool.submit(new CutoffTask(
@@ -200,6 +201,7 @@ public class MotifSetCutoffAssigner {
 			Motif m = mf.get();
 			System.err.printf("%s\t%f%n",m.getName(),m.getThreshold());
 		}
+		threadPool.shutdown();
 		
 		OutputStream os = null;
 		if (outputMotifFile == null) {
@@ -209,7 +211,6 @@ public class MotifSetCutoffAssigner {
 		}
 		
 		MotifIOTools.writeMotifSetXML(os, motifs);
-		threadPool.shutdown();
 	}
 	
 	private class ScanTask implements Callable<Boolean> {
