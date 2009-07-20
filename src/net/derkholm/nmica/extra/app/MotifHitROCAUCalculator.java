@@ -352,6 +352,7 @@ public class MotifHitROCAUCalculator {
 				sum.getAuc(),
 				sum.getBootstrapFraction());
 		}
+		System.err.println("Done.");
 	}
 	
 	private double rocAuc(Collection<ScoredHit> l, int tot) {
