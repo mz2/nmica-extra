@@ -73,12 +73,16 @@ public class MotifMatchEnumerator {
 	{
 		if (index == word.length) {
 			StringBuilder sb = new StringBuilder();
-
+			
 			for (Symbol s : word) {sb.append(s.getName().charAt(0));}
-			if (storeHits) {storedHits.add(new ScoredString(sb.toString(), score));}
-			sb.append('\t');
-			sb.append(score);
-			System.out.println(sb.toString());
+			if (storeHits) {
+				storedHits.add(new ScoredString(sb.toString(), score));
+			} else {
+				sb.append('\t');
+				sb.append(score);
+				System.err.println(sb.toString());
+			}
+
 		} else {
 			Distribution d = wm.getColumn(index);
 			double max = 0;
