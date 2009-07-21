@@ -65,11 +65,12 @@ public class WriteCoveredSequences {
 				//do nothing (nothing was covered by a location)
 			} else {
 				Location wanted;
-				if (!negate) {
-					wanted = LocationTools.union(new RangeLocation(1, seq.length()), loc);
-				} else {
+				if (negate) {
 					wanted = LocationTools.subtract(new RangeLocation(1, seq.length()), loc);					
+				} else {
+					wanted = loc;
 				}
+				
 				for (Iterator<?> bi = wanted.blockIterator(); bi.hasNext(); ) { 
 					Location wl = (Location) bi.next();
 					
@@ -79,7 +80,7 @@ public class WriteCoveredSequences {
 							String.format("%s_%d-%d", seq.getName(), wl.getMin(), wl.getMax()),
 							Annotation.EMPTY_ANNOTATION
 					), 
-					null);  
+					null);
 				}   
 			}   
 		}   
