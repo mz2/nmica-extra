@@ -24,8 +24,7 @@ import org.bjv2.util.cli.Option;
 
 
 
-@App(overview="A tool for regularising XMS motif set files", 
-		generateStub=true)
+@App(overview="Regularise XMS motif set files", generateStub=true)
 @NMExtraApp(launchName="nmregularise", vm=VirtualMachine.SERVER)
 public class MotifSetRegulariser {
 	

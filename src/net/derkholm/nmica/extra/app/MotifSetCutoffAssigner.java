@@ -146,7 +146,7 @@ public class MotifSetCutoffAssigner {
 					motifHitMap.get(m).add(rec);					
 				}
 			}
-			System.err.printf("Number of hits for motif %s:%d%n",motifHitMap.get(m).size());
+			System.err.printf("Number of hits for motif %s:%d%n",m.getName(),motifHitMap.get(m).size());
 		}
 		
 		hitRecords = null;
