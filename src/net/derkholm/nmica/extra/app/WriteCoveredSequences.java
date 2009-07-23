@@ -8,7 +8,9 @@ import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
+import java.util.TreeSet;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
@@ -27,6 +29,7 @@ import org.biojava.bio.symbol.RangeLocation;
 import org.biojavax.bio.seq.RichSequence;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
+import org.bjv2.util.cli.UserLevel;
 
 @App(overview = "Write out sequence regions covered by GFF features", generateStub = true)
 @NMExtraApp(launchName = "nmcoveredseq", vm = VirtualMachine.SERVER)
@@ -40,7 +43,9 @@ public class WriteCoveredSequences {
 	private boolean negate;
 	private File gffFile;
 	private File seqFile;
+	
 	private Format outputFormat = Format.FASTA;
+	private boolean validate = true;
 
 	@Option(help="Input feature file")
 	public void setFeatures(File f) {
@@ -61,12 +66,47 @@ public class WriteCoveredSequences {
 	public void setNegate(boolean b) {
 		this.negate = b;
 	}
+	
+	@Option(help="Validate input (check that sequence identifiers match)", optional=true, userLevel = UserLevel.DEBUG)
+	public void setValidate(boolean b) {
+		this.validate = b;
+	}
 
 	public void main(String[] args)
 	throws Exception
 	{   
 
 		Map<String,Location> locs = GFFUtils.gffToLocationMap(gffFile);
+		
+		Set<String> gffIdentifiers = locs.keySet();
+		Set<String> seqIdentifiers = new TreeSet<String>();
+		if (validate) {
+			for (SequenceIterator si = RichSequence
+					.IOTools
+						.readFastaDNA(
+							new BufferedReader(
+								new FileReader(seqFile)), null); si.hasNext();) {
+				
+				seqIdentifiers.add(si.nextSequence().getName());
+			}
+			
+			boolean validationIssuesFound = false;
+			for (String gffId : gffIdentifiers) {
+				if (!seqIdentifiers.contains(gffId)) {
+					System.err.println(
+							"VALIDATION ERROR: sequence identifier " + gffId + 
+							" from the feature input file doesn't match any of the sequence identifiers " +
+							"in the sequence input file.");
+					validationIssuesFound = true;
+				}
+			}
+			if (validationIssuesFound) {
+				System.exit(1);
+			}
+		}
+		
+		
+		
 		for (SequenceIterator si = RichSequence
 									.IOTools
 										.readFastaDNA(
@@ -89,7 +129,16 @@ public class WriteCoveredSequences {
 				} else {
 					for (Iterator<?> li = loc.blockIterator(); li.hasNext(); ) {
 						Location l = (Location)li.next();
-						GFFRecord r = new SimpleGFFRecord(seq.getName(),"nmcoveredseq","covered",l.getMin(),l.getMax(),Double.NaN,strand,0,"",null);
+						GFFRecord r = new SimpleGFFRecord(
+								seq.getName(),
+								"nmcoveredseq",
+								"covered",
+								l.getMin(),
+								l.getMax(),
+								Double.NaN,
+								strand,
+								0,
+								"",null);
 						
 						writer.recordLine(r);
 					}
