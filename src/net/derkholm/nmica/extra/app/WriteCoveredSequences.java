@@ -46,6 +46,7 @@ public class WriteCoveredSequences {
 	
 	private Format outputFormat = Format.FASTA;
 	private boolean validate = true;
+	private int filterAboveLength;
 
 	@Option(help="Input feature file")
 	public void setFeatures(File f) {
@@ -71,6 +72,15 @@ public class WriteCoveredSequences {
 	public void setValidate(boolean b) {
 		this.validate = b;
 	}
+	
+	@Option(help="Filter out features above specified maximum length", optional=true)
+	public void setFilterFeaturesAboveLength(int i) {
+		if (i < 0) {
+			System.err.println("-filterFeaturesAboveLength value should be > 0");
+			System.exit(2);
+		}
+		this.filterAboveLength = i;
+	}
 
 	public void main(String[] args)
 	throws Exception
@@ -80,6 +90,7 @@ public class WriteCoveredSequences {
 		
 		Set<String> gffIdentifiers = locs.keySet();
 		Set<String> seqIdentifiers = new TreeSet<String>();
+		
 		if (validate) {
 			for (SequenceIterator si = RichSequence
 					.IOTools
@@ -105,7 +116,18 @@ public class WriteCoveredSequences {
 			}
 		}
 		
-		
+		if (filterAboveLength > 0) {
+			Set<String> keys = locs.keySet();
+			for (String str : keys) {
+				Location loc = locs.get(str);
+				if (loc.getMax() - loc.getMin() > filterAboveLength) {
+					System.err.printf("Filtered feature that spans %d-%d%n",
+							loc.getMin(),
+							loc.getMax());
+					locs.remove(str);
+				}
+			}
+		}
 		
 		for (SequenceIterator si = RichSequence
 									.IOTools
