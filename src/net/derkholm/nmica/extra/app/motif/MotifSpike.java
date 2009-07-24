@@ -1,4 +1,4 @@
-package net.derkholm.nmica.extra.app.motifs;
+package net.derkholm.nmica.extra.app.motif;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
