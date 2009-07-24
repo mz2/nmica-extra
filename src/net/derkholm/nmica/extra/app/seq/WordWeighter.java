@@ -1,4 +1,4 @@
-package net.derkholm.nmica.extra.app;
+package net.derkholm.nmica.extra.app.seq;
 
 import java.io.BufferedReader;
 import java.io.File;

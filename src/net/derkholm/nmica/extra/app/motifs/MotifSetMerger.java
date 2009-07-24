@@ -1,4 +1,4 @@
-package net.derkholm.nmica.extra.app;
+package net.derkholm.nmica.extra.app.motifs;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -15,17 +15,17 @@ import net.derkholm.nmica.motif.MotifIOTools;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
-@App(overview="A tool for separating XMS motif set files", 
+@App(overview="A tool for merging XMS motif set files", 
 		generateStub=true)
-@NMExtraApp(launchName="nmseparate", vm=VirtualMachine.SERVER)
-public class MotifSetSeparator {
+@NMExtraApp(launchName="nmmerge", vm=VirtualMachine.SERVER)
+public class MotifSetMerger {
 	
-	private String prefix;
+	private String out;
 	private boolean ignoreErrors;
 	
-	@Option(help="Output filename prefix",optional=true)
-	public void setPrefix(String str) {
-		this.prefix = str;
+	@Option(help="Output filename")
+	public void setOut(String str) {
+		this.out = str;
 	}
 	
 	@Option(help="Ignore errors, e.g. empty/incorrect motif set files (default=false)",
@@ -51,18 +51,10 @@ public class MotifSetSeparator {
 			}
 		}
 		
-		for (Motif m : motifList) {
-			String filen;
-			if (prefix != null)
-				filen = prefix + m.getName();
-			else
-				filen = m.getName();
-			
-			MotifIOTools.writeMotifSetXML(
-				new BufferedOutputStream(
-					new FileOutputStream(
-						new File(filen))), motifList.toArray(
-							new Motif[] {m}));
-		}
+		MotifIOTools.writeMotifSetXML(
+			new BufferedOutputStream(
+				new FileOutputStream(
+					new File(this.out))), motifList.toArray(
+						new Motif[motifList.size()]));
 	}
 }

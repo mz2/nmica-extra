@@ -1,4 +1,4 @@
-package net.derkholm.nmica.extra.app;
+package net.derkholm.nmica.extra.app.motifs;
 
 import java.io.BufferedWriter;
 import java.io.File;

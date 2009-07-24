@@ -1,4 +1,4 @@
-package net.derkholm.nmica.extra.app;
+package net.derkholm.nmica.extra.app.motifs;
 
 import hep.aida.bin.StaticBin1D;
 

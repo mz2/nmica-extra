@@ -1,4 +1,4 @@
-package net.derkholm.nmica.extra.app;
+package net.derkholm.nmica.extra.app.motifs;
 
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -18,6 +18,7 @@ import javax.xml.stream.XMLStreamReader;
 
 import net.derkholm.nmica.apps.MotifScanner;
 import net.derkholm.nmica.build.NMExtraApp;
+import net.derkholm.nmica.extra.app.seq.WordWeighter;
 import net.derkholm.nmica.model.MotifHitRecord;
 import net.derkholm.nmica.model.analysis.ScoredString;
 import net.derkholm.nmica.model.motif.Mosaic;
