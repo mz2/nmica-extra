@@ -4,10 +4,12 @@ import gfftools.GFFUtils;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.PrintWriter;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
@@ -16,16 +18,20 @@ import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 
 import org.biojava.bio.Annotation;
+import org.biojava.bio.BioException;
 import org.biojava.bio.program.gff.GFFRecord;
 import org.biojava.bio.program.gff.GFFWriter;
 import org.biojava.bio.program.gff.SimpleGFFRecord;
 import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.seq.SequenceIterator;
 import org.biojava.bio.seq.StrandedFeature;
+import org.biojava.bio.seq.db.HashSequenceDB;
+import org.biojava.bio.seq.db.SequenceDB;
 import org.biojava.bio.seq.impl.SimpleSequence;
 import org.biojava.bio.symbol.Location;
 import org.biojava.bio.symbol.LocationTools;
 import org.biojava.bio.symbol.RangeLocation;
+import org.biojava.utils.ChangeVetoException;
 import org.biojavax.bio.seq.RichSequence;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
@@ -47,15 +53,25 @@ public class WriteCoveredSequences {
 	private Format outputFormat = Format.FASTA;
 	private boolean validate = true;
 	private int filterAboveLength;
+	private HashSequenceDB seqDB;
 
 	@Option(help="Input feature file")
 	public void setFeatures(File f) {
 		this.gffFile = f;
 	}
 	
-	@Option(help="Input sequence file")
-	public void setSeqs(File f) {
+	@Option(help="Input sequence file. Needed if you want to use -format fasta and/or -negate.", optional=true)
+	public void setSeqs(File f) throws FileNotFoundException, BioException {
 		this.seqFile = f;
+		
+		this.seqDB = new HashSequenceDB();
+		for (SequenceIterator si = RichSequence
+				.IOTools
+					.readFastaDNA(
+						new BufferedReader(
+							new FileReader(seqFile)), null); si.hasNext();) {
+			seqDB.addSequence(si.nextSequence());
+		}
 	}
 	
 	@Option(help="Output format: fasta|gff", optional=true)
@@ -85,35 +101,22 @@ public class WriteCoveredSequences {
 	public void main(String[] args)
 	throws Exception
 	{   
-
+		if (seqFile == null) {
+			if (negate) {
+				System.err.println("You need to specify input sequences with -seqs for negated output.");
+				System.exit(2);
+			}
+			if (outputFormat == Format.FASTA) {
+				System.err.println("You need to specify input sequences with -seqs when you want to output sequences (-format fasta).");
+			}
+		}
+		
 		Map<String,Location> locs = GFFUtils.gffToLocationMap(gffFile);
 		
-		Set<String> gffIdentifiers = locs.keySet();
-		Set<String> seqIdentifiers = new TreeSet<String>();
+
 		
 		if (validate) {
-			for (SequenceIterator si = RichSequence
-					.IOTools
-						.readFastaDNA(
-							new BufferedReader(
-								new FileReader(seqFile)), null); si.hasNext();) {
-				
-				seqIdentifiers.add(si.nextSequence().getName());
-			}
-			
-			boolean validationIssuesFound = false;
-			for (String gffId : gffIdentifiers) {
-				if (!seqIdentifiers.contains(gffId)) {
-					System.err.println(
-							"VALIDATION ERROR: sequence identifier " + gffId + 
-							" from the feature input file doesn't match any of the sequence identifiers " +
-							"in the sequence input file.");
-					validationIssuesFound = true;
-				}
-			}
-			if (validationIssuesFound) {
-				System.exit(1);
-			}
+			WriteCoveredSequences.validateGFFSequenceIdentifiersAgainstSequences(locs,seqDB);
 		}
 		
 		if (filterAboveLength > 0) {
@@ -129,11 +132,7 @@ public class WriteCoveredSequences {
 			}
 		}
 		
-		for (SequenceIterator si = RichSequence
-									.IOTools
-										.readFastaDNA(
-											new BufferedReader(
-												new FileReader(seqFile)), null); si.hasNext();) {
+		for (SequenceIterator si = seqDB.sequenceIterator(); si.hasNext();) {
 			Sequence seq = si.nextSequence();
 			Location loc = locs.get(seq.getName());
 			
@@ -170,7 +169,7 @@ public class WriteCoveredSequences {
 			} else {
 				Location wanted;
 				if (negate) {
-					wanted = LocationTools.subtract(new RangeLocation(1, seq.length()), loc);					
+					wanted = LocationTools.subtract(new RangeLocation(1, seq.length()), loc);
 				} else {
 					wanted = loc;
 				}
@@ -187,7 +186,7 @@ public class WriteCoveredSequences {
 						), null);						
 					} else {
 						System.err.printf("%s %s %s %s%n",seq,seq.getName(),wl,strand);
-						GFFRecord r = new SimpleGFFRecord(seq.getName(),"nmcoveredseq","covered",wl.getMin(),wl.getMax(),Double.NaN,strand,0,"",new TreeMap());
+						GFFRecord r = new SimpleGFFRecord(seq.getName(),"nmcoveredseq","covered",wl.getMin(),wl.getMax(),Double.NaN,strand,0,"",null);
 						writer.recordLine(r);
 					}
 				}
@@ -195,5 +194,31 @@ public class WriteCoveredSequences {
 			
 			if (writer != null) writer.endDocument();
 		}   
+	}
+
+	public static void validateGFFSequenceIdentifiersAgainstSequences(Map<String,Location> locs, SequenceDB seqDB) 
+		throws SequenceIdentifierValidationException, BioException {
+		
+		Set<String> gffIdentifiers = locs.keySet();
+		Set<String> seqIdentifiers = new TreeSet<String>();
+		for (SequenceIterator si = seqDB.sequenceIterator(); si.hasNext();) {
+			seqIdentifiers.add(si.nextSequence().getName());
+		}
+		
+		boolean validationIssuesFound = false;
+		int i = 0;
+		for (String gffId : gffIdentifiers) {
+			if (!seqIdentifiers.contains(gffId)) {
+				i+=1;
+				System.err.println(
+						"VALIDATION ERROR: sequence identifier " + gffId + 
+						" from the feature input file doesn't match any of the sequence identifiers " +
+						"in the sequence input file.");
+				validationIssuesFound = true;
+			}
+		}
+		if (validationIssuesFound) {
+			throw new SequenceIdentifierValidationException("" + i + " validation issues found");
+		}
 	}   
 }
