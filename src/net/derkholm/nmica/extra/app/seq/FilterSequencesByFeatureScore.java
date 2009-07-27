@@ -165,8 +165,14 @@ public class FilterSequencesByFeatureScore {
 		public void recordLine(GFFRecord record) {
 			boolean allowOutput = true;
 			double s = record.getScore();
+			double minS = this.minScore;
+			double maxS = this.maxScore;
 			if (this.negateScore) {
 				s = -s;
+				double tempMinS = minS;
+				double tempMaxS = maxS;
+				minS = -tempMaxS;
+				maxS = -tempMinS;
 			}
 			
 			if (!Double.isNaN(this.minScore)) {
