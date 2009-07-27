@@ -45,8 +45,7 @@ import org.bjv2.util.cli.UserLevel;
 public class WriteIntersectingSequences {
     public static enum Format {
     	GFF,
-    	FASTA,
-    	TABLE
+    	FASTA
     }
     
 	private File seqsFile;
@@ -70,7 +69,7 @@ public class WriteIntersectingSequences {
 		}
 	}
 	
-	@Option(help = "Negate output after intersecting", optional=true)
+	@Option(help = "Negate output after intersecting (i.e. substract features rather than intersecting)", optional=true)
 	public void setNegate(boolean b) {
 		this.negate = b;
 	}
@@ -90,12 +89,10 @@ public class WriteIntersectingSequences {
      * @throws Exception 
      */
     public void main(String[] args) throws Exception {
-    	
         List<Map<String,Location>> locs = new ArrayList<Map<String,Location>>();
         for (String fileName : args) {
             locs.add(GFFUtils.gffToLocationMap(new File(fileName)));
         }
-        
         
         Set<String> seqIds;
         {
