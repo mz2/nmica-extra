@@ -62,6 +62,8 @@ public class FilterSequencesByFeatureScore {
 
 	private boolean negate;
 
+	private boolean negateScore;
+
 	@Option(help="Maximum score", optional=true)
 	public void setMaxScore(double s) {
 		this.maxScore = s;
@@ -76,7 +78,13 @@ public class FilterSequencesByFeatureScore {
 	public void setNegate(boolean b) {
 		this.negate = b;
 	}
-
+	
+	@Option(help="Invert the score (positive <--> negative numbers). Use this if you need to use negative scores.", optional=true)
+	public void setInvertScore(boolean b) {
+		this.negateScore = b;
+	}
+	
+	
 	@Option(help = "Input sequences (output the intersecting sequences rather than a new GFF file)", optional=true)
 	public void setSeqs(File f) throws FileNotFoundException, ChangeVetoException, NoSuchElementException, BioException {
 		this.seqsFile = f;
@@ -107,10 +115,13 @@ public class FilterSequencesByFeatureScore {
 		
 		GFFParser gffp = new GFFParser();
 		gffp.parse(IOTools.fileBufferedReader(featureFile), 
-				new GFFFilteringDocumentHandler(this.minScore,this.maxScore,this.negate,this.format, seqDB));
-		
-		
-		
+				new GFFFilteringDocumentHandler(
+						this.minScore,
+						this.maxScore,
+						this.negate,
+						this.negateScore,
+						this.format, 
+						seqDB));
 	}
 
 	private static class GFFFilteringDocumentHandler implements GFFDocumentHandler {
@@ -120,15 +131,23 @@ public class FilterSequencesByFeatureScore {
 		private GFFWriter gffWriter;
 		private SequenceDB sequences;
 		private boolean negate;
+		private boolean negateScore;
 
 		public GFFFilteringDocumentHandler() {
 			
 		}
 		
-		private GFFFilteringDocumentHandler(double minScore, double maxScore, boolean negate, Format format, SequenceDB sequences) {
+		private GFFFilteringDocumentHandler(
+				double minScore, 
+				double maxScore, 
+				boolean negate,
+				boolean negateScores,
+				Format format, 
+				SequenceDB sequences) {
 			this.minScore = minScore;
 			this.maxScore = maxScore;
 			this.negate = negate;
+			this.negateScore = negateScores;
 			this.gffWriter = new GFFWriter(new PrintWriter(System.out));
 			this.format = format;
 			this.sequences = sequences;
@@ -145,6 +164,11 @@ public class FilterSequencesByFeatureScore {
 
 		public void recordLine(GFFRecord record) {
 			boolean allowOutput = true;
+			double s = record.getScore();
+			if (this.negateScore) {
+				s = -s;
+			}
+			
 			if (!Double.isNaN(this.minScore)) {
 				if (this.minScore > record.getScore()) {
 					allowOutput = false;
