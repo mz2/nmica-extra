@@ -45,7 +45,7 @@ public class FilterSequencesByFeatureScore {
     	FASTA
     }
 	
-	private Format format;
+	private Format format = Format.GFF;
 	
 	private double minScore = Double.NaN;
 	@Option(help="Minimum score", optional=true)
@@ -90,6 +90,7 @@ public class FilterSequencesByFeatureScore {
 
 			seqDB.addSequence(si.nextSequence());
 		}
+		this.format = Format.FASTA;
 	}
 
 	@Option(help="Input file for features")
