@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.Map;
@@ -161,16 +162,15 @@ public class FilterSequencesByFeatureScore {
 			this.maxScore = maxScore;
 			this.negate = negate;
 			this.negateScore = negateScores;
-			this.gffWriter = new GFFWriter(new PrintWriter(System.out));
+			this.gffWriter = new GFFWriter(new PrintWriter(new OutputStreamWriter(System.out)));
 			this.format = format;
 			this.sequences = sequences;
 		}
 		
 		public void startDocument(String locator) {
+			this.gffWriter.startDocument(locator);
 		}
 
-		public void endDocument() {
-		}
 
 		public void commentLine(String comment) {
 		}
@@ -182,21 +182,19 @@ public class FilterSequencesByFeatureScore {
 			double maxS = this.maxScore;
 			if (this.negateScore) {
 				s = -s;
-				double tempMinS = minS;
-				double tempMaxS = maxS;
-				minS = -tempMaxS;
-				maxS = -tempMinS;
 			}
 			
 			if (!Double.isNaN(this.minScore)) {
-				if (this.minScore > record.getScore()) {
+				if (this.minScore > s) {
 					allowOutput = false;
+					System.err.println("Score " + s + " doesnt fit (minScore = "+ this.minScore + ")");
 				}
 			}
 			
-			if (!Double.isNaN(this.maxScore)) {
-				if (this.maxScore < record.getScore()) {
+			if (allowOutput &! Double.isNaN(this.maxScore)) {
+				if (this.maxScore < s) {
 					allowOutput = false;
+					System.err.println("Score " + s + " doesnt fit (maxScore)");
 				}
 			}
 			
@@ -206,7 +204,9 @@ public class FilterSequencesByFeatureScore {
 			
 			if (allowOutput) {
 				if (this.format == Format.GFF) {
+					System.err.println("Writing output line");
 					this.gffWriter.recordLine(record);
+					
 				} else {
 					Sequence seq;
 					try {
@@ -225,6 +225,10 @@ public class FilterSequencesByFeatureScore {
 					
 				}
 			}
+		}
+		
+		public void endDocument() {
+			this.gffWriter.endDocument();
 		}
 	}
 }
