@@ -182,19 +182,18 @@ public class FilterSequencesByFeatureScore {
 			double maxS = this.maxScore;
 			if (this.negateScore) {
 				s = -s;
+				
 			}
 			
 			if (!Double.isNaN(this.minScore)) {
 				if (this.minScore > s) {
 					allowOutput = false;
-					System.err.println("Score " + s + " doesnt fit (minScore = "+ this.minScore + ")");
 				}
 			}
 			
 			if (allowOutput &! Double.isNaN(this.maxScore)) {
 				if (this.maxScore < s) {
 					allowOutput = false;
-					System.err.println("Score " + s + " doesnt fit (maxScore)");
 				}
 			}
 			
@@ -204,7 +203,6 @@ public class FilterSequencesByFeatureScore {
 			
 			if (allowOutput) {
 				if (this.format == Format.GFF) {
-					System.err.println("Writing output line");
 					this.gffWriter.recordLine(record);
 					
 				} else {
