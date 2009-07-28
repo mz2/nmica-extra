@@ -8,6 +8,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -54,7 +55,7 @@ public class FilterSequencesByFeatureScore {
 	}
 
 	private double maxScore = Double.NaN;
-	private File featureFile;
+	
 	private File seqFile;
 	private File seqsFile;
 	private HashSequenceDB seqDB;
@@ -63,6 +64,8 @@ public class FilterSequencesByFeatureScore {
 	private boolean negate;
 
 	private boolean negateScore;
+
+	private File[] featureFiles;
 
 	@Option(help="Maximum score", optional=true)
 	public void setMaxScore(double s) {
@@ -101,27 +104,34 @@ public class FilterSequencesByFeatureScore {
 		this.format = Format.FASTA;
 	}
 
-	@Option(help="Input file for features")
-	public void setFeatures(File file) {
-		this.featureFile = file;
+	@Option(help="Input GFF file(s) for features")
+	public void setFeatures(File[] files) {
+		this.featureFiles = files;
 	}
 
 	public void main(String[] args) throws Exception {
 
-		if (validate && (seqDB != null)) {
-			Map<String,Location> locs = GFFUtils.gffToLocationMap(featureFile);
-			WriteCoveredSequences.validateGFFSequenceIdentifiersAgainstSequences(locs, seqDB);
+		Map<String,Location> locs = new HashMap<String, Location>();
+		for (File f : featureFiles) {
+			if (validate && (seqDB != null)) {
+				Map<String,Location> ls = GFFUtils.gffToLocationMap(f);
+				WriteCoveredSequences.validateGFFSequenceIdentifiersAgainstSequences(ls, seqDB);
+				locs.putAll(ls);
+			}
 		}
 		
 		GFFParser gffp = new GFFParser();
-		gffp.parse(IOTools.fileBufferedReader(featureFile), 
-				new GFFFilteringDocumentHandler(
-						this.minScore,
-						this.maxScore,
-						this.negate,
-						this.negateScore,
-						this.format, 
-						seqDB));
+		
+		for (File f : featureFiles) {
+			gffp.parse(IOTools.fileBufferedReader(f), 
+					new GFFFilteringDocumentHandler(
+							this.minScore,
+							this.maxScore,
+							this.negate,
+							this.negateScore,
+							this.format, 
+							seqDB));
+		}
 	}
 
 	private static class GFFFilteringDocumentHandler implements GFFDocumentHandler {
