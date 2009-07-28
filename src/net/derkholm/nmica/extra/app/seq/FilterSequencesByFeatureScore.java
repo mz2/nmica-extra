@@ -123,14 +123,17 @@ public class FilterSequencesByFeatureScore {
 		GFFParser gffp = new GFFParser();
 		
 		for (File f : featureFiles) {
-			gffp.parse(IOTools.fileBufferedReader(f), 
-					new GFFFilteringDocumentHandler(
-							this.minScore,
-							this.maxScore,
-							this.negate,
-							this.negateScore,
-							this.format, 
-							seqDB));
+			GFFFilteringDocumentHandler fDocHandler = 
+				new GFFFilteringDocumentHandler(
+						this.minScore,
+						this.maxScore,
+						this.negate,
+						this.negateScore,
+						this.format, 
+						seqDB);
+			
+			gffp.parse(IOTools.fileBufferedReader(f),fDocHandler);
+			fDocHandler.endDocument();
 		}
 	}
 
@@ -203,7 +206,7 @@ public class FilterSequencesByFeatureScore {
 			
 			if (allowOutput) {
 				if (this.format == Format.GFF) {
-					this.gffWriter.recordLine(record);					
+					this.gffWriter.recordLine(record);
 				} else {
 					Sequence seq;
 					try {
@@ -219,6 +222,7 @@ public class FilterSequencesByFeatureScore {
 					} catch (IOException e) {
 						throw new BioError(e);
 					}
+					
 				}
 			}
 		}
