@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -40,7 +41,6 @@ import org.biojava.bio.symbol.SimpleSymbolList;
 import org.biojava.bio.symbol.Symbol;
 import org.biojava.bio.symbol.SymbolList;
 import org.biojava.utils.JDBCPooledDataSource;
-import org.biojavax.bio.seq.RichLocation.Strand;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -385,7 +385,8 @@ public class RetrieveEnsemblSequences {
 								Double.NaN,
 								strand,
 								0,
-								null,null);
+								null,
+								new HashMap<Object, Object>());
 						gffw.recordLine(rec);
 					}
 				}
