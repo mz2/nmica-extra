@@ -37,7 +37,7 @@ import biobits.utils.IOTools;
 @App(overview="Area under an ROC", generateStub=true)
 @NMExtraApp(launchName = "nmrocauc")
 public class MotifHitROCAUCalculator {
-	private int bootstraps = 10000;
+	private int bootstraps = 50000;
 	private String target = null;
 	private Set<String> whiteList = null;
 	private Set<String> blackList = null;
@@ -77,7 +77,7 @@ public class MotifHitROCAUCalculator {
 		this.target = s;
 	}
 	
-	@Option(help="The number of bootstraps to make (default=10000)", optional=true)
+	@Option(help="The number of bootstraps to make (default=50000)", optional=true)
 	public void setBootstraps(int b) {
 		this.bootstraps = b;
 	}
