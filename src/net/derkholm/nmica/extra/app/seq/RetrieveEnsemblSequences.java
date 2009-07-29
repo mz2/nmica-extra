@@ -14,6 +14,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.sql.DataSource;
 
@@ -275,6 +276,7 @@ public class RetrieveEnsemblSequences {
 				} else {
 					int start = transcript.getLocation().getMax();
 					int end = transcript.getLocation().getMin();
+					
 					if (fivePrimeBegin > 0 || fivePrimeEnd > 0) {
 						dumpLocs.add(new RangeLocation(start - fivePrimeEnd,
 								start + fivePrimeBegin));
@@ -364,7 +366,7 @@ public class RetrieveEnsemblSequences {
 						}
 						Sequence dump = new SimpleSequence(ssl, null, String
 								.format("%s_%s_%d_%d", gene, chr.getName(), bloc
-										.getMin(), bloc.getMax()),
+										.getMin(), max),
 								Annotation.EMPTY_ANNOTATION);
 						
 						
@@ -376,17 +378,20 @@ public class RetrieveEnsemblSequences {
 					} else {
 						org.biojava.bio.seq.StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
 						
+						Map<String,Object> map = new HashMap<String, Object>();
+						map.put("ID", gene);
+						
 						GFFRecord rec = new SimpleGFFRecord(
-								gene,
+								chr.getName(),
 								"nmensemblseq",
 								"noncoding-seq",
 								bloc.getMin(),
-								bloc.getMax(),
+								max,
 								Double.NaN,
 								strand,
 								0,
 								null,
-								new HashMap<Object, Object>());
+								map);
 						
 						gffw.recordLine(rec);
 						gffw.endDocument();
