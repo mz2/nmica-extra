@@ -331,7 +331,7 @@ public class RetrieveEnsemblSequences {
 					if (chr.length() < bloc.getMin()) {
 						System.err.printf(
 								"WARNING: cannot extract feature from %s:" +
-								"the beginning of feature %d - %d runs over the end of the sequence at %d)",
+								"the beginning of feature %d - %d runs over the end of the sequence at %d)%n",
 								chr.getName(), 
 								bloc.getMin(),
 								bloc.getMax(),
@@ -341,13 +341,13 @@ public class RetrieveEnsemblSequences {
 					if (chr.length() < bloc.getMax()) {
 						System.err.printf(
 							"WARNING: extracted feature from %s would be truncated " +
-							"(feature %d - %d runs over the end of the sequence at %d). Will not output",
+							"(feature %d - %d runs over the end of the sequence at %d).%n",
 							chr.getName(), 
 							bloc.getMin(),
 							bloc.getMax(),
 							chr.length());
 						
-						continue;
+						max = chr.length();
 					}
 					for (int i = bloc.getMin(); i <= max; ++i) {
 						if (!mask.contains(i)) {
