@@ -347,7 +347,7 @@ public class RetrieveEnsemblSequences {
 							bloc.getMax(),
 							chr.length());
 						
-						max = bloc.getMax();
+						max = chr.length();
 					}
 					for (int i = bloc.getMin(); i <= max; ++i) {
 						if (!mask.contains(i)) {
