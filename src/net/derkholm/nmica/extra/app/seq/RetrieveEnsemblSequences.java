@@ -387,7 +387,9 @@ public class RetrieveEnsemblSequences {
 								0,
 								null,
 								new HashMap<Object, Object>());
+						
 						gffw.recordLine(rec);
+						gffw.endDocument();
 					}
 				}
 			}

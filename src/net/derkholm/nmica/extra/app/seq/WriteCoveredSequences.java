@@ -7,11 +7,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 
 import net.derkholm.nmica.build.NMExtraApp;
@@ -31,7 +30,6 @@ import org.biojava.bio.seq.impl.SimpleSequence;
 import org.biojava.bio.symbol.Location;
 import org.biojava.bio.symbol.LocationTools;
 import org.biojava.bio.symbol.RangeLocation;
-import org.biojava.utils.ChangeVetoException;
 import org.biojavax.bio.seq.RichSequence;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
@@ -159,7 +157,7 @@ public class WriteCoveredSequences {
 								Double.NaN,
 								strand,
 								0,
-								"",null);
+								"",new HashMap<Object, Object>());
 						
 						writer.recordLine(r);
 					}
