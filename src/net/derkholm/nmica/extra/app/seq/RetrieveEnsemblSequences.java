@@ -3,7 +3,9 @@ package net.derkholm.nmica.extra.app.seq;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -18,6 +20,9 @@ import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 
 import org.biojava.bio.Annotation;
+import org.biojava.bio.program.gff.GFFRecord;
+import org.biojava.bio.program.gff.GFFWriter;
+import org.biojava.bio.program.gff.SimpleGFFRecord;
 import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.seq.Feature;
 import org.biojava.bio.seq.FeatureFilter;
@@ -35,11 +40,9 @@ import org.biojava.bio.symbol.SimpleSymbolList;
 import org.biojava.bio.symbol.Symbol;
 import org.biojava.bio.symbol.SymbolList;
 import org.biojava.utils.JDBCPooledDataSource;
-import org.biojava.utils.xml.Initializable;
+import org.biojavax.bio.seq.RichLocation.Strand;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
-
-import com.sun.tools.javac.code.Type;
 
 import biobits.utils.IOTools;
 
@@ -47,6 +50,13 @@ import biobits.utils.IOTools;
 @NMExtraApp(launchName = "nmensemblseq", vm = VirtualMachine.SERVER)
 public class RetrieveEnsemblSequences {
 
+    public static enum Format {
+    	GFF,
+    	FASTA
+    }
+    
+    private Format format = Format.FASTA;
+	
 	/* Sequence region processing */
 	private boolean repeatMask = true;
 	private boolean excludeTranslations = true;
@@ -78,6 +88,13 @@ public class RetrieveEnsemblSequences {
 	private PreparedStatement get_gsiForTranscript;
 	private PreparedStatement get_gsiForTranslation;
 
+	private Object type;
+
+	@Option(help = "Output format: either fasta or gff (default=fasta)",optional=true)
+	public void setFormat(Format format) {
+		this.format = format;
+	}
+	
 	@Option(help = "Repeat mask the sequences (default=true)", optional = true)
 	public void setRepeatMask(boolean b) {
 		this.repeatMask = b;
@@ -176,6 +193,12 @@ public class RetrieveEnsemblSequences {
 	public void setSchemaVersion(int ver) {
 		this.schemaVersion = ver;
 	}
+	
+	@Option(help="Allowed gene type, e.g. 'protein_coding','pseudogene' " +
+			"(by default all gene types are allowed)", optional = true)
+	public void setType(String type) {
+		this.type = type;
+	}
 
 	public void main(String[] argv) throws Exception {
 		this.initPreparedStatements();
@@ -217,11 +240,21 @@ public class RetrieveEnsemblSequences {
 			ids = idList.toArray(new String[idList.size()]);
 		}
 		
+		GFFWriter gffw = null;
+		
+		if (format == Format.GFF) {
+			gffw = new GFFWriter(new PrintWriter(new OutputStreamWriter(System.out)));
+		}
+		
 		for (String gene : ids) {
 			System.err.println("" + gene);
 			FeatureHolder transcripts = seqDB
-					.filter(new FeatureFilter.ByAnnotation("ensembl.gene_id",
-							gene));
+					.filter(new FeatureFilter.ByAnnotation("ensembl.gene_id",gene));
+			
+			if (this.type != null) {
+				transcripts = transcripts.filter(new FeatureFilter.ByAnnotation("ensembl.gene_type",this.type));
+			}
+			
 			Sequence chr = null;
 			boolean reverse = false;
 			List<Location> dumpLocs = new ArrayList<Location>();
@@ -292,31 +325,76 @@ public class RetrieveEnsemblSequences {
 					continue;
 				} else {
 					List<Symbol> sl = new ArrayList<Symbol>();
-					for (int i = bloc.getMin(); i <= bloc.getMax(); ++i) {
+					boolean truncatedSeq = false;
+					int max = bloc.getMax();
+					
+					if (chr.length() < bloc.getMin()) {
+						System.err.printf(
+								"WARNING: cannot extract feature from %s:" +
+								"the beginning of feature %d - %d runs over the end of the sequence at %d)",
+								chr.getName(), 
+								bloc.getMin(),
+								bloc.getMax(),
+								chr.length());
+						continue;
+					}
+					if (chr.length() < bloc.getMax()) {
+						System.err.printf(
+							"WARNING: extracted feature from %s will be truncated " +
+							"(feature %d - %d runs over the end of the sequence at %d)",
+							chr.getName(), 
+							bloc.getMin(),
+							bloc.getMax(),
+							chr.length());
+						
+						max = bloc.getMax();
+					}
+					for (int i = bloc.getMin(); i <= max; ++i) {
 						if (!mask.contains(i)) {
 							sl.add(chr.symbolAt(i));
 						} else {
 							sl.add(DNATools.n());
 						}
 					}
-					SymbolList ssl = new SimpleSymbolList(DNATools.getDNA(), sl);
-					if (reverse) {
-						ssl = DNATools.reverseComplement(ssl);
-					}
-					Sequence dump = new SimpleSequence(ssl, null, String
-							.format("%s_%s_%d_%d", gene, chr.getName(), bloc
-									.getMin(), bloc.getMax()),
-							Annotation.EMPTY_ANNOTATION);
 					
-					
-					if (outputFile == null) {
-						new FastaFormat().writeSequence(dump, System.out);						
+					if (format == Format.FASTA) {
+						SymbolList ssl = new SimpleSymbolList(DNATools.getDNA(), sl);
+						if (reverse) {
+							ssl = DNATools.reverseComplement(ssl);
+						}
+						Sequence dump = new SimpleSequence(ssl, null, String
+								.format("%s_%s_%d_%d", gene, chr.getName(), bloc
+										.getMin(), bloc.getMax()),
+								Annotation.EMPTY_ANNOTATION);
+						
+						
+						if (outputFile == null) {
+							new FastaFormat().writeSequence(dump, System.out);						
+						} else {
+							new FastaFormat().writeSequence(dump, new PrintStream(new FileOutputStream(outputFile)));
+						}						
 					} else {
-						new FastaFormat().writeSequence(dump, new PrintStream(new FileOutputStream(outputFile)));
+						org.biojava.bio.seq.StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
+						
+						GFFRecord rec = new SimpleGFFRecord(
+								gene,
+								"nmensemblseq",
+								"noncoding-seq",
+								bloc.getMin(),
+								bloc.getMax(),
+								Double.NaN,
+								strand,
+								0,
+								null,null);
+						gffw.recordLine(rec);
 					}
 				}
 			}
 
+		}
+		
+		if (gffw != null) {
+			gffw.endDocument();
 		}
 	}
 
