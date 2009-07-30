@@ -3,6 +3,8 @@ package net.derkholm.nmica.extra.app.seq;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.PrintWriter;
@@ -11,6 +13,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -68,7 +71,7 @@ public class RetrieveEnsemblSequences {
 	 * Sequence filtering properties id = list of identifiers idType = type of
 	 * identifier ('ensembl_gene' and 'stable_id' for now)
 	 */
-	private String[] ids;
+	private List<String> ids = new ArrayList<String>();
 	private String idType = "ensembl_gene";
 
 	/* Sequence region properties */
@@ -116,9 +119,19 @@ public class RetrieveEnsemblSequences {
 		this.featherRegionsBy = i;
 	}
 
-	@Option(help = "Filter returned sequence set based on identifiers", optional = true)
-	public void setFilterById(String[] ids) {
-		this.ids = ids;
+	@Option(help = "Filter returned sequence set based on identifier(s)", optional = true)
+	public void setFilterByIds(String[] ids) {
+		this.ids.addAll(Arrays.asList(ids));
+	}
+	
+	@Option(help = "Filter returned sequence set based on identifier(s) in the input file (one row per identifier)", optional = true)
+	public void setFilterByIdsInFile(FileReader fr) throws IOException {
+		BufferedReader reader = new BufferedReader(fr);
+		String line = null;
+		
+		while ((line = reader.readLine()) != null) {
+			this.ids.add(line.replace("\n", ""));
+		}
 	}
 
 	@Option(help = "Identifier type to use when filtering sequences identifiers (default = ensembl_gene, possible values: ensembl_gene|stable_id|display_label)", optional = true)
@@ -214,7 +227,7 @@ public class RetrieveEnsemblSequences {
 
 		BufferedReader br = IOTools.inputBufferedReader(argv);
 
-		if (ids == null) {
+		if (ids.size() == 0) {
 			List<String> idsList = new ArrayList<String>();
 			DataSource db = JDBCPooledDataSource.getDataSource(
 					"org.gjt.mm.mysql.Driver", dbURL, username, password);
@@ -228,7 +241,7 @@ public class RetrieveEnsemblSequences {
 				idsList.add(rs.getString(1));
 			}
 			rs.close();
-			ids = idsList.toArray(new String[idsList.size()]);
+			ids = idsList;
 		}
 
 		if (!this.idType.equals("ensembl_gene")) {
@@ -238,7 +251,7 @@ public class RetrieveEnsemblSequences {
 				idList .add(ensId);
 				System.err.printf("%s -> %s",str, ensId);
 			}
-			ids = idList.toArray(new String[idList.size()]);
+			ids = idList;
 		}
 		
 		GFFWriter gffw = null;
