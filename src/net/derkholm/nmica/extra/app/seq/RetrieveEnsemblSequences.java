@@ -379,7 +379,8 @@ public class RetrieveEnsemblSequences {
 						org.biojava.bio.seq.StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
 						
 						Map<String,Object> map = new HashMap<String, Object>();
-						map.put("ID", gene);
+						List<String> geneIDs = new ArrayList<String>();
+						map.put("ID", geneIDs);
 						
 						GFFRecord rec = new SimpleGFFRecord(
 								chr.getName(),
