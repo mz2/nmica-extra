@@ -380,6 +380,7 @@ public class RetrieveEnsemblSequences {
 						
 						Map<String,Object> map = new HashMap<String, Object>();
 						List<String> geneIDs = new ArrayList<String>();
+						geneIDs.add(gene);
 						map.put("ID", geneIDs);
 						
 						GFFRecord rec = new SimpleGFFRecord(
