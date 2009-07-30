@@ -352,6 +352,20 @@ public class RetrieveEnsemblSequences {
 						//max = chr.length();
 						continue;
 					}
+					if (bloc.getMin() <= 1) {
+						System.err.printf(
+							"WARNING: retrieved location %d-%d on chromosome %s has a negative start coordinate on the sequence region. " +
+							"Will not output.%n",bloc.getMin(),bloc.getMax(),chr.getName());
+						
+						continue;
+					}
+					if (bloc.getMax() <= 1) {
+						System.err.printf(
+							"WARNING: retrieved location %d-%d on chromosome %s has a negative end coordinate on the sequence region. " +
+							"Will not output.%n",bloc.getMin(),bloc.getMax(),chr.getName());
+						
+						continue;
+					}
 					for (int i = bloc.getMin(); i <= max; ++i) {
 						if (!mask.contains(i)) {
 							sl.add(chr.symbolAt(i));
