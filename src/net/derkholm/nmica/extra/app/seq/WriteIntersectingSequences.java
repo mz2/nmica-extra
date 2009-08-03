@@ -9,6 +9,7 @@ import java.io.FileReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -51,7 +52,7 @@ public class WriteIntersectingSequences {
 	private File seqsFile;
 	private boolean negate;
 	private SequenceDB seqDB;
-	private net.derkholm.nmica.extra.app.seq.WriteIntersectingSequences.Format outputFormat;
+	private Format outputFormat = Format.GFF;
 	private boolean validate;
 
 	@Option(help = "Input sequences (output the intersecting sequences rather than a new GFF file)", optional=true)
@@ -137,11 +138,13 @@ public class WriteIntersectingSequences {
             r.setFeature("block");
             r.setSource("nmintersectseq");
             r.setStrand(StrandedFeature.POSITIVE);
+            
             for (Iterator<?> bi = l.blockIterator(); bi.hasNext(); ) {
                 Location bloc = (Location) bi.next();
                 r.setStart(bloc.getMin());
                 r.setEnd(bloc.getMax());
-                
+                r.setComment("");
+                r.setGroupAttributes(new HashMap<Object,Object>());
                 if (gffw != null) {gffw.recordLine(r);}
                 else {
                 	Sequence seq = new SimpleSequence(seqDB.getSequence(id).subList(bloc.getMin(),bloc.getMax()),null,
