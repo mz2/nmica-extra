@@ -30,9 +30,15 @@ import biobits.utils.IOTools;
 @NMExtraApp(launchName = "nmoverlapseq", vm = VirtualMachine.SERVER)
 public class FilterOverlappingSequences {
 	private boolean ignoreNames = false;
-	private boolean fraction = false;
+	//private boolean fraction = false;
 	private File featuresFile;
 	private File maskFile;
+	private Format format = Format.GFF;
+	
+	private static enum Format {
+		GFF,
+		FRACTION
+	};
 	
 	@Option(help="The features that are filtered and output " +
 			"(those that overlap the masking features are output)")
@@ -45,10 +51,12 @@ public class FilterOverlappingSequences {
 		this.maskFile = f;
 	}
 	
+	@Option(help="Output the fraction of features covered by the mask")
 	public void setFraction(boolean b) {
-		this.fraction = b;
+		this.format = Format.FRACTION;
 	}
 	
+	@Option(help="Ignore feature names")
 	public void setIgnoreNames(boolean b) {
 		this.ignoreNames = b;
 	}
@@ -90,7 +98,7 @@ public class FilterOverlappingSequences {
                 Location loc = new RangeLocation(min, max);
                 ++all;
                 if (LocationTools.overlaps(loc, refLoc)) {
-                	if (!fraction)
+                	if (format == Format.GFF)
                 		gffw.recordLine(record);
                     ++accepted;
                 }
@@ -103,7 +111,7 @@ public class FilterOverlappingSequences {
             public void endDocument() {
                 gffw.endDocument();
                 
-                if (fraction) {
+                if (format == Format.FRACTION) {
                 	System.out.println((1.0 * accepted) / all);
                 }
             }
