@@ -53,7 +53,11 @@ public class FilterOverlappingSequences {
 	
 	@Option(help="Output the fraction of features covered by the mask")
 	public void setFraction(boolean b) {
-		this.format = Format.FRACTION;
+		if (b) {
+			this.format = Format.FRACTION;			
+		} else {
+			this.format = Format.GFF;
+		}
 	}
 	
 	@Option(help="Ignore feature names")
