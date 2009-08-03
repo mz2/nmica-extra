@@ -23,6 +23,7 @@ import org.biojava.bio.symbol.LocationTools;
 import org.biojava.bio.symbol.RangeLocation;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
+import org.bjv2.util.cli.UserLevel;
 
 import biobits.utils.IOTools;
 
@@ -60,7 +61,7 @@ public class FilterOverlappingSequences {
 		}
 	}
 	
-	@Option(help="Ignore feature names")
+	@Option(help="Ignore feature names",userLevel=UserLevel.EXPERT)
 	public void setIgnoreNames(boolean b) {
 		this.ignoreNames = b;
 	}
