@@ -52,7 +52,7 @@ public class FilterOverlappingSequences {
 		this.maskFile = f;
 	}
 	
-	@Option(help="Output the fraction of features covered by the mask")
+	@Option(help="Output the fraction of features covered by the mask",optional=true)
 	public void setFraction(boolean b) {
 		if (b) {
 			this.format = Format.FRACTION;			
@@ -61,7 +61,7 @@ public class FilterOverlappingSequences {
 		}
 	}
 	
-	@Option(help="Ignore feature names",userLevel=UserLevel.EXPERT)
+	@Option(help="Ignore feature names",userLevel=UserLevel.EXPERT,optional=true)
 	public void setIgnoreNames(boolean b) {
 		this.ignoreNames = b;
 	}
