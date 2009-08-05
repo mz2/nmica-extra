@@ -184,7 +184,17 @@ public class WriteCoveredSequences {
 						), null);						
 					} else {
 						System.err.printf("%s %s %s %s%n",seq,seq.getName(),wl,strand);
-						GFFRecord r = new SimpleGFFRecord(seq.getName(),"nmcoveredseq","covered",wl.getMin(),wl.getMax(),Double.NaN,strand,0,"",null);
+						GFFRecord r = new SimpleGFFRecord(
+								seq.getName(),
+								"nmcoveredseq",
+								this.negate ? "covered" : "uncovered",
+								wl.getMin(),
+								wl.getMax(),
+								Double.NaN,
+								strand,
+								0,
+								"",
+								new HashMap<Object, Object>());
 						writer.recordLine(r);
 					}
 				}
