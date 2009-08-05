@@ -68,6 +68,12 @@ public class FilterSequencesByFeatureScore {
 
 	private File[] featureFiles;
 
+	private int maxRegionLength = 0;
+
+	private int minRegionLength = 0;
+
+	private String type = null;
+
 	@Option(help="Maximum score", optional=true)
 	public void setMaxScore(double s) {
 		this.maxScore = s;
@@ -81,6 +87,21 @@ public class FilterSequencesByFeatureScore {
 	@Option(help="Negate output (output features/sequences that don't fill the filter constraints", optional=true)
 	public void setNegate(boolean b) {
 		this.negate = b;
+	}
+	
+	@Option(help="The maximum sequence region length", optional=true)
+	public void setMaxRegionLength(int l) {
+		this.maxRegionLength = l;
+	}
+	
+	@Option(help="The minimum sequence region length", optional=true)
+	public void setMinRegionLength(int l) {
+		this.minRegionLength = l;
+	}
+	
+	@Option(help="Feature type", optional=true)
+	public void setType(String type) {
+		this.type = type;
 	}
 	
 	@Option(help="Invert the score (positive <--> negative numbers). Use this if you need to use negative scores.", optional=true)
@@ -130,6 +151,9 @@ public class FilterSequencesByFeatureScore {
 						this.maxScore,
 						this.negate,
 						this.negateScore,
+						this.minRegionLength,
+						this.maxRegionLength,
+						this.type,
 						this.format, 
 						seqDB);
 			
@@ -146,6 +170,11 @@ public class FilterSequencesByFeatureScore {
 		private SequenceDB sequences;
 		private boolean negate;
 		private boolean negateScore;
+		
+		private int minRegionLength;
+		private int maxRegionLength;
+		private String type;
+		
 
 		public GFFFilteringDocumentHandler() {
 			
@@ -156,13 +185,23 @@ public class FilterSequencesByFeatureScore {
 				double maxScore, 
 				boolean negate,
 				boolean negateScores,
+				int minRegionLength,
+				int maxRegionLength,
+				String type,
 				Format format, 
 				SequenceDB sequences) {
 			this.minScore = minScore;
 			this.maxScore = maxScore;
+			this.minRegionLength = minRegionLength;
+			this.maxRegionLength = maxRegionLength;
+			this.type = type;
 			this.negate = negate;
 			this.negateScore = negateScores;
-			this.gffWriter = new GFFWriter(new PrintWriter(new OutputStreamWriter(System.out)));
+			this.gffWriter = 
+				new GFFWriter(
+					new PrintWriter(
+						new OutputStreamWriter(
+							System.out)));
 			this.format = format;
 			this.sequences = sequences;
 		}
@@ -178,6 +217,7 @@ public class FilterSequencesByFeatureScore {
 		public void recordLine(GFFRecord record) {
 			boolean allowOutput = true;
 			double s = record.getScore();
+			
 			double minS = this.minScore;
 			double maxS = this.maxScore;
 			if (this.negateScore) {
@@ -193,6 +233,24 @@ public class FilterSequencesByFeatureScore {
 			
 			if (allowOutput &! Double.isNaN(this.maxScore)) {
 				if (this.maxScore < s) {
+					allowOutput = false;
+				}
+			}
+			
+			if (this.maxRegionLength > 0) {
+				if (this.maxRegionLength < Math.abs(record.getStart() - record.getEnd())) {
+					allowOutput = false;					
+				}
+			}
+			
+			if (this.minRegionLength > 0) {
+				if (this.minRegionLength > Math.abs(record.getStart() - record.getEnd())) {
+					allowOutput = false;
+				}
+			}
+			
+			if (this.type != null) {
+				if (!record.getFeature().equals(this.type)) {
 					allowOutput = false;
 				}
 			}

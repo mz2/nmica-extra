@@ -94,6 +94,12 @@ public class RetrieveEnsemblSequences {
 
 	private Object type;
 
+	private EnsemblConnection ensemblConnection;
+
+	private SequenceDB seqDB;
+
+	private String dbURL;
+
 	@Option(help = "Output format: either fasta or gff (default=fasta)",optional=true)
 	public void setFormat(Format format) {
 		this.format = format;
@@ -214,19 +220,21 @@ public class RetrieveEnsemblSequences {
 		this.type = type;
 	}
 
-	public void main(String[] argv) throws Exception {
+	protected void initializeEnsemblConnection() throws SQLException, Exception {
 		this.initPreparedStatements();
-		String dbURL = String.format("jdbc:mysql://%s:%d/%s", 
+		this.dbURL = String.format("jdbc:mysql://%s:%d/%s", 
 				this.host,
 				this.port, 
 				this.database);
 
-		EnsemblConnection conn = new EnsemblConnection(dbURL, username,
+		ensemblConnection = new EnsemblConnection(dbURL, username,
 				password, schemaVersion);
-		SequenceDB seqDB = conn.getDefaultSequenceDB();
-
-		BufferedReader br = IOTools.inputBufferedReader(argv);
-
+		this.seqDB = ensemblConnection.getDefaultSequenceDB();
+	}
+	
+	public void main(String[] argv) throws Exception {
+		initializeEnsemblConnection();
+		
 		if (ids.size() == 0) {
 			List<String> idsList = new ArrayList<String>();
 			DataSource db = JDBCPooledDataSource.getDataSource(

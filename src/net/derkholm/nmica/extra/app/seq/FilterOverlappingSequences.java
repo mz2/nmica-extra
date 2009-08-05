@@ -35,6 +35,7 @@ public class FilterOverlappingSequences {
 	private File featuresFile;
 	private File maskFile;
 	private Format format = Format.GFF;
+	private boolean mergeOverlapping;
 	
 	private static enum Format {
 		GFF,
@@ -50,6 +51,11 @@ public class FilterOverlappingSequences {
 	@Option(help="The features that are used as a mask")
 	public void setMask(File f) {
 		this.maskFile = f;
+	}
+	
+	@Option(help="Merge overlapping features")
+	public void setMergeOverlapping(boolean b) {
+		this.mergeOverlapping = b;
 	}
 	
 	@Option(help="Output the fraction of features covered by the mask",optional=true)
