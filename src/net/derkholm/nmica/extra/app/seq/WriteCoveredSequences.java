@@ -187,7 +187,7 @@ public class WriteCoveredSequences {
 						GFFRecord r = new SimpleGFFRecord(
 								seq.getName(),
 								"nmcoveredseq",
-								this.negate ? "covered" : "uncovered",
+								this.negate ? "uncovered" : "covered",
 								wl.getMin(),
 								wl.getMax(),
 								Double.NaN,
