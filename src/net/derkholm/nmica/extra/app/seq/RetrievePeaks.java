@@ -97,6 +97,27 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			this.value = value;
 		}
 
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + id;
+			return result;
+		}
+
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (getClass() != obj.getClass())
+				return false;
+			PeakEntry other = (PeakEntry) obj;
+			if (id != other.id)
+				return false;
+			return true;
+		}
 	}
 	
 	public static abstract class PeakEntryComparator implements Comparator<PeakEntry> {
@@ -138,8 +159,6 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 		
 		BufferedReader br = new BufferedReader(new FileReader(peaksFile));
 		
-		Map<String,List<Location>> locations = new HashMap<String,List<Location>>();
-		String line = null;
 		PeakEntryComparator comp = null;
 		
 		if (rankOrder == RankOrder.ASC) {
@@ -151,8 +170,9 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 		}
 		
 		SortedSet<PeakEntry> peaks = new TreeSet<PeakEntry>(comp);
+		String line = null;
 		while ((line = br.readLine()) != null) {
-			StringTokenizer tok = new StringTokenizer("\t");
+			StringTokenizer tok = new StringTokenizer(line,"\t");
 			
 			int id = Integer.parseInt(tok.nextToken());
 			String chromo = tok.nextToken();
