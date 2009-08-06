@@ -268,6 +268,14 @@ public class RetrieveEnsemblSequences {
 			gffw = new GFFWriter(new PrintWriter(new OutputStreamWriter(System.out)));
 		}
 		
+		PrintStream outputStream = null;
+		
+		if (outputFile == null) {
+			outputStream = System.out;
+		} else {
+			outputStream = new PrintStream(new FileOutputStream(outputFile));
+		}						
+		
 		for (String gene : ids) {
 			System.err.println("" + gene);
 			FeatureHolder transcripts = seqDB
@@ -411,11 +419,7 @@ public class RetrieveEnsemblSequences {
 								Annotation.EMPTY_ANNOTATION);
 						
 						
-						if (outputFile == null) {
-							new FastaFormat().writeSequence(dump, System.out);						
-						} else {
-							new FastaFormat().writeSequence(dump, new PrintStream(new FileOutputStream(outputFile)));
-						}						
+						new FastaFormat().writeSequence(dump, outputStream);						
 					} else {
 						org.biojava.bio.seq.StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
 						
