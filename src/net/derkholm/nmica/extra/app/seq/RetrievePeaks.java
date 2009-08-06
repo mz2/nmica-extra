@@ -285,7 +285,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 					for (Iterator<?> bi = transLoc.blockIterator(); bi.hasNext();) {
 						Location tl = (Location)bi.next();
 						int len = tl.getMax() - tl.getMin();
-						System.err.println("Masking translated sequence of length " + len);
+						System.err.println("Masking translated sequence of length " + len + " from peak with ID " + peak.id);
 						maskedSeqLength += len;
 						transLocs.add(tl);
 					}
