@@ -343,7 +343,9 @@ public class RetrieveEnsemblSequences {
 			Location mask = Location.empty;
 			if (repeatMask) {
 				FeatureHolder repeats = chr.filter(new FeatureFilter.And(
-						new FeatureFilter.ByType("repeat"),
+						new FeatureFilter.Or(
+								new FeatureFilter.ByType("repeat"),
+								new FeatureFilter.ByType("Repeat")),
 						new FeatureFilter.OverlapsLocation(dumpLoc)));
 				List<Location> repLocs = new ArrayList<Location>();
 				for (Iterator<?> i = repeats.features(); i.hasNext();) {

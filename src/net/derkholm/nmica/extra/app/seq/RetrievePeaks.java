@@ -258,7 +258,9 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			if (this.repeatMask) {
 
 				FeatureHolder repeats = chromoSeq.filter(new FeatureFilter.And(
-						new FeatureFilter.ByType("repeat"),
+						new FeatureFilter.Or(
+								new FeatureFilter.ByType("repeat"),
+								new FeatureFilter.ByType("Repeat")),
 						new FeatureFilter.OverlapsLocation(loc)));
 				List<Location> repLocs = new ArrayList<Location>();
 				for (Iterator<?> it = repeats.features(); it.hasNext();) {
