@@ -206,16 +206,21 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			
 			if (chromoSeq.length() < peak.startCoord) {
 				System.err.printf(
-					"%s : %d - %d (%d)%n (start > seq.length)",
+					"%s : %d - %d (%d) (start > seq.length)%n",
 					peak.seqName,
 					peak.startCoord,
-					peak.endCoord);
+					peak.endCoord,
+					chromoSeq.length());
 				continue;
 			}
 			
 			if (chromoSeq.length() < peak.endCoord) {
 				System.err.printf(
-					"%s : %d - %d (%d)%n (end > seq.length)",peak.seqName,peak.startCoord,peak.endCoord);
+					"%s : %d - %d (%d) (end > seq.length) %n",
+					peak.seqName,
+					peak.startCoord,
+					peak.endCoord,
+					chromoSeq.length());
 				continue;
 			}
 			
