@@ -268,17 +268,24 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 				loc = LocationTools.subtract(loc, transMask);
 			}
 			
-			SymbolList symList = chromoSeq.subList(peak.startCoord, peak.endCoord);
-			Sequence seq = 
-				new SimpleSequence(symList, null, 
-					String.format("%s_%d-%d;%f", 
-							peak.seqName, 
-							peak.startCoord,
-							peak.endCoord,
-							peak.value),
-					Annotation.EMPTY_ANNOTATION);
+			for (Iterator<?> bi = loc.blockIterator(); bi.hasNext();) {
+				Location bloc = (Location) bi.next();
+				SymbolList symList = chromoSeq.subList(bloc.getMin(), bloc.getMax());
+				
+				Sequence seq = 
+					new SimpleSequence(symList, null, 
+						String.format("%s_%d-%d;%f", 
+								peak.seqName, 
+								peak.startCoord,
+								peak.endCoord,
+								peak.value),
+						Annotation.EMPTY_ANNOTATION);
+				
+				RichSequence.IOTools.writeFasta(System.out, seq, null);
+			}
 			
-			RichSequence.IOTools.writeFasta(System.out, seq, null);
+			/* incremented for each *peak*, not for each output sequence 
+			 * (might be cut because of repeats/translations) */
 			i++;
 			
 			if ((maxCount > 0) && (i >= maxCount)) {
