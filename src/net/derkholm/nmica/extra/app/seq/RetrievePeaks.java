@@ -203,7 +203,22 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 				System.err.println("Could not retrieve seq with name " + peak.seqName);
 				System.exit(1);
 			}
-			System.err.printf("Fetching %d -- %d from chromosome %s%n",peak.startCoord,peak.endCoord,peak.seqName);
+			
+			if (chromoSeq.length() < peak.startCoord) {
+				System.err.printf(
+					"%s : %d - %d (%d)%n (start > seq.length)",
+					peak.seqName,
+					peak.startCoord,
+					peak.endCoord);
+				continue;
+			}
+			
+			if (chromoSeq.length() < peak.endCoord) {
+				System.err.printf(
+					"%s : %d - %d (%d)%n (end > seq.length)",peak.seqName,peak.startCoord,peak.endCoord);
+				continue;
+			}
+			
 			SymbolList symList = chromoSeq.subList(peak.startCoord, peak.endCoord);
 			Sequence seq = 
 				new SimpleSequence(symList, null, 
