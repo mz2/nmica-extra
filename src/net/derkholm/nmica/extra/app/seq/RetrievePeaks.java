@@ -49,6 +49,8 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 	private int minLength = Integer.MIN_VALUE;
 	private RankOrder rankOrder = RankOrder.DESC;
 	private int maxCount = 0;
+	private int aroundPeak;
+	private int chunkLength;
 	
 	@Option(help="Peaks")
 	public void setPeaks(File f) {
@@ -80,12 +82,22 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 		this.minLength = minLength;
 	}
 	
+	@Option(help="Region length around peak",optional=true)
+	public void setAroundPeak(int aroundPeak) {
+		this.aroundPeak = aroundPeak;
+	}
+	
+	@Option(help="Cut sequences to chunks of the specified size", optional=true)
+	public void setChunkLength(int chunkLength) {
+		this.chunkLength = chunkLength;
+	}
+	
 	public static class PeakEntry {
 		public final int id;
 		public String seqName;
 		public final int startCoord;
 		public final int endCoord;
-		public final int regEndCoord;
+		public final int peakCoord;
 		public final double value;
 		
 		public PeakEntry(
@@ -93,13 +105,13 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 				String seqName,
 				int startCoord, 
 				int endCoord, 
-				int regEndCoord, 
+				int peakCoord, 
 				double value) {
 			this.id = id;
 			this.seqName = seqName;
 			this.startCoord = startCoord;
 			this.endCoord = endCoord;
-			this.regEndCoord = regEndCoord;
+			this.peakCoord = peakCoord;
 			this.value = value;
 		}
 
@@ -187,7 +199,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			String chromo = tok.nextToken();
 			int startCoord = Integer.parseInt(tok.nextToken());
 			int endCoord = Integer.parseInt(tok.nextToken());
-			int minValCoord = Integer.parseInt(tok.nextToken());
+			int peakCoord = Integer.parseInt(tok.nextToken());
 			double value = Double.parseDouble(tok.nextToken());
 			
 			boolean maxLengthCondition = Math.abs(startCoord - endCoord) < this.maxLength;
@@ -195,7 +207,18 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			boolean minLengthCondition = Math.abs(startCoord - endCoord) > this.minLength;
 			if (!minLengthCondition) continue;
 
-			peaks.add(new PeakEntry(id, chromo, startCoord, endCoord, minValCoord, value));
+			if (aroundPeak > 0) {
+				int halfLength = (int) Math.round((double)aroundPeak / 2.0);
+				peaks.add(new PeakEntry(
+						id, 
+						chromo, 
+						Math.max(startCoord,peakCoord - halfLength), 
+						Math.min(endCoord,peakCoord + halfLength), 
+						peakCoord, 
+						value));
+			} else {
+				peaks.add(new PeakEntry(id, chromo, startCoord, endCoord, peakCoord, value));	
+			}
 		}
 		
 		int maskedSeqLength = 0;
@@ -258,11 +281,15 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 				List<Location> transLocs = new ArrayList<Location>();
 				for (Iterator<?> it = translations.features(); it.hasNext();) {
 					Feature transFeat = (Feature) it.next();
-					RangeLocation transLoc = (RangeLocation)transFeat.getLocation();
-					int len = transLoc.getMax() - transLoc.getMin();
-					System.err.println("Masking translated sequence of length " + len);
-					maskedSeqLength += len;
-					transLocs.add(transFeat.getLocation());
+					Location transLoc = (Location)transFeat.getLocation();
+					for (Iterator<?> bi = transLoc.blockIterator(); bi.hasNext();) {
+						Location tl = (Location)bi.next();
+						int len = tl.getMax() - tl.getMin();
+						System.err.println("Masking translated sequence of length " + len);
+						maskedSeqLength += len;
+						transLocs.add(tl);
+					}
+					
 				}
 				Location transMask = feather(LocationTools.union(transLocs),this.featherTranslationsBy);
 				loc = LocationTools.subtract(loc, transMask);
