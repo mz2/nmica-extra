@@ -127,7 +127,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 	public static class PeakEntryAscComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
 
 		public int compare(PeakEntry o1, PeakEntry o2) {
-			return -Double.compare(o1.value, o2.value);
+			return Double.compare(o1.value, o2.value);
 		}
 		
 	}
@@ -135,7 +135,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 	public static class PeakEntryDescComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
 
 		public int compare(PeakEntry o1, PeakEntry o2) {
-			return Double.compare(o1.value, o2.value);
+			return -Double.compare(o1.value, o2.value);
 		}
 		
 	}
