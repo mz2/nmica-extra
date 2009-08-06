@@ -177,6 +177,12 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 				locationMap.put(peak.seqName, new ArrayList<StrandedFeature>());
 			}
 			Sequence chromoSeq = seqDB.getSequence(peak.seqName);
+			
+			if (chromoSeq == null) {
+				System.err.println("Could not retrieve seq with name " + peak.seqName);
+				System.exit(1);
+			}
+			
 			SymbolList symList = chromoSeq.subList(peak.startCoord, peak.endCoord);
 			Sequence seq = 
 				new SimpleSequence(symList, null, 
