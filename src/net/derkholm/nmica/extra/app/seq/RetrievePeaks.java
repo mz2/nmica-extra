@@ -171,6 +171,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 		
 		SortedSet<PeakEntry> peaks = new TreeSet<PeakEntry>(comp);
 		String line = null;
+		br.readLine();//ignore the header
 		while ((line = br.readLine()) != null) {
 			StringTokenizer tok = new StringTokenizer(line,"\t");
 			
