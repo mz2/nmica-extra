@@ -270,7 +270,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 					repLocs.add(repLoc);
 				}
 				
-				System.err.println("Will mask away" + repLocs.size() + " repeats");
+				System.err.println("Will mask " + repLocs.size() + " repeats");
 				mask = LocationTools.union(repLocs);
 			}
 			
