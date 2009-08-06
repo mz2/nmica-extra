@@ -62,9 +62,9 @@ public class RetrieveEnsemblSequences {
     private Format format = Format.FASTA;
 	
 	/* Sequence region processing */
-	private boolean repeatMask = true;
-	private boolean excludeTranslations = true;
-	private int featherTranslationsBy;
+	protected boolean repeatMask = true;
+	protected boolean excludeTranslations = true;
+	protected int featherTranslationsBy;
 	private int featherRegionsBy;
 
 	/*
@@ -451,7 +451,7 @@ public class RetrieveEnsemblSequences {
 		}
 	}
 
-	private Location feather(Location l, int amount) {
+	protected Location feather(Location l, int amount) {
 		List<Location> spans = new ArrayList<Location>();
 		for (Iterator<?> bi = l.blockIterator(); bi.hasNext();) {
 			Location bloc = (Location) bi.next();

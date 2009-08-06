@@ -6,22 +6,28 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
-import java.util.Comparator;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 
 import org.biojava.bio.Annotation;
+import org.biojava.bio.seq.Feature;
+import org.biojava.bio.seq.FeatureFilter;
+import org.biojava.bio.seq.FeatureHolder;
 import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.impl.SimpleSequence;
 import org.biojava.bio.symbol.Location;
+import org.biojava.bio.symbol.LocationTools;
+import org.biojava.bio.symbol.RangeLocation;
 import org.biojava.bio.symbol.SymbolList;
 import org.biojavax.bio.seq.RichSequence;
 import org.bjv2.util.cli.App;
@@ -172,6 +178,8 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 		SortedSet<PeakEntry> peaks = new TreeSet<PeakEntry>(comp);
 		String line = null;
 		br.readLine();//ignore the header
+		
+		
 		while ((line = br.readLine()) != null) {
 			StringTokenizer tok = new StringTokenizer(line,"\t");
 			
@@ -190,13 +198,11 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			peaks.add(new PeakEntry(id, chromo, startCoord, endCoord, minValCoord, value));
 		}
 		
-		Map<String, List<StrandedFeature>> locationMap = new HashMap<String,List<StrandedFeature>>();
-		
+		int maskedSeqLength = 0;
+		int totalLength = 0;
 		int i = 0;
 		for (PeakEntry peak : peaks) {
-			if (locationMap.get(peak.seqName) == null) {
-				locationMap.put(peak.seqName, new ArrayList<StrandedFeature>());
-			}
+			totalLength += peak.endCoord - peak.startCoord;
 			Sequence chromoSeq = seqDB.getSequence(peak.seqName);
 			
 			if (chromoSeq == null) {
@@ -224,6 +230,44 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 				continue;
 			}
 			
+			Location mask = Location.empty;
+			Location loc = new RangeLocation(peak.startCoord,peak.endCoord);
+			if (this.repeatMask) {
+				FeatureHolder repeats = chromoSeq.filter(new FeatureFilter.And(
+						new FeatureFilter.ByType("repeat"),
+						new FeatureFilter.OverlapsLocation(loc)));
+				List<Location> repLocs = new ArrayList<Location>();
+				for (Iterator<?> it = repeats.features(); it.hasNext();) {
+					Feature repFeat = (Feature) it.next();
+					RangeLocation repLoc = (RangeLocation)repFeat.getLocation();
+					int len = repLoc.getMax() - repLoc.getMin();
+					System.err.println("Masking repeat of length " + len);
+					maskedSeqLength += len;
+					repLocs.add(repLoc);
+				}
+				mask = LocationTools.union(repLocs);
+			}
+			
+			loc = LocationTools.subtract(loc, mask);
+			
+			if (excludeTranslations) {
+				FeatureHolder translations = chromoSeq.filter(new FeatureFilter.And(
+						new FeatureFilter.ByType("translation"),
+						new FeatureFilter.OverlapsLocation(loc)));
+				
+				List<Location> transLocs = new ArrayList<Location>();
+				for (Iterator<?> it = translations.features(); it.hasNext();) {
+					Feature transFeat = (Feature) it.next();
+					RangeLocation transLoc = (RangeLocation)transFeat.getLocation();
+					int len = transLoc.getMax() - transLoc.getMin();
+					System.err.println("Masking translated sequence of length " + len);
+					maskedSeqLength += len;
+					transLocs.add(transFeat.getLocation());
+				}
+				Location transMask = feather(LocationTools.union(transLocs),this.featherTranslationsBy);
+				loc = LocationTools.subtract(loc, transMask);
+			}
+			
 			SymbolList symList = chromoSeq.subList(peak.startCoord, peak.endCoord);
 			Sequence seq = 
 				new SimpleSequence(symList, null, 
@@ -235,7 +279,6 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 					Annotation.EMPTY_ANNOTATION);
 			
 			RichSequence.IOTools.writeFasta(System.out, seq, null);
-			
 			i++;
 			
 			if ((maxCount > 0) && (i >= maxCount)) {
@@ -243,6 +286,8 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			}
 		}
 		
-		
+		System.err.printf("Masked %d nucleotides out of %d total (%.4f %)%n",
+				maskedSeqLength, 
+				totalLength, 100.0 * (double)maskedSeqLength / (double)totalLength);
 	}
 }
