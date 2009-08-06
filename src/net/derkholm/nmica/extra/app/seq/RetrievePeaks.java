@@ -203,7 +203,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 				System.err.println("Could not retrieve seq with name " + peak.seqName);
 				System.exit(1);
 			}
-			
+			System.err.printf("Fetching %d -- %d from chromosome %s%n",peak.startCoord,peak.endCoord,peak.seqName);
 			SymbolList symList = chromoSeq.subList(peak.startCoord, peak.endCoord);
 			Sequence seq = 
 				new SimpleSequence(symList, null, 
