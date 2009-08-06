@@ -42,7 +42,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 	private int maxLength = Integer.MAX_VALUE;
 	private int minLength = Integer.MIN_VALUE;
 	private RankOrder rankOrder = RankOrder.DESC;
-	private int maxCount;
+	private int maxCount = 0;
 	
 	@Option(help="Peaks")
 	public void setPeaks(File f) {
@@ -218,7 +218,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			
 			i++;
 			
-			if (i >= maxCount) {
+			if ((maxCount > 0) && (i >= maxCount)) {
 				break;
 			}
 		}
