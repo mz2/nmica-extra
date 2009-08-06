@@ -349,6 +349,7 @@ public class RetrieveEnsemblSequences {
 				for (Iterator<?> i = repeats.features(); i.hasNext();) {
 					repLocs.add(((Feature) i.next()).getLocation());
 				}
+				System.err.println("Will mask " + repLocs.size() + " repeats");
 				mask = LocationTools.union(repLocs);
 			}
 
