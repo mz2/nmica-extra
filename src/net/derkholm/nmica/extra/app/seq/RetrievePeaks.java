@@ -46,7 +46,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 	private File peaksFile;
 	private File outFile;
 	private int maxLength = Integer.MAX_VALUE;
-	private int minLength = Integer.MIN_VALUE;
+	private int minLength = 20;
 	private RankOrder rankOrder = RankOrder.DESC;
 	private int maxCount = 0;
 	private int aroundPeak;
@@ -72,17 +72,17 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 		this.rankOrder = order;
 	}
 	
-	@Option(help="Maximum peak length",optional=true)
+	@Option(help="Maximum peak length (not defined by default)",optional=true)
 	public void setMaxLength(int maxLength) {
 		this.maxLength = maxLength;
 	}
 	
-	@Option(help="Minimum peak length",optional=true)
+	@Option(help="Minimum peak length (default=20)",optional=true)
 	public void setMinLength(int minLength) {
 		this.minLength = minLength;
 	}
 	
-	@Option(help="Region length around peak",optional=true)
+	@Option(help="Region length around peak maximum",optional=true)
 	public void setAroundPeak(int aroundPeak) {
 		this.aroundPeak = aroundPeak;
 	}
@@ -256,6 +256,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			Location mask = Location.empty;
 			Location loc = new RangeLocation(peak.startCoord,peak.endCoord);
 			if (this.repeatMask) {
+
 				FeatureHolder repeats = chromoSeq.filter(new FeatureFilter.And(
 						new FeatureFilter.ByType("repeat"),
 						new FeatureFilter.OverlapsLocation(loc)));
@@ -268,6 +269,8 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 					maskedSeqLength += len;
 					repLocs.add(repLoc);
 				}
+				
+				System.err.println("Will mask away" + repLocs.size() + " repeats");
 				mask = LocationTools.union(repLocs);
 			}
 			
@@ -300,8 +303,10 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			
 			for (Iterator<?> bi = loc.blockIterator(); bi.hasNext();) {
 				Location bloc = (Location) bi.next();
-				SymbolList symList = chromoSeq.subList(bloc.getMin(), bloc.getMax());
 				
+				if ((bloc.getMax() - bloc.getMin()) < this.minLength) continue;
+				
+				SymbolList symList = chromoSeq.subList(bloc.getMin(), bloc.getMax());
 				Sequence seq = 
 					new SimpleSequence(symList, null, 
 						String.format("%s_%d-%d;%f", 
@@ -323,7 +328,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			}
 		}
 		
-		System.err.printf("Masked %d nucleotides out of %d total (%.4f %)%n",
+		System.err.printf("Masked %d nucleotides out of %d total (%.4f)%n",
 				maskedSeqLength, 
 				totalLength, 100.0 * (double)maskedSeqLength / (double)totalLength);
 	}
