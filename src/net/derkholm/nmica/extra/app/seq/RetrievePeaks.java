@@ -303,6 +303,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 				loc = LocationTools.subtract(loc, transMask);
 			}
 			
+			boolean anyWereOutput = false;
 			for (Iterator<?> bi = loc.blockIterator(); bi.hasNext();) {
 				Location bloc = (Location) bi.next();
 				
@@ -319,11 +320,13 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 						Annotation.EMPTY_ANNOTATION);
 				
 				RichSequence.IOTools.writeFasta(System.out, seq, null);
+				anyWereOutput = true;
 			}
 			
-			/* incremented for each *peak*, not for each output sequence 
+			/* incremented for each *peak* that had at least one sequence, 
+			 * not for each output sequence 
 			 * (might be cut because of repeats/translations) */
-			i++;
+			if (anyWereOutput) i++;
 			
 			if ((maxCount > 0) && (i >= maxCount)) {
 				break;
