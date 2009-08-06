@@ -2,53 +2,79 @@ package net.derkholm.nmica.extra.app.seq;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.StringTokenizer;
+import java.util.TreeSet;
+import java.util.Comparator;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 
 import org.biojava.bio.Annotation;
-import org.biojava.bio.seq.DNATools;
-import org.biojava.bio.seq.FeatureFilter;
-import org.biojava.bio.seq.FeatureHolder;
 import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.impl.SimpleSequence;
-import org.biojava.bio.seq.io.FastaFormat;
 import org.biojava.bio.symbol.Location;
-import org.biojava.bio.symbol.LocationTools;
-import org.biojava.bio.symbol.RangeLocation;
-import org.biojava.bio.symbol.SimpleSymbolList;
 import org.biojava.bio.symbol.SymbolList;
 import org.biojavax.bio.seq.RichSequence;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
-import biobits.utils.IOTools;
 
 @App(overview = "Get sequences from Ensembl that using peaks in the FindPeaks format", generateStub = true)
 @NMExtraApp(launchName = "nmpeakseq", vm = VirtualMachine.SERVER)
 public class RetrievePeaks extends RetrieveEnsemblSequences {
-
+	public static enum RankOrder {
+    	ASC,
+    	DESC,
+    	NONE
+    }
+	
 	private File peaksFile;
 	private File outFile;
-
+	private int maxLength = Integer.MAX_VALUE;
+	private int minLength = Integer.MIN_VALUE;
+	private RankOrder rankOrder = RankOrder.DESC;
+	private int maxCount;
+	
 	@Option(help="Peaks")
 	public void setPeaks(File f) {
 		peaksFile = f;
 	}
 	
-	@Option(help="Output file")
+	@Option(help="Output file",optional=true)
 	public void setOut(File f) {
 		this.outFile = f;
 	}
 	
-	public static class PeakEntry implements Comparable<PeakEntry> {
+	@Option(help="The maximum count of peaks to output",optional=true)
+	public void setMaxCount(int maxCount) {
+		this.maxCount = maxCount;
+	}
+	
+	@Option(help="Ranking order: asc|desc|none (default = desc)",optional=true)
+	public void setRankOrder(RankOrder order) {
+		this.rankOrder = order;
+	}
+	
+	@Option(help="Maximum peak length",optional=true)
+	public void setMaxLength(int maxLength) {
+		this.maxLength = maxLength;
+	}
+	
+	@Option(help="Minimum peak length",optional=true)
+	public void setMinLength(int minLength) {
+		this.minLength = minLength;
+	}
+	
+	public static class PeakEntry {
 		public final int id;
 		public String seqName;
 		public final int startCoord;
@@ -71,19 +97,60 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			this.value = value;
 		}
 
-		public int compareTo(PeakEntry o) {
-			return Double.compare(this.value, o.value);
+	}
+	
+	public static abstract class PeakEntryComparator implements Comparator<PeakEntry> {
+		
+	}
+	
+	public static class PeakEntryAscComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
+
+		public int compare(PeakEntry o1, PeakEntry o2) {
+			return -Double.compare(o1.value, o2.value);
+		}
+		
+	}
+	
+	public static class PeakEntryDescComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
+
+		public int compare(PeakEntry o1, PeakEntry o2) {
+			return Double.compare(o1.value, o2.value);
+		}
+		
+	}
+	
+	public static class PeakEntryRandomComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
+		public int compare(PeakEntry o1, PeakEntry o2) {
+			return 0;
 		}
 	}
+	
 	
 	public void main(String[] argv) throws Exception {
 		initializeEnsemblConnection();
 		
-		BufferedReader br = IOTools.inputBufferedReader(argv);
+		PrintStream os = null;
+		if (this.outFile == null) {
+			os = System.out;
+		} else {
+			os = new PrintStream(new FileOutputStream(this.outFile, true));
+		}
+		
+		BufferedReader br = new BufferedReader(new FileReader(peaksFile));
 		
 		Map<String,List<Location>> locations = new HashMap<String,List<Location>>();
 		String line = null;
-		List<PeakEntry> peaks = new ArrayList<PeakEntry>();
+		PeakEntryComparator comp = null;
+		
+		if (rankOrder == RankOrder.ASC) {
+			comp = new PeakEntryAscComparitor();
+		} else if (rankOrder == RankOrder.DESC) {
+			comp = new PeakEntryDescComparitor();
+		} else {
+			comp = new PeakEntryRandomComparitor();
+		}
+		
+		SortedSet<PeakEntry> peaks = new TreeSet<PeakEntry>(comp);
 		while ((line = br.readLine()) != null) {
 			StringTokenizer tok = new StringTokenizer("\t");
 			
@@ -91,46 +158,44 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			String chromo = tok.nextToken();
 			int startCoord = Integer.parseInt(tok.nextToken());
 			int endCoord = Integer.parseInt(tok.nextToken());
-			int regEndCoord = Integer.parseInt(tok.nextToken());
+			int minValCoord = Integer.parseInt(tok.nextToken());
 			double value = Double.parseDouble(tok.nextToken());
 			
-			peaks.add(new PeakEntry(id, chromo, startCoord, endCoord, regEndCoord, value));
+			boolean maxLengthCondition = Math.abs(startCoord - endCoord) < this.maxLength;
+			if (!maxLengthCondition) continue;
+			boolean minLengthCondition = Math.abs(startCoord - endCoord) > this.minLength;
+			if (!minLengthCondition) continue;
+
+			peaks.add(new PeakEntry(id, chromo, startCoord, endCoord, minValCoord, value));
 		}
 		
-		Map<String, List<Location>> locationMap = new HashMap<String,List<Location>>();
+		Map<String, List<StrandedFeature>> locationMap = new HashMap<String,List<StrandedFeature>>();
 		
+		int i = 0;
 		for (PeakEntry peak : peaks) {
 			if (locationMap.get(peak.seqName) == null) {
-				
+				locationMap.put(peak.seqName, new ArrayList<StrandedFeature>());
 			}
-			locationMap.get(peak.seqName).add(new RangeLocation(peak.startCoord,peak.endCoord));
+			Sequence chromoSeq = seqDB.getSequence(peak.seqName);
+			SymbolList symList = chromoSeq.subList(peak.startCoord, peak.endCoord);
+			Sequence seq = 
+				new SimpleSequence(symList, null, 
+					String.format("%s_%d-%d;%f", 
+							peak.seqName, 
+							peak.startCoord,
+							peak.endCoord,
+							peak.value),
+					Annotation.EMPTY_ANNOTATION);
+			
+			RichSequence.IOTools.writeFasta(System.out, seq, null);
+			
+			i++;
+			
+			if (i >= maxCount) {
+				break;
+			}
 		}
 		
-		for (String chromo : locationMap.keySet()) {
-			Location loc = LocationTools.union(locationMap.get(chromo));
-			
-			for (Iterator<?> bi = loc.blockIterator(); bi.hasNext();) {
-				RangeLocation l = (RangeLocation)bi.next();
-				
-				FeatureHolder feats = 
-					seqDB.filter(
-						new FeatureFilter.ContainedByLocation(l));
-				
-				for (Iterator<?> fi = feats.features(); fi.hasNext();) {
-					StrandedFeature peakFeat = (StrandedFeature) fi.next();
-					Sequence chr = peakFeat.getSequence();
-					
-					SymbolList symList = chr.subList(l.getMin(), l.getMax());
-					Sequence seq = new SimpleSequence(symList, null, 
-							String.format("%s_%d-%d", 
-									chromo, 
-									l.getMin(),
-									l.getMax()),
-							Annotation.EMPTY_ANNOTATION);
-					
-					RichSequence.IOTools.writeFasta(System.out, seq, null);
-				}
-			}
-		}
+		
 	}
 }
