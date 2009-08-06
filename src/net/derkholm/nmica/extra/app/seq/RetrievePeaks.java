@@ -292,6 +292,9 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 					
 				}
 				Location transMask = feather(LocationTools.union(transLocs),this.featherTranslationsBy);
+				if (transLocs.size() == 0) {
+					System.err.println("No translated segments near peak with ID " + peak.id);
+				}
 				loc = LocationTools.subtract(loc, transMask);
 			}
 			
