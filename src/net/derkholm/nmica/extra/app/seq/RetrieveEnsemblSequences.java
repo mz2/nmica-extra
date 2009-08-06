@@ -96,7 +96,7 @@ public class RetrieveEnsemblSequences {
 
 	private EnsemblConnection ensemblConnection;
 
-	private SequenceDB seqDB;
+	protected SequenceDB seqDB;
 
 	private String dbURL;
 
@@ -271,7 +271,8 @@ public class RetrieveEnsemblSequences {
 		for (String gene : ids) {
 			System.err.println("" + gene);
 			FeatureHolder transcripts = seqDB
-					.filter(new FeatureFilter.ByAnnotation("ensembl.gene_id",gene));
+					.filter(
+						new FeatureFilter.ByAnnotation("ensembl.gene_id",gene));
 			
 			if (this.type != null) {
 				transcripts = transcripts.filter(new FeatureFilter.ByAnnotation("ensembl.gene_type",this.type));
@@ -321,6 +322,7 @@ public class RetrieveEnsemblSequences {
 				FeatureHolder translations = chr.filter(new FeatureFilter.And(
 						new FeatureFilter.ByType("translation"),
 						new FeatureFilter.OverlapsLocation(dumpLoc)));
+				
 				List<Location> transLocs = new ArrayList<Location>();
 				for (Iterator<?> i = translations.features(); i.hasNext();) {
 					transLocs.add(((Feature) i.next()).getLocation());
@@ -400,9 +402,12 @@ public class RetrieveEnsemblSequences {
 						if (reverse) {
 							ssl = DNATools.reverseComplement(ssl);
 						}
-						Sequence dump = new SimpleSequence(ssl, null, String
-								.format("%s_%s_%d_%d", gene, chr.getName(), bloc
-										.getMin(), max),
+						Sequence dump = new SimpleSequence(ssl, null, 
+								String.format("%s_%s_%d_%d", 
+										gene, 
+										chr.getName(), 
+										bloc.getMin(), 
+										max),
 								Annotation.EMPTY_ANNOTATION);
 						
 						

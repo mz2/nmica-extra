@@ -271,8 +271,10 @@ public class FilterSequences {
 				} else {
 					Sequence seq;
 					try {
-						seq = new SimpleSequence(sequences.getSequence(record.getSeqName()).subList(record.getStart(),record.getEnd()),null,
-								String.format("%s_|%d-%d|",record.getSeqName(),record.getStart(),record.getEnd()),Annotation.EMPTY_ANNOTATION);
+						seq = new SimpleSequence(
+								sequences.getSequence(record.getSeqName()).subList(record.getStart(),record.getEnd()),null,
+								String.format("%s_|%d-%d|",record.getSeqName(),record.getStart(),record.getEnd()),
+								Annotation.EMPTY_ANNOTATION);
 					} catch (IllegalIDException e) {
 						throw new BioError(e);
 					} catch (BioException e) {
