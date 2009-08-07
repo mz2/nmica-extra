@@ -155,6 +155,8 @@ public class WriteCoveredSequences {
 			Sequence seq = si.nextSequence();
 			Location loc = locs.get(seq.getName());
 			
+			if (loc == null) continue;
+			
 			org.biojava.bio.seq.StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
 
 			
