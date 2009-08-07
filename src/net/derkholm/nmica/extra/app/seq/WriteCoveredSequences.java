@@ -52,7 +52,8 @@ public class WriteCoveredSequences {
 	private boolean validate = true;
 	private int filterAboveLength;
 	private HashSequenceDB seqDB;
-
+	private int filterBelowLength = 1;
+	
 	@Option(help="Input feature file")
 	public void setFeatures(File f) {
 		this.gffFile = f;
@@ -88,7 +89,16 @@ public class WriteCoveredSequences {
 	}
 	
 	@Option(help="Filter out features above specified maximum length", optional=true)
-	public void setFilterFeaturesAboveLength(int i) {
+	public void setMaxFeatureLength(int i) {
+		if (i < 0) {
+			System.err.println("-filterFeaturesAboveLength value should be > 0");
+			System.exit(2);
+		}
+		this.filterBelowLength  = i;
+	}
+	
+	@Option(help="Filter out features below specified maximum length (default=1)", optional=true)
+	public void setMinFeatureLength(int i) {
 		if (i < 0) {
 			System.err.println("-filterFeaturesAboveLength value should be > 0");
 			System.exit(2);
@@ -117,15 +127,25 @@ public class WriteCoveredSequences {
 			WriteCoveredSequences.validateGFFSequenceIdentifiersAgainstSequences(locs,seqDB);
 		}
 		
-		if (filterAboveLength > 0) {
+		if ((filterAboveLength > 0) || (filterBelowLength > 0)) {
 			Set<String> keys = locs.keySet();
 			for (String str : keys) {
 				Location loc = locs.get(str);
-				if (loc.getMax() - loc.getMin() > filterAboveLength) {
-					System.err.printf("Filtered feature that spans %d-%d%n",
-							loc.getMin(),
-							loc.getMax());
-					locs.remove(str);
+				if (filterAboveLength > 0) {
+					if ((loc.getMax() - loc.getMin()) > filterAboveLength) {
+						System.err.printf("Filtered feature that spans %d-%d%n",
+								loc.getMin(),
+								loc.getMax());
+						locs.remove(str);
+					}
+				}
+				if (filterBelowLength > 0) {
+					if ((loc.getMax() - loc.getMin()) < filterBelowLength) {
+						System.err.printf("Filtered feature that spans %d-%d%n",
+								loc.getMin(),
+								loc.getMax());
+						locs.remove(str);
+					}
 				}
 			}
 		}
