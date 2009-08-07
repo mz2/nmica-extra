@@ -128,33 +128,27 @@ public class WriteCoveredSequences {
 			WriteCoveredSequences.validateGFFSequenceIdentifiersAgainstSequences(locs,seqDB);
 		}
 		
-		if ((filterAboveLength > 0) || (filterBelowLength > 0)) {
-			Set<String> keys = locs.keySet();
-			for (String str : keys) {
-				Location loc = locs.get(str);
-				if (filterAboveLength > 0) {
-					if ((loc.getMax() - loc.getMin()) > filterAboveLength) {
-						System.err.printf("Filtered feature that spans %d-%d%n",
-								loc.getMin(),
-								loc.getMax());
-						locs.remove(str);
-					}
-				}
-				if (filterBelowLength > 0) {
-					if ((loc.getMax() - loc.getMin()) < filterBelowLength) {
-						System.err.printf("Filtered feature that spans %d-%d%n",
-								loc.getMin(),
-								loc.getMax());
-						locs.remove(str);
-					}
-				}
-			}
-		}
-		
 		for (SequenceIterator si = seqDB.sequenceIterator(); si.hasNext();) {
 			Sequence seq = si.nextSequence();
 			Location loc = locs.get(seq.getName());
 			
+			
+			if (filterAboveLength > 0) {
+				if ((loc.getMax() - loc.getMin()) > filterAboveLength) {
+					System.err.printf("Filtered feature that spans %d-%d%n",
+							loc.getMin(),
+							loc.getMax());
+					continue;
+				}
+			}
+			if (filterBelowLength > 0) {
+				if ((loc.getMax() - loc.getMin()) < filterBelowLength) {
+					System.err.printf("Filtered feature that spans %d-%d%n",
+							loc.getMin(),
+							loc.getMax());
+					continue;
+				}
+			}
 			if (loc == null) continue;
 			
 			org.biojava.bio.seq.StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
