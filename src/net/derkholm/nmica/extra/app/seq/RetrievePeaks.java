@@ -255,8 +255,8 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			
 			Location mask = Location.empty;
 			Location loc = new RangeLocation(peak.startCoord,peak.endCoord);
+			
 			if (this.repeatMask) {
-
 				FeatureHolder repeats = chromoSeq.filter(new FeatureFilter.And(
 						new FeatureFilter.Or(
 								new FeatureFilter.ByType("repeat"),
@@ -304,6 +304,8 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			}
 			
 			boolean anyWereOutput = false;
+			
+			int frag = 0;
 			for (Iterator<?> bi = loc.blockIterator(); bi.hasNext();) {
 				Location bloc = (Location) bi.next();
 				
@@ -312,11 +314,12 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 				SymbolList symList = chromoSeq.subList(bloc.getMin(), bloc.getMax());
 				Sequence seq = 
 					new SimpleSequence(symList, null, 
-						String.format("%s_%d-%d;%f", 
+						String.format("%s_%d-%d;%f;%d", 
 								peak.seqName, 
-								peak.startCoord,
-								peak.endCoord,
-								peak.value),
+								bloc.getMin(),
+								bloc.getMax(),
+								peak.value,
+								++frag),
 						Annotation.EMPTY_ANNOTATION);
 				
 				RichSequence.IOTools.writeFasta(System.out, seq, null);
@@ -333,7 +336,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			}
 		}
 		
-		System.err.printf("Masked %d nucleotides out of %d total (%.4f)%n",
+		System.err.printf("Masked %d nucleotides out of %d total (%.4f%)%n",
 				maskedSeqLength, 
 				totalLength, 100.0 * (double)maskedSeqLength / (double)totalLength);
 	}
