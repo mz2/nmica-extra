@@ -50,8 +50,9 @@ public class WriteCoveredSequences {
 	
 	private Format outputFormat = Format.FASTA;
 	private boolean validate = true;
-	private int filterAboveLength;
 	private HashSequenceDB seqDB;
+	
+	private int filterAboveLength = 0;
 	private int filterBelowLength = 1;
 	
 	@Option(help="Input feature file")
