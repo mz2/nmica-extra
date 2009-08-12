@@ -9,11 +9,16 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry combineaccessrules="false" kind="src" path="/nmica-dev"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/bytecode.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/biojava.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/bjv2-core-0.1.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/colt.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/stax-api-1.0.1.jar"/>
 	<classpathentry kind="lib" path="lib/biojava-ensembl.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/biojava.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/bjv2-core-0.1.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/blog.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/bytecode.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/changeless.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/colt.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/Jama-1.0.2.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/nmica.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/stax-api-1.0.1.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/wstx-lgpl-3.0.2.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

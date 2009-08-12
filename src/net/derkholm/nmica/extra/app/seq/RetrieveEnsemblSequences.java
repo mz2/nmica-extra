@@ -94,7 +94,7 @@ public class RetrieveEnsemblSequences {
 
 	private Object type;
 
-	private EnsemblConnection ensemblConnection;
+	protected EnsemblConnection ensemblConnection;
 
 	protected SequenceDB seqDB;
 
