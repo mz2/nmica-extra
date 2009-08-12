@@ -9,9 +9,11 @@ import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 
 import org.biojava.bio.Annotation;
+import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.seq.db.SequenceDB;
 import org.biojava.bio.seq.impl.SimpleSequence;
+import org.biojava.bio.symbol.SimpleSymbolList;
 import org.biojavax.bio.seq.RichSequence;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
@@ -37,11 +39,16 @@ public class RetrieveChromosomesFromEnsembl extends RetrieveEnsemblSequences {
 			os = new PrintStream(new FileOutputStream(this.outFile, true));
 		}
 		
+		
 		SequenceDB chromos = ensemblConnection.getSequenceDB("chromosome");
 		for (Object id : chromos.ids()) {
 			String idStr = (String)id;
 			
 			Sequence seq = chromos.getSequence(idStr);
+			Sequence s = new SimpleSequence(
+					seq.subList(0, 2),
+					String.format("%s",idStr),
+					null, Annotation.EMPTY_ANNOTATION);
 			System.err.printf("Retrieved chromosome %s (length : %d)%n", idStr, seq.length());
 			RichSequence.IOTools.writeFasta(os, seq, null);
 		}
