@@ -49,7 +49,6 @@ public class RetrieveChromosomesFromEnsembl extends RetrieveEnsemblSequences {
 		for (Object id : chromos.ids()) {
 			String idStr = (String)id;
 			
-			
 			Sequence seq = chromos.getSequence(idStr);
 			Sequence s = new SimpleSequence(
 					new SimpleSymbolList(tokenization, seq.seqString().substring(0, seq.length()-1)),
