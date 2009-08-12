@@ -38,7 +38,7 @@ public class RetrieveChromosomesFromEnsembl extends RetrieveEnsemblSequences {
 		if (this.outFile == null) {
 			os = System.out;
 		} else {
-			os = new PrintStream(new FileOutputStream(this.outFile, true));
+			os = new PrintStream(new FileOutputStream(this.outFile));
 		}
 		
 	
@@ -58,6 +58,7 @@ public class RetrieveChromosomesFromEnsembl extends RetrieveEnsemblSequences {
 			seq = null;
 			System.err.printf("Retrieved chromosome %s (length : %d)%n", idStr, s.length());
 			RichSequence.IOTools.writeFasta(os, s, null);
+			os.flush();
 		}
 		
 		os.close();
