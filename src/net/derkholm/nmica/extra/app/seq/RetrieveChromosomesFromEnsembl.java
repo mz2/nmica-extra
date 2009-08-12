@@ -42,6 +42,7 @@ public class RetrieveChromosomesFromEnsembl extends RetrieveEnsemblSequences {
 			String idStr = (String)id;
 			
 			Sequence seq = chromos.getSequence(idStr);
+			System.err.printf("Retrieved chromosome %s (length : %d)%n", idStr, seq.length());
 			RichSequence.IOTools.writeFasta(os, seq, null);
 		}
 		
