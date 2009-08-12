@@ -52,11 +52,12 @@ public class RetrieveChromosomesFromEnsembl extends RetrieveEnsemblSequences {
 			
 			Sequence seq = chromos.getSequence(idStr);
 			Sequence s = new SimpleSequence(
-					new SimpleSymbolList(tokenization, seq.seqString().substring(0, 5)),
+					new SimpleSymbolList(tokenization, seq.seqString().substring(0, seq.length()-1)),
 					String.format("%s",idStr),
 					null, Annotation.EMPTY_ANNOTATION);
+			seq = null;
 			System.err.printf("Retrieved chromosome %s (length : %d)%n", idStr, seq.length());
-			RichSequence.IOTools.writeFasta(os, seq, null);
+			RichSequence.IOTools.writeFasta(os, s, null);
 		}
 		
 		os.close();
