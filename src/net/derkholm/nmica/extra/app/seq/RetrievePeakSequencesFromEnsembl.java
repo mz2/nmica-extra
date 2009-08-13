@@ -7,23 +7,22 @@ import java.io.FileReader;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.SortedSet;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
+import java.util.regex.Pattern;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 
 import org.biojava.bio.Annotation;
+import org.biojava.bio.BioError;
 import org.biojava.bio.seq.Feature;
 import org.biojava.bio.seq.FeatureFilter;
 import org.biojava.bio.seq.FeatureHolder;
 import org.biojava.bio.seq.Sequence;
-import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.impl.SimpleSequence;
 import org.biojava.bio.symbol.Location;
 import org.biojava.bio.symbol.LocationTools;
@@ -36,12 +35,21 @@ import org.bjv2.util.cli.Option;
 
 @App(overview = "Get sequences from Ensembl that using peaks in the FindPeaks format", generateStub = true)
 @NMExtraApp(launchName = "nmpeakseq", vm = VirtualMachine.SERVER)
-public class RetrievePeaks extends RetrieveEnsemblSequences {
+public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	public static enum RankOrder {
     	ASC,
     	DESC,
     	NONE
     }
+	
+	public static enum PeakFormat {
+		BED,
+		MACS,
+		SWEMBL,
+		FINDPEAKS
+	}
+	
+	private PeakFormat inputFormat = PeakFormat.BED;
 	
 	private File peaksFile;
 	private File outFile;
@@ -55,6 +63,11 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 	@Option(help="Peaks")
 	public void setPeaks(File f) {
 		peaksFile = f;
+	}
+	
+	@Option(help="Input format")
+	public void setInputFormat(PeakFormat f) {
+		this.inputFormat = f;
 	}
 	
 	@Option(help="Output file",optional=true)
@@ -93,7 +106,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 	}
 	
 	public static class PeakEntry {
-		public final int id;
+		public final String id;
 		public String seqName;
 		public final int startCoord;
 		public final int endCoord;
@@ -101,13 +114,13 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 		public final double value;
 		
 		public PeakEntry(
-				int id, 
+				String id2, 
 				String seqName,
 				int startCoord, 
 				int endCoord, 
 				int peakCoord, 
 				double value) {
-			this.id = id;
+			this.id = id2;
 			this.seqName = seqName;
 			this.startCoord = startCoord;
 			this.endCoord = endCoord;
@@ -119,7 +132,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
-			result = prime * result + id;
+			result = prime * result + ((id == null) ? 0 : id.hashCode());
 			return result;
 		}
 
@@ -131,11 +144,16 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 				return false;
 			if (getClass() != obj.getClass())
 				return false;
-			PeakEntry other = (PeakEntry) obj;
-			if (id != other.id)
+			final PeakEntry other = (PeakEntry) obj;
+			if (id == null) {
+				if (other.id != null)
+					return false;
+			} else if (!id.equals(other.id))
 				return false;
 			return true;
 		}
+
+		
 	}
 	
 	public static abstract class PeakEntryComparator implements Comparator<PeakEntry> {
@@ -166,7 +184,6 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 	
 	
 	public void main(String[] argv) throws Exception {
-		initializeEnsemblConnection();
 		
 		PrintStream os = null;
 		if (this.outFile == null) {
@@ -176,7 +193,6 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 		}
 		
 		BufferedReader br = new BufferedReader(new FileReader(peaksFile));
-		
 		PeakEntryComparator comp = null;
 		
 		if (rankOrder == RankOrder.ASC) {
@@ -189,18 +205,96 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 		
 		SortedSet<PeakEntry> peaks = new TreeSet<PeakEntry>(comp);
 		String line = null;
-		br.readLine();//ignore the header
+		//br.readLine();//ignore the header
 		
-		
+		int peakId = 1;
 		while ((line = br.readLine()) != null) {
+			//stem.err.println(line);
+			//ignore comment lines regardless of exact format
+			if (Pattern.compile("^#").matcher(line).find()) {
+				continue;
+			}
+			
+			//the MACS header
+			if (inputFormat == PeakFormat.MACS && Pattern.compile("chr\\s+start\\s+end").matcher(line).find()) {
+				continue;
+			}
+			
+			//the SWEMBL header
+			if (inputFormat == PeakFormat.SWEMBL && Pattern.compile("Region\\s+Start").matcher(line).find()) {
+				continue;
+			}
+			
+			//the BED header
+			if (inputFormat == PeakFormat.BED && Pattern.compile("track name").matcher(line).find()) {
+				continue;
+			}
+			
+			String id; //not really used for anything (not present in the BED format)
+			String chromo;
+			int startCoord;
+			int endCoord;
+			int peakCoord;
+			double value;
+			
 			StringTokenizer tok = new StringTokenizer(line,"\t");
 			
-			int id = Integer.parseInt(tok.nextToken());
-			String chromo = tok.nextToken();
-			int startCoord = Integer.parseInt(tok.nextToken());
-			int endCoord = Integer.parseInt(tok.nextToken());
-			int peakCoord = Integer.parseInt(tok.nextToken());
-			double value = Double.parseDouble(tok.nextToken());
+			if (inputFormat == PeakFormat.BED) {
+				chromo = tok.nextToken();
+				startCoord = Integer.parseInt(tok.nextToken());
+				endCoord = Integer.parseInt(tok.nextToken());
+				id = tok.nextToken();
+				peakCoord = -1;
+				value = Double.parseDouble(tok.nextToken());
+				
+				
+			} else if (inputFormat == PeakFormat.MACS) {
+				id = "" + peakId++;
+				chromo = tok.nextToken();
+				startCoord = Integer.parseInt(tok.nextToken()) - 1; //1-based coords
+				endCoord = Integer.parseInt(tok.nextToken()) - 1; //1-based coords
+				tok.nextToken();//length
+				peakCoord  = startCoord + Integer.parseInt(tok.nextToken());//summit reported relative to start coord
+				tok.nextToken(); //tags
+				value = Double.parseDouble(tok.nextToken());
+				//fold enrichment
+				//false discovery rate
+				
+			} else if (inputFormat == PeakFormat.SWEMBL) {
+				chromo = tok.nextToken();
+				id = "" + peakId++;
+				startCoord = Integer.parseInt(tok.nextToken());
+				endCoord = Integer.parseInt(tok.nextToken());
+				tok.nextToken();//count
+				tok.nextToken();//length
+				tok.nextToken();//uniquePos
+				value = Double.parseDouble(tok.nextToken());//score
+				tok.nextToken();//Ref. count
+				tok.nextToken();//Max. coverage
+				peakCoord = (int)Math.round(Double.parseDouble(tok.nextToken()));
+			
+			}else {
+				id = tok.nextToken();
+				chromo = tok.nextToken();
+				startCoord = Integer.parseInt(tok.nextToken());
+				endCoord = Integer.parseInt(tok.nextToken());
+				peakCoord = (int)Math.round(Double.parseDouble(tok.nextToken()));
+				value = Double.parseDouble(tok.nextToken());
+					
+			}
+			
+			
+			/*
+			if ((startCoord > endCoord) || id.equals("847")) {
+				System.err.println(line);
+				System.err.printf("chromo:%s start:%d end:%d peak:%d value:%.3f%n",
+						chromo, 
+						startCoord, 
+						endCoord, 
+						peakCoord, 
+						value);
+				//throw new BioError("Start coordinate " + startCoord + " is larger than end coordinate "+ endCoord);
+			}*/
 			
 			boolean maxLengthCondition = Math.abs(startCoord - endCoord) < this.maxLength;
 			if (!maxLengthCondition) continue;
@@ -209,17 +303,35 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 
 			if (aroundPeak > 0) {
 				int halfLength = (int) Math.round((double)aroundPeak / 2.0);
+				int peakStartCoord = Math.max(startCoord,peakCoord - halfLength);
+				int peakEndCoord = Math.min(endCoord,peakCoord + halfLength);
+				
+				if (peakStartCoord > peakEndCoord) {
+					System.err.printf("Peak start (%d) larger than end (%d) -- will skip%n", 
+							peakStartCoord, peakEndCoord);	
+					continue;
+				}
 				peaks.add(new PeakEntry(
 						id, 
 						chromo, 
-						Math.max(startCoord,peakCoord - halfLength), 
-						Math.min(endCoord,peakCoord + halfLength), 
+						peakStartCoord, 
+						peakEndCoord, 
 						peakCoord, 
 						value));
 			} else {
 				peaks.add(new PeakEntry(id, chromo, startCoord, endCoord, peakCoord, value));	
 			}
 		}
+		
+		/*
+		for (PeakEntry e : peaks) {
+			if (e.startCoord > e.endCoord) {
+				System.err.printf("Start %d larger than end %d (id:%s)%n", e.startCoord, e.endCoord,e.id);
+				System.exit(1);
+			}
+		}*/
+		
+		initializeEnsemblConnection();
 		
 		int maskedSeqLength = 0;
 		int totalLength = 0;
@@ -254,6 +366,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			}
 			
 			Location mask = Location.empty;
+			
 			Location loc = new RangeLocation(peak.startCoord,peak.endCoord);
 			
 			if (this.repeatMask) {
@@ -315,7 +428,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 				Sequence seq = 
 					new SimpleSequence(symList, null, 
 						String.format("%s_%d-%d;%f;%d", 
-								peak.seqName, 
+								peak.seqName,
 								bloc.getMin(),
 								bloc.getMax(),
 								peak.value,
@@ -336,7 +449,7 @@ public class RetrievePeaks extends RetrieveEnsemblSequences {
 			}
 		}
 		
-		System.err.printf("Masked %d nucleotides out of %d total (%.4f%)%n",
+		System.err.printf("Masked %d nucleotides out of %d total (%.4f)%n",
 				maskedSeqLength, 
 				totalLength, 100.0 * (double)maskedSeqLength / (double)totalLength);
 	}
