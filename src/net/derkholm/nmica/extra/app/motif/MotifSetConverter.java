@@ -34,7 +34,7 @@ public class MotifSetConverter {
 			new BufferedOutputStream(new FileOutputStream(new File(str)));
 	}
 	
-	@Option(help = "Output format (default = TRANSFAC)", 
+	@Option(help = "Output format (default = transfac)", 
 			userLevel = UserLevel.EXPERT, 
 			optional = true)
 	public void setFormat(OutputFormat format) {
