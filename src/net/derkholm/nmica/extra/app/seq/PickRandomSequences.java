@@ -4,16 +4,23 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+
+import net.derkholm.nmica.build.NMExtraApp;
+import net.derkholm.nmica.build.VirtualMachine;
 
 import org.biojava.bio.BioException;
 import org.biojava.bio.seq.Sequence;
 import org.biojavax.bio.seq.RichSequence;
 import org.biojavax.bio.seq.RichSequenceIterator;
+import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
+@App(overview = "Write out random sequences or sections of sequences", generateStub = true)
+@NMExtraApp(launchName = "nmrandomseq", vm = VirtualMachine.SERVER)
 public class PickRandomSequences {
 	private int count = 1;
 	private File seqFile;
@@ -47,7 +54,7 @@ public class PickRandomSequences {
 		this.sampleFragsWithReplacement = b;
 	}
 	
-	public void main(String[] args) throws FileNotFoundException, BioException {
+	public void main(String[] args) throws BioException, IOException {
 		RichSequenceIterator seqIterator = RichSequence.IOTools.readFastaDNA(new BufferedReader(new FileReader(seqFile)), null);
 		
 		List<Sequence> seqs = new ArrayList<Sequence>();
@@ -70,7 +77,14 @@ public class PickRandomSequences {
 			 * or if the wanted length is specified 
 			 */
 			
+			if (length > 0) {
+				
+			}
 			
+		}
+		
+		for (Sequence seq : chosenSeqs) {
+			RichSequence.IOTools.writeFasta(System.out, seq, null);
 		}
 		seqs = null;
 	}

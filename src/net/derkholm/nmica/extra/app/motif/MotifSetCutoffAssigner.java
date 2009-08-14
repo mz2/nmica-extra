@@ -78,9 +78,10 @@ public class MotifSetCutoffAssigner {
 	}
 	
 	@Option(help = "Default score threshold applied to motifs for which threshold could not be determined " +
-			"(an annotation 'default_threshold_used' will also be added to these cases)", optional = true)
+			"(an annotation 'default_threshold_used' will also be added to these cases). " +
+			"Note that as the scores are negative, and as you can't output negative numbers ", optional = true)
 	public void setDefaultThreshold(double d) {
-		this.defaultThreshold = d;
+		this.defaultThreshold = -d;
 	}
 
 	@Option(help="Background model in the NMICA background model XML format")
