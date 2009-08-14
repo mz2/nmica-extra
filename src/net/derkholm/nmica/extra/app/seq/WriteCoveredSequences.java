@@ -52,8 +52,8 @@ public class WriteCoveredSequences {
 	private boolean validate = true;
 	private HashSequenceDB seqDB;
 	
-	private int filterAboveLength = 0;
-	private int filterBelowLength = 1;
+	private int minFeatureLength = 0;
+	private int maxFeatureLength = 0;
 	
 	@Option(help="Input feature file")
 	public void setFeatures(File f) {
@@ -95,7 +95,7 @@ public class WriteCoveredSequences {
 			System.err.println("-filterFeaturesAboveLength value should be > 0");
 			System.exit(2);
 		}
-		this.filterBelowLength  = i;
+		this.maxFeatureLength  = i;
 	}
 	
 	@Option(help="Filter out features below specified maximum length (default=1)", optional=true)
@@ -104,7 +104,7 @@ public class WriteCoveredSequences {
 			System.err.println("-filterFeaturesAboveLength value should be > 0");
 			System.exit(2);
 		}
-		this.filterAboveLength = i;
+		this.minFeatureLength = i;
 	}
 
 	public void main(String[] args)
@@ -133,22 +133,6 @@ public class WriteCoveredSequences {
 			Location loc = locs.get(seq.getName());
 			
 			
-			if (filterAboveLength > 0) {
-				if ((loc.getMax() - loc.getMin()) > filterAboveLength) {
-					System.err.printf("Filtered feature that spans %d-%d%n",
-							loc.getMin(),
-							loc.getMax());
-					continue;
-				}
-			}
-			if (filterBelowLength > 0) {
-				if ((loc.getMax() - loc.getMin()) < filterBelowLength) {
-					System.err.printf("Filtered feature that spans %d-%d%n",
-							loc.getMin(),
-							loc.getMax());
-					continue;
-				}
-			}
 			if (loc == null) continue;
 			
 			org.biojava.bio.seq.StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
@@ -163,8 +147,26 @@ public class WriteCoveredSequences {
 				if (outputFormat == Format.FASTA) {
 					RichSequence.IOTools.writeFasta(System.out, seq, null);					
 				} else {
-					for (Iterator<?> li = loc.blockIterator(); li.hasNext(); ) {
+          
+          for (Iterator<?> li = loc.blockIterator(); li.hasNext(); ) {
 						Location l = (Location)li.next();
+            if (minFeatureLength > 0) {
+              if ((l.getMax() - l.getMin()) < minFeatureLength) {
+                System.err.printf("Filtered feature that spans %d-%d%n",
+                    l.getMin(),
+                    l.getMax());
+                continue;
+              }
+            }
+            if (maxFeatureLength > 0) {
+              if ((l.getMax() - l.getMin()) > maxFeatureLength) {
+                System.err.printf("Filtered feature that spans %d-%d%n",
+                    l.getMin(),
+                    l.getMax());
+                continue;
+              }
+            }
+
 						GFFRecord r = new SimpleGFFRecord(
 								seq.getName(),
 								"nmcoveredseq",
@@ -190,8 +192,24 @@ public class WriteCoveredSequences {
 				}
 				
 				for (Iterator<?> bi = wanted.blockIterator(); bi.hasNext(); ) { 
-					Location wl = (Location) bi.next();
-					
+          Location wl = (Location) bi.next();
+          if (minFeatureLength > 0) {
+            if ((wl.getMax() - wl.getMin()) < minFeatureLength) {
+              System.err.printf("Filtered feature that spans %d-%d%n",
+                  wl.getMin(),
+                  wl.getMax());
+              continue;
+            }
+          }
+          if (maxFeatureLength > 0) {
+            if ((wl.getMax() - wl.getMin()) > maxFeatureLength) {
+              System.err.printf("Filtered feature that spans %d-%d%n",
+                  wl.getMin(),
+                  wl.getMax());
+              continue;
+            }
+          }
+
 					if (outputFormat == Format.FASTA) {
 						RichSequence.IOTools.writeFasta(System.out, new SimpleSequence(
 								seq.subList(wl.getMin(), wl.getMax()),
