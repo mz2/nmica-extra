@@ -18,17 +18,18 @@ import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 
 import org.biojava.bio.Annotation;
-import org.biojava.bio.BioError;
 import org.biojava.bio.seq.Feature;
 import org.biojava.bio.seq.FeatureFilter;
 import org.biojava.bio.seq.FeatureHolder;
 import org.biojava.bio.seq.Sequence;
+import org.biojava.bio.seq.db.HashSequenceDB;
 import org.biojava.bio.seq.impl.SimpleSequence;
 import org.biojava.bio.symbol.Location;
 import org.biojava.bio.symbol.LocationTools;
 import org.biojava.bio.symbol.RangeLocation;
 import org.biojava.bio.symbol.SymbolList;
 import org.biojavax.bio.seq.RichSequence;
+import org.biojavax.bio.seq.RichSequenceIterator;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -59,6 +60,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	private int maxCount = 0;
 	private int aroundPeak;
 	private int chunkLength;
+
+	private File seqDBFile;
 	
 	@Option(help="Peaks")
 	public void setPeaks(File f) {
@@ -68,6 +71,11 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	@Option(help="Input format")
 	public void setInputFormat(PeakFormat f) {
 		this.inputFormat = f;
+	}
+	
+	@Option(help="Sequence database (you can read the peaks from local disk instead of Ensembl)")
+	public void setSeqDB(File f) {
+		this.seqDBFile = f;
 	}
 	
 	@Option(help="Output file",optional=true)
@@ -331,7 +339,15 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			}
 		}*/
 		
-		initializeEnsemblConnection();
+		if (seqDBFile == null) {
+			initializeEnsemblConnection();
+		} else {
+			seqDB = new HashSequenceDB();
+			RichSequenceIterator seqIter = RichSequence.IOTools.readFastaDNA(new BufferedReader(new FileReader(seqDBFile)), null);
+			while (seqIter.hasNext()) {
+				seqDB.addSequence(seqIter.nextSequence());
+			}
+		}
 		
 		int maskedSeqLength = 0;
 		int totalLength = 0;
