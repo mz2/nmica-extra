@@ -406,7 +406,6 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			}
 			
 			loc = LocationTools.subtract(loc, mask);
-			
 			if (excludeTranslations) {
 				FeatureHolder translations = chromoSeq.filter(new FeatureFilter.And(
 						new FeatureFilter.ByType("translation"),
@@ -419,7 +418,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 					for (Iterator<?> bi = transLoc.blockIterator(); bi.hasNext();) {
 						Location tl = (Location)bi.next();
 						int len = tl.getMax() - tl.getMin();
-						System.err.println("Masking translated sequence of length " + len + " from peak with ID " + peak.id);
+						System.err.println(
+							"Masking translated sequence of length " + len + " from peak with ID " + peak.id);
 						maskedSeqLength += len;
 						transLocs.add(tl);
 					}
@@ -438,7 +438,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			for (Iterator<?> bi = loc.blockIterator(); bi.hasNext();) {
 				Location bloc = (Location) bi.next();
 				
-				if ((bloc.getMax() - bloc.getMin()) < this.minLength) continue;
+				if ((bloc.getMax() - bloc.getMin()) < this.minLength) continue; //too short, filter out
 				
 				SymbolList symList = chromoSeq.subList(bloc.getMin(), bloc.getMax());
 				Sequence seq = 
@@ -451,7 +451,16 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 								++frag),
 						Annotation.EMPTY_ANNOTATION);
 				
-				RichSequence.IOTools.writeFasta(System.out, seq, null);
+				if (chunkLength > 0) {
+					List<Sequence> outSeqs = 
+						SequenceSplitter.splitSequences(
+							new RichSequence.IOTools.SingleRichSeqIterator(seq),this.minLength, this.maxLength);
+					for (Sequence s : outSeqs) {
+						RichSequence.IOTools.writeFasta(System.out, s, null);
+					}
+				} else {
+					RichSequence.IOTools.writeFasta(System.out, seq, null);					
+				}
 				anyWereOutput = true;
 			}
 			

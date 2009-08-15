@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
@@ -12,8 +14,7 @@ import org.biojava.bio.Annotation;
 import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.seq.SequenceIterator;
 import org.biojava.bio.seq.impl.SimpleSequence;
-import org.biojava.bio.seq.io.FastaFormat;
-import org.biojava.bio.seq.io.SeqIOTools;
+import org.biojavax.bio.seq.RichSequence;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -47,22 +48,20 @@ public class SequenceSplitter {
     }
     
     public void main(String[] args)
-    		throws Exception
-    {
+    		throws Exception {
     	if (args.length > 0) {
 	        for (int i = 0; i < args.length; ++i) {
 	            File seqFile = new File(args[i]);
-	            doSplit(new BufferedReader(new FileReader(seqFile)));
+	            doSplit(RichSequence.IOTools.readFastaDNA(new BufferedReader(new FileReader(seqFile)), null));
 	        }
     	} else {
-    		doSplit(new BufferedReader(new InputStreamReader(System.in)));
+    		doSplit(RichSequence.IOTools.readFastaDNA(new BufferedReader(new InputStreamReader(System.in)), null));
     	}
     }
     
-    private void doSplit(BufferedReader br)
+    private void doSplit(SequenceIterator si)
     	throws Exception
     {
-    	 SequenceIterator si = SeqIOTools.readFastaDNA(br);
          while (si.hasNext()) {
              Sequence seq = si.nextSequence();
              if (seq.length() > maxLength) {
@@ -72,21 +71,45 @@ public class SequenceSplitter {
                  while (pos < seq.length()) {
                      int maxPos = Math.min(seq.length(), pos + chunkSize - 1);
                      if ((maxPos - pos) >= minLength) {
-	                     new FastaFormat().writeSequence(
-	                             new SimpleSequence(
-	                                     seq.subList(pos, maxPos),
-	                                     null,
-	                                     seq.getName() + "_" + pos + "-" + maxPos,
-	                                     Annotation.EMPTY_ANNOTATION
-	                            ),
-	                            System.out
-	                     );
+                    	 RichSequence.IOTools.writeFasta(System.out, new SimpleSequence(
+                                 seq.subList(pos, maxPos),
+                                 null,
+                                 seq.getName() + "_" + pos + "-" + maxPos,
+                                 Annotation.EMPTY_ANNOTATION), null);
                      }
                      pos = maxPos + 1;
                  }
              } else if (seq.length() > minLength) {
-                 new FastaFormat().writeSequence(seq, System.out);
+            	 RichSequence.IOTools.writeFasta(System.out, seq, null);
              }
          }
     }
+    
+    public static List<Sequence> splitSequences(SequenceIterator si, int minLength, int maxLength) throws Exception {
+    	List<Sequence> seqs = new ArrayList<Sequence>();
+    	
+	     while (si.hasNext()) {
+	         Sequence seq = si.nextSequence();
+	         if (seq.length() > maxLength) {
+	             int numChunks = (int) Math.ceil((1.0 * seq.length()) / maxLength);
+	             int chunkSize = (int) Math.ceil((1.0 * seq.length()) / numChunks);
+	             int pos = 1;
+	             while (pos < seq.length()) {
+	                 int maxPos = Math.min(seq.length(), pos + chunkSize - 1);
+	                 if ((maxPos - pos) >= minLength) {
+	                	  seqs.add(new SimpleSequence(
+		                             seq.subList(pos, maxPos),
+		                             null,
+		                             seq.getName() + "_" + pos + "-" + maxPos,
+		                             Annotation.EMPTY_ANNOTATION));
+	                 }
+	                 pos = maxPos + 1;
+	             }
+	         } else if (seq.length() > minLength) {
+	        	 RichSequence.IOTools.writeFasta(System.out, seq, null);
+	         }
+	     }
+	     
+	     return seqs;
+	}
 }
