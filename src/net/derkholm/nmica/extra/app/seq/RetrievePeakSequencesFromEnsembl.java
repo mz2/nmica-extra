@@ -73,7 +73,10 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		this.inputFormat = f;
 	}
 	
-	@Option(help="Sequence database (you can read the peaks from local disk instead of Ensembl)")
+	@Option(
+		help="Sequence database " +
+				"(you can read the peaks from local disk instead of Ensembl)",
+				optional=true)
 	public void setSeqDB(File f) {
 		this.seqDBFile = f;
 	}
