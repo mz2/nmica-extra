@@ -421,7 +421,6 @@ public class RetrieveEnsemblSequences {
 										max),
 								Annotation.EMPTY_ANNOTATION);
 						
-						
 						new FastaFormat().writeSequence(dump, outputStream);						
 					} else {
 						org.biojava.bio.seq.StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
@@ -453,6 +452,8 @@ public class RetrieveEnsemblSequences {
 			gffw.endDocument();
 		}
 	}
+	
+	
 
 	protected Location feather(Location l, int amount) {
 		List<Location> spans = new ArrayList<Location>();
