@@ -4,10 +4,12 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.StringTokenizer;
 import java.util.TreeSet;
 
 import net.derkholm.nmica.build.NMExtraApp;
@@ -61,16 +63,14 @@ public class SAMProcessor {
 	}
 
 	
-	@Option(help="Reference sequence that the reads are mapped to (FASTA formatted)")
-	public void setRef(File f) throws FileNotFoundException, NoSuchElementException, BioException {
-		this.seqDB = new HashSequenceDB();
-		RichSequenceIterator iter = RichSequence.IOTools.readFastaDNA(new BufferedReader(new FileReader(f)), null);
+	@Option(help="Reference sequence names and lengths in a TSV formatted file")
+	public void setRefLengths(File f) throws NoSuchElementException, BioException, NumberFormatException, IOException {
+		BufferedReader reader = new BufferedReader(new FileReader(f));
 		
-		System.err.println("Reading reference sequences...");
-		while (iter.hasNext()) {
-			Sequence s = iter.nextSequence();
-			System.err.println(s.getName());
-			refSeqLengths.put(s.getName(), s.length());
+		String line = null;
+		while ((line = reader.readLine()) != null) {
+			StringTokenizer tok = new StringTokenizer(line,"\t");
+			refSeqLengths.put(tok.nextToken(), Integer.parseInt(tok.nextToken()));
 		}
 	}
 	
