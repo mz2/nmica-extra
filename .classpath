@@ -3,11 +3,7 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="src-build"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
-	<classpathentry kind="src" path=".apt_generated">
-		<attributes>
-			<attribute name="optional" value="true"/>
-		</attributes>
-	</classpathentry>
+	<classpathentry kind="src" path=".apt_generated"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/nmica-dev"/>
 	<classpathentry kind="lib" path="lib/biojava-ensembl.jar"/>
 	<classpathentry kind="lib" path="lib/commons-collections-2.1.jar"/>
@@ -25,5 +21,7 @@
 	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/nmica.jar"/>
 	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/stax-api-1.0.1.jar"/>
 	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/wstx-lgpl-3.0.2.jar"/>
+	<classpathentry kind="lib" path="lib/sam-1.03.jar"/>
+	<classpathentry kind="lib" path="lib/picard-1.03.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
