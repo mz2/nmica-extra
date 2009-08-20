@@ -77,7 +77,7 @@ public class SAMProcessor {
 		} else {
 			this.inReader = new SAMFileReader(new File(in),indexFile);
 		}
-		this.inReader.setValidationStringency(ValidationStringency.LENIENT);
+		this.inReader.setValidationStringency(ValidationStringency.SILENT);
 		
 		int excludedReads = 0;
 		int readCount = 0;
