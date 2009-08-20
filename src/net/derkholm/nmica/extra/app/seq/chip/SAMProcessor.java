@@ -32,10 +32,8 @@ import org.bjv2.util.cli.Option;
 @App(overview = "Create an SQLite database usable by nextgenseq-dazzle", generateStub = true)
 @NMExtraApp(launchName = "ngsamprocess", vm = VirtualMachine.SERVER)
 public class SAMProcessor {
-
 	private String in;
 	private SAMFileReader inReader;
-	private File outFile;
 	private HashSequenceDB seqDB;
 	private int qualityCutoff = 10;
 	private int expandReadsBy;
@@ -43,7 +41,7 @@ public class SAMProcessor {
 	@Option(help="Input map in SAM format -- " +
 			"input needs to be sorted according to reference sequence identifier " +
 			"and ascending start position (read from stdin if '-' given)")
-	public void setIn(String str) {
+	public void setReads(String str) {
 		if (str.equals("-")) {
 			this.inReader = new SAMFileReader(System.in);
 		} else {
@@ -53,7 +51,7 @@ public class SAMProcessor {
 		this.in = str;
 	}
 
-	@Option(help="Expand reads")
+	@Option(help="Expand reads by specified number of nucleotides (bound by reference sequence ends)", optional=true)
 	public void setExpandReadsBy(int i) {
 		this.expandReadsBy = i;
 	}
@@ -77,19 +75,13 @@ public class SAMProcessor {
 		this.qualityCutoff = quality;
 	}
 
-	@Option(help="Output file")
-	public void setOut(String str) {
-		this.outFile = new File(str);
-	}
-
 	public void main(String[] args) throws BioException {
 
 		int excludedReads = 0;
 		int readCount = 0;
 		Sequence seq = null;
-		String source = "ngsam";
+		String source = "samprocessor";
 		String type = "read";
-		Annotation annotation = new SimpleAnnotation();
 
 		Set<String> seenRefSeqNames = new TreeSet<String>();
 
