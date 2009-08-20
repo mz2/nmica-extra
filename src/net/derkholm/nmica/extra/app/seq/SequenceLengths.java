@@ -31,7 +31,7 @@ public class SequenceLengths {
 	public void main(String[] args) throws BioException {
 		while (this.seqs.hasNext()) {
 			Sequence s = this.seqs.nextSequence();
-			System.out.printf("%s\t%s",s.getName(),s.length());
+			System.out.printf("%s\t%s%n",s.getName(),s.length());
 		}
 	}
 }
