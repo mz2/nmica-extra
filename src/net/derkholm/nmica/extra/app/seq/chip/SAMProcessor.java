@@ -73,7 +73,7 @@ public class SAMProcessor {
 	}
 
 	@Option(help="Mapping quality threshold (exclude reads whose mapping quality is below. default=10)", optional=true)
-	public void mappingQualityCutoff(int quality) {
+	public void setMappingQualityCutoff(int quality) {
 		this.qualityCutoff = quality;
 	}
 
