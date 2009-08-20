@@ -39,7 +39,7 @@ public class SAMProcessor {
 		if (str.equals("-")) {
 			this.inReader = new SAMFileReader(System.in);
 		} else {
-			this.inReader = new SAMFileReader(new File(str), false);
+			this.inReader = new SAMFileReader(new File(str), true);
 		}
 	}
 
