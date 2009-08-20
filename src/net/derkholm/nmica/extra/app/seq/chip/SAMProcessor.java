@@ -41,7 +41,7 @@ public class SAMProcessor {
 	@Option(help="Input map in SAM format -- " +
 			"input needs to be sorted according to reference sequence identifier " +
 			"and ascending start position (read from stdin if '-' given)")
-	public void setReads(String str) {
+	public void setMap(String str) {
 		if (str.equals("-")) {
 			this.inReader = new SAMFileReader(System.in);
 		} else {
