@@ -65,8 +65,8 @@ public class SAMProcessor {
 		System.err.println("Reading reference sequences...");
 		while (iter.hasNext()) {
 			Sequence s = iter.nextSequence();
-
-			DummySymbolList symList = new DummySymbolList(DNATools.getDNA(), Integer.MAX_VALUE);
+			System.err.printf("Reading %s%n",s.getName());
+			DummySymbolList symList = new DummySymbolList(DNATools.getDNA(), s.length());
 			Sequence refS = new SimpleSequence(symList,s.getName(),s.getName(),Annotation.EMPTY_ANNOTATION);
 			seqDB.addSequence(refS);
 		}
