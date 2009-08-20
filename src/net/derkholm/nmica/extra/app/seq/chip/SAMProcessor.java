@@ -69,6 +69,7 @@ public class SAMProcessor {
 		System.err.println("Reading reference sequences...");
 		while (iter.hasNext()) {
 			Sequence s = iter.nextSequence();
+			System.err.println(s.getName());
 			refSeqLengths.put(s.getName(), s.length());
 		}
 	}
@@ -90,7 +91,7 @@ public class SAMProcessor {
 
 		Set<String> seenRefSeqNames = new TreeSet<String>();
 
-		this.inReader.queryOverlapping(sequence, start, end);
+		//this.inReader.queryOverlapping(sequence, start, end);
 		for (final SAMRecord samRecord : this.inReader) {
 			readCount += 1;
 
