@@ -40,7 +40,7 @@
     <property name="resources.dir" value="./resources" />
     <property name="nmica.dev.home" value="${env.NMICA_DEV_HOME}" />
     <property name="nmica.home" value="${env.NMICA_HOME}" />
-    <property name="classpath" value="${nmica.home}/lib/biojava.jar:${nmica.home}/lib/bytecode.jar:${nmica.home}/lib/bjv2-core-0.1.jar:${nmica.home}/lib/stax-api-1.0.1.jar:${nmica.home}/lib/colt.jar:${nmica.home}/lib/nmica.jar:${lib.dir}/biojava-ensembl.jar:${lib.dir}" />
+    <property name="classpath" value="${nmica.home}/lib/biojava.jar:${nmica.home}/lib/bytecode.jar:${nmica.home}/lib/bjv2-core-0.1.jar:${nmica.home}/lib/stax-api-1.0.1.jar:${nmica.home}/lib/colt.jar:${nmica.home}/lib/nmica.jar:${lib.dir}/biojava-ensembl.jar:${lib.dir}:${lib.dir}/sam-1.03.jar:${lib.dir}/picard-1.03.jar" />
  
     <!-- Main build directory -->
     <property name="build.dir" value="./ant-build" />
