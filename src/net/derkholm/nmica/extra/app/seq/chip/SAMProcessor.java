@@ -31,19 +31,20 @@ public class SAMProcessor {
 	private SequenceDB seqDB = new HashSequenceDB();
 	private int qualityCutoff = 10;
 	private int expandReadsBy;
+	private File indexFile;
+	private String in;
 
 	@Option(help="Input map in SAM format -- " +
 			"input needs to be sorted according to reference sequence identifier " +
 			"and ascending start position (read from stdin if '-' given)")
 	public void setMap(String str) {
 		System.err.println("Reading map...");
-		if (str.equals("-")) {
-			this.inReader = new SAMFileReader(System.in);
-		} else {
-			this.inReader = new SAMFileReader(new File(str));
-		}
-		
-		this.inReader.setValidationStringency(ValidationStringency.LENIENT);
+		this.in = str;
+	}
+	
+	@Option(help="Index file for the reads")
+	public void setIndex(File f) {
+		this.indexFile = f;
 	}
 	
 	
@@ -71,7 +72,13 @@ public class SAMProcessor {
 	}
 
 	public void main(String[] args) throws BioException {
-
+		if (in.equals("-")) {
+			this.inReader = new SAMFileReader(System.in);
+		} else {
+			this.inReader = new SAMFileReader(new File(in),indexFile);
+		}
+		this.inReader.setValidationStringency(ValidationStringency.LENIENT);
+		
 		int excludedReads = 0;
 		int readCount = 0;
 		Sequence seq = null;
