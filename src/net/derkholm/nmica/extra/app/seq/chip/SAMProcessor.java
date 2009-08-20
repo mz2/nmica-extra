@@ -42,6 +42,7 @@ public class SAMProcessor {
 			"input needs to be sorted according to reference sequence identifier " +
 			"and ascending start position (read from stdin if '-' given)")
 	public void setMap(String str) {
+		System.err.println("Reading map...");
 		if (str.equals("-")) {
 			this.inReader = new SAMFileReader(System.in);
 		} else {
@@ -61,6 +62,7 @@ public class SAMProcessor {
 		this.seqDB = new HashSequenceDB();
 		RichSequenceIterator iter = RichSequence.IOTools.readFastaDNA(new BufferedReader(new FileReader(f)), null);
 
+		System.err.println("Reading reference sequences...");
 		while (iter.hasNext()) {
 			Sequence s = iter.nextSequence();
 
