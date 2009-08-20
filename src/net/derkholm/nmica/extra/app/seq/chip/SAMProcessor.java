@@ -8,6 +8,7 @@ import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.sf.samtools.SAMFileReader;
 import net.sf.samtools.SAMRecord;
+import net.sf.samtools.SAMFileReader.ValidationStringency;
 
 import org.biojava.bio.Annotation;
 import org.biojava.bio.BioException;
@@ -41,8 +42,11 @@ public class SAMProcessor {
 		} else {
 			this.inReader = new SAMFileReader(new File(str), true);
 		}
+		
+		this.inReader.setValidationStringency(ValidationStringency.LENIENT);
 	}
-
+	
+	
 	@Option(help="Expand reads by specified number of nucleotides (bound by reference sequence ends)", optional=true)
 	public void setExpandReadsBy(int i) {
 		this.expandReadsBy = i;
