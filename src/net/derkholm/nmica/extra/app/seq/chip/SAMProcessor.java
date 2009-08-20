@@ -40,7 +40,7 @@ public class SAMProcessor {
 		if (str.equals("-")) {
 			this.inReader = new SAMFileReader(System.in);
 		} else {
-			this.inReader = new SAMFileReader(new File(str), true);
+			this.inReader = new SAMFileReader(new File(str));
 		}
 		
 		this.inReader.setValidationStringency(ValidationStringency.LENIENT);
