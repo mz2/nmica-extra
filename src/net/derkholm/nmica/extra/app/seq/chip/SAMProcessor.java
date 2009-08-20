@@ -1,6 +1,12 @@
 package net.derkholm.nmica.extra.app.seq.chip;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -20,6 +26,8 @@ import org.biojava.bio.seq.db.SequenceDB;
 import org.biojava.bio.seq.impl.SimpleSequence;
 import org.biojava.bio.symbol.DummySymbolList;
 import org.biojava.bio.symbol.RangeLocation;
+import org.biojavax.bio.seq.RichSequence;
+import org.biojavax.bio.seq.RichSequenceIterator;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -33,10 +41,9 @@ public class SAMProcessor {
 	private int expandReadsBy;
 	private File indexFile;
 	private String in;
+	private Map<String,Integer> refSeqLengths = new HashMap<String,Integer>();
 
-	@Option(help="Input map in SAM format -- " +
-			"input needs to be sorted according to reference sequence identifier " +
-			"and ascending start position (read from stdin if '-' given)")
+	@Option(help="Input map in SAM/BAM format")
 	public void setMap(String str) {
 		System.err.println("Reading map...");
 		this.in = str;
@@ -53,30 +60,26 @@ public class SAMProcessor {
 		this.expandReadsBy = i;
 	}
 
-	/*
+	
 	@Option(help="Reference sequence that the reads are mapped to (FASTA formatted)")
 	public void setRef(File f) throws FileNotFoundException, NoSuchElementException, BioException {
 		this.seqDB = new HashSequenceDB();
 		RichSequenceIterator iter = RichSequence.IOTools.readFastaDNA(new BufferedReader(new FileReader(f)), null);
+		
 		System.err.println("Reading reference sequences...");
 		while (iter.hasNext()) {
 			Sequence s = iter.nextSequence();
-			System.err.printf("Reading %s%n",s.getName());
-			seqDB.addSequence(refS);
+			refSeqLengths.put(s.getName(), s.length());
 		}
-	}*/
-
+	}
+	
 	@Option(help="Mapping quality threshold (exclude reads whose mapping quality is below. default=10)", optional=true)
 	public void setMappingQualityCutoff(int quality) {
 		this.qualityCutoff = quality;
 	}
 
 	public void main(String[] args) throws BioException {
-		if (in.equals("-")) {
-			this.inReader = new SAMFileReader(System.in);
-		} else {
-			this.inReader = new SAMFileReader(new File(in),indexFile);
-		}
+		this.inReader = new SAMFileReader(new File(in),indexFile);
 		this.inReader.setValidationStringency(ValidationStringency.SILENT);
 		
 		int excludedReads = 0;
@@ -87,7 +90,7 @@ public class SAMProcessor {
 
 		Set<String> seenRefSeqNames = new TreeSet<String>();
 
-
+		this.inReader.queryOverlapping(sequence, start, end);
 		for (final SAMRecord samRecord : this.inReader) {
 			readCount += 1;
 
