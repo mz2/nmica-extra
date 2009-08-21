@@ -21,7 +21,7 @@ import org.bjv2.util.cli.Option;
 public class FilterByMappingQuality {
 
 	private SAMFileReader sam;
-	private int mapQual;
+	private int mapQual = 10;
 	private File outFile;
 
 
@@ -36,7 +36,7 @@ public class FilterByMappingQuality {
 		sam.setValidationStringency(ValidationStringency.SILENT);
 	}
 	
-	@Option(help="Mapping quality threshold")
+	@Option(help="Mapping quality threshold (default = 10)")
 	public void setMappingQualityAbove(int i) {
 		this.mapQual = i;
 	}

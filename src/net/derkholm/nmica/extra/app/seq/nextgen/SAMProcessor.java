@@ -2,66 +2,84 @@ package net.derkholm.nmica.extra.app.seq.nextgen;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.TreeSet;
 
-import net.derkholm.nmica.build.NMExtraApp;
-import net.derkholm.nmica.build.VirtualMachine;
 import net.sf.samtools.SAMFileReader;
 import net.sf.samtools.SAMRecord;
 import net.sf.samtools.SAMFileReader.ValidationStringency;
+import net.sf.samtools.util.CloseableIterator;
 
-import org.biojava.bio.Annotation;
 import org.biojava.bio.BioException;
-import org.biojava.bio.seq.DNATools;
-import org.biojava.bio.seq.Sequence;
-import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.db.HashSequenceDB;
 import org.biojava.bio.seq.db.SequenceDB;
-import org.biojava.bio.seq.impl.SimpleSequence;
-import org.biojava.bio.symbol.DummySymbolList;
-import org.biojava.bio.symbol.RangeLocation;
-import org.biojavax.bio.seq.RichSequence;
-import org.biojavax.bio.seq.RichSequenceIterator;
-import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
 
-@App(overview = "Create an SQLite database usable by nextgenseq-dazzle", generateStub = true)
-@NMExtraApp(launchName = "ngsamprocess", vm = VirtualMachine.SERVER)
-public class SAMProcessor {
+public abstract class SAMProcessor {
 	private SAMFileReader inReader;
 	private SequenceDB seqDB = new HashSequenceDB();
 	private int qualityCutoff = 10;
-	private int expandReadsBy;
+	
 	private File indexFile;
 	private String in;
-	private Map<String,Integer> refSeqLengths = new HashMap<String,Integer>();
+	protected Map<String,Integer> refSeqLengths = new HashMap<String,Integer>();
+	
+	
+	
+	private int windowSize = 1;
+	protected int frequency = 10;
+	private IterationType iterationType = IterationType.ONE_BY_ONE;
+	private QueryType queryType = QueryType.RECORD;
+	private ArrayList<String> nameList;
 
-	@Option(help="Input map in SAM/BAM format")
-	public void setMap(String str) {
-		System.err.println("Reading map...");
-		this.in = str;
+	public enum IterationType {
+		ONE_BY_ONE,
+		MOVING_WINDOW,
+		WITH_FREQUENCY
+	}
+	
+	public enum QueryType {
+		RECORD,
+		CONTAINED,
+		OVERLAP
+	}
+
+	@Option(help="Input reads (SAM/BAM formatted)")
+	public void setMap(String in) {
+		this.in = in;
+	}
+	
+	public void setIterationType(IterationType type) {
+		this.iterationType = type;
+	}
+	
+	public void setQueryType(QueryType type) {
+		this.queryType  = type;
+	}
+	
+	@Option(help="Sequence window size around the current position (default=1)", optional=true)
+	public void setWindowSize(int i) {
+		this.windowSize = i;
+	}
+	
+	@Option(help="Frequency of positions sampled (default=1)", optional=true)
+	public void setFreq(int i) {
+		this.frequency = i;
 	}
 	
 	@Option(help="Index file for the reads")
 	public void setIndex(File f) {
 		this.indexFile = f;
 	}
-	
-	
-	@Option(help="Expand reads by specified number of nucleotides (bound by reference sequence ends)", optional=true)
-	public void setExpandReadsBy(int i) {
-		this.expandReadsBy = i;
-	}
-
 	
 	@Option(help="Reference sequence names and lengths in a TSV formatted file")
 	public void setRefLengths(File f) throws NoSuchElementException, BioException, NumberFormatException, IOException {
@@ -72,80 +90,131 @@ public class SAMProcessor {
 			StringTokenizer tok = new StringTokenizer(line,"\t");
 			refSeqLengths.put(tok.nextToken(), Integer.parseInt(tok.nextToken()));
 		}
+		
+		nameList = new ArrayList<String>(refSeqLengths.keySet());
+		Collections.sort(
+				nameList, 
+				new Comparator<String>() {
+					public int compare(String str1, String str2) {
+						Integer thisI = new Integer(Integer.parseInt(str1));
+						Integer otherI = Integer.parseInt(str2);
+						return thisI.compareTo(otherI);
+					}
+				}
+		);
 	}
 	
 	@Option(help="Mapping quality threshold (exclude reads whose mapping quality is below. default=10)", optional=true)
 	public void setMappingQualityCutoff(int quality) {
 		this.qualityCutoff = quality;
 	}
-
-	public void main(String[] args) throws BioException {
-		this.inReader = new SAMFileReader(new File(in),indexFile);
-		this.inReader.setValidationStringency(ValidationStringency.SILENT);
+	
+	//override in subclass to handle QueryType.CONTAINED and QueryType.OVERLAP
+	public void process(List<SAMRecord> recs, String refName, int begin, int end, int seqLength) {
 		
-		int excludedReads = 0;
-		int readCount = 0;
-		Sequence seq = null;
-		String source = "samprocessor";
-		String type = "read";
-
-		Set<String> seenRefSeqNames = new TreeSet<String>();
-
-		//this.inReader.queryOverlapping(sequence, start, end);
-		for (final SAMRecord samRecord : this.inReader) {
-			readCount += 1;
-
-			int quality = samRecord.getMappingQuality();
-			if (quality < qualityCutoff) {
-				excludedReads += 1;
-				continue;
+	}
+	
+	//override in subclass to handle QueryType.ONE_BY_ONE
+	public void process(SAMRecord rec, int readIndex) {
+		
+	}
+	
+	public void initializeSAMReader() {
+		if (this.in.equals("-")) {
+			if (queryType != QueryType.RECORD) {
+				System.err.println("Query type -record is the only allowed query type when reading from stdin");
+				System.exit(1);
 			}
-			String refName = samRecord.getReferenceName();
-			assert refName != null;
-			seenRefSeqNames.add(refName);
-
-			int start = samRecord.getAlignmentStart();
-			int end = samRecord.getAlignmentEnd();
-
-
-			boolean isPosStrand = !samRecord.getReadNegativeStrandFlag();
-
-			if (isPosStrand) {
-				end = Math.min(seq.length()-1, end + this.expandReadsBy);
-			} else {
-				start = Math.max(0, start - this.expandReadsBy);
+			this.inReader = new SAMFileReader(System.in);
+		} else {
+			if (indexFile == null) {
+				System.err.println("Index file was not specified");
+				System.exit(2);
 			}
-
-			if (seq == null) {
-				System.err.println("Collecting reads mapped to reference sequence " + refName);
-				
-				DummySymbolList symList = new DummySymbolList(DNATools.getDNA(), Integer.MAX_VALUE);
-				seq = new SimpleSequence(symList,refName,refName,Annotation.EMPTY_ANNOTATION);
-			} else if (seq.getName().equals(refName)) {
-				StrandedFeature.Template template = new StrandedFeature.Template();
-				template.source = source;
-				template.type = type;
-				template.location = new RangeLocation(start, end);
-				template.strand = isPosStrand ? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE;
-
-				seq.createFeature(template);
-			} else {
-				assert !seenRefSeqNames.contains(refName);
-
-				this.processSequence(seq);
-				
-				DummySymbolList symList = new DummySymbolList(DNATools.getDNA(), Integer.MAX_VALUE);
-				seq = new SimpleSequence(symList,refName,refName,Annotation.EMPTY_ANNOTATION);
-				
-				System.err.println("Collecting reads mapped to reference sequence " + refName);
-			}
+			this.inReader = new SAMFileReader(new File(in),indexFile);
 		}
-
-		System.err.printf("Excluded %d reads (%.2f%)%n", excludedReads, (double)excludedReads / (double)readCount * 100.0);
+		this.inReader.setValidationStringency(ValidationStringency.SILENT);
 	}
 
-	private void processSequence(Sequence seq) {
+	//the main method in subclasses can pretty much look like this (you can customise of course)
+	public void main(String[] args) throws BioException {
+		initializeSAMReader();
+		process();
+	}
+	
+	public void process() throws BioException {
+		
+		if (iterationType == IterationType.ONE_BY_ONE) {
+			int excludedReads = 0;
+			int readCount = 0;
 
-		System.err.println("Processing "+ seq.getName());
+			for (SAMRecord record : inReader) {
+				if ((readCount++ % frequency) != 0) continue;
+				
+				int quality = record.getMappingQuality();
+				if (quality < qualityCutoff) {
+					excludedReads += 1;
+					continue;
+				}
+				
+				process(record, readCount);
+			}
+			System.err.printf("Excluded %d reads (%.2f%)%n", excludedReads, (double)excludedReads / (double)readCount * 100.0);			
+		} else if (iterationType == IterationType.MOVING_WINDOW) {
+			int halfFreq = (frequency / 2);
+			int windowCenter = halfFreq;
+			
+			final List<SAMRecord> recs = new ArrayList<SAMRecord>();
+			
+			for (String seqName : nameList) {
+				int len = refSeqLengths.get(seqName);
+				while ((windowCenter + halfFreq) < len) {
+					CloseableIterator<SAMRecord> recIterator = this.query(seqName, windowCenter - halfFreq, windowCenter + halfFreq);
+					
+					iterateAndFilterToList(recIterator,recs);
+					process(recs,seqName,windowCenter - halfFreq,windowCenter + halfFreq,len);
+					recs.clear();
+				}
+				
+				windowCenter += frequency;
+			}
+			
+		} else if (iterationType == IterationType.WITH_FREQUENCY) {
+			int windowBegin = 0;
+			
+			final List<SAMRecord> recs = new ArrayList<SAMRecord>();
+			for (String seqName : nameList) {
+				int len = refSeqLengths.get(seqName);
+				
+				while ((windowBegin + frequency)  < len) {
+					CloseableIterator<SAMRecord> recIterator = this.query(seqName, windowBegin, windowBegin + frequency);
+					
+					iterateAndFilterToList(recIterator,recs);
+					recIterator.close();
+					process(recs,seqName,windowBegin,windowBegin + frequency,len);
+					recs.clear();
+				}
+			}
+			
+			windowBegin += frequency;
+		}
+	}
+
+	private List<SAMRecord> iterateAndFilterToList(CloseableIterator<SAMRecord> recIterator,final List<SAMRecord> recs) {
+		while (recIterator.hasNext()) {
+			SAMRecord rec = recIterator.next();
+			if (rec.getMappingQuality() < this.qualityCutoff) continue;
+			recs.add(rec);
+		}
+		return recs;
+	}
+	
+	private CloseableIterator<SAMRecord> query(String seqName, int begin, int end) {
+		if (this.queryType == QueryType.CONTAINED) {
+			return inReader.queryContained(seqName, begin, end);			
+		} else {
+			return inReader.queryOverlapping(seqName, begin, end);
+		}
+		
 	}
 }
