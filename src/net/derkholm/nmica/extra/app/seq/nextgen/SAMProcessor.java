@@ -2,7 +2,6 @@ package net.derkholm.nmica.extra.app.seq.nextgen;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -23,10 +22,11 @@ import org.biojava.bio.BioException;
 import org.biojava.bio.seq.db.HashSequenceDB;
 import org.biojava.bio.seq.db.SequenceDB;
 import org.bjv2.util.cli.Option;
+import org.bjv2.util.cli.UserLevel;
 
 
 public abstract class SAMProcessor {
-	private SAMFileReader inReader;
+	protected SAMFileReader inReader;
 	private SequenceDB seqDB = new HashSequenceDB();
 	private int qualityCutoff = 10;
 	
@@ -37,10 +37,11 @@ public abstract class SAMProcessor {
 	
 	
 	private int windowSize = 1;
-	protected int frequency = 10;
+	protected int frequency = 1;
 	private IterationType iterationType = IterationType.ONE_BY_ONE;
 	private QueryType queryType = QueryType.RECORD;
 	private ArrayList<String> nameList;
+	private boolean includeUnmapped = false;
 
 	public enum IterationType {
 		ONE_BY_ONE,
@@ -113,6 +114,11 @@ public abstract class SAMProcessor {
 		this.qualityCutoff = quality;
 	}
 	
+	@Option(help="Include unmapped reads", optional=true, userLevel=UserLevel.DEBUG)
+	public void setIncludeUnmapped(boolean b) {
+		this.includeUnmapped  = b;
+	}
+	
 	//override in subclass to handle QueryType.CONTAINED and QueryType.OVERLAP
 	public void process(List<SAMRecord> recs, String refName, int begin, int end, int seqLength) {
 		
@@ -168,7 +174,7 @@ public abstract class SAMProcessor {
 				
 				process(record, readCount);
 			}
-			System.err.printf("Excluded %d reads (%.2f%)%n", excludedReads, (double)excludedReads / (double)readCount * 100.0);			
+			System.err.printf("Excluded %d reads (%.2f%%)%n", excludedReads, (double)excludedReads / (double)readCount * 100.0);			
 		} else if (iterationType == IterationType.MOVING_WINDOW) {
 			int halfFreq = (frequency / 2);
 			int windowCenter = halfFreq;
