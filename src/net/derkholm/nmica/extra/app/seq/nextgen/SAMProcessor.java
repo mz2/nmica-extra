@@ -127,11 +127,16 @@ public abstract class SAMProcessor {
 			}
 			this.inReader = new SAMFileReader(System.in);
 		} else {
-			if (indexFile == null) {
+			if (indexFile == null && (this.queryType.equals(QueryType.CONTAINED) || this.queryType.equals(QueryType.OVERLAP))) {
 				System.err.println("Index file was not specified");
 				System.exit(2);
 			}
-			this.inReader = new SAMFileReader(new File(in),indexFile);
+			
+			if (indexFile != null) {
+				this.inReader = new SAMFileReader(new File(in),indexFile);				
+			} else {
+				this.inReader = new SAMFileReader(new File(in));
+			}
 		}
 		this.inReader.setValidationStringency(ValidationStringency.SILENT);
 	}
