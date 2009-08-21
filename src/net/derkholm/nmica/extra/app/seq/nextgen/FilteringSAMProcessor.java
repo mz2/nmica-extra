@@ -29,10 +29,10 @@ abstract public class FilteringSAMProcessor extends SAMProcessor {
 	public void initializeSAMWriter(boolean presorted) {
 		SAMFileWriterFactory factory = new SAMFileWriterFactory();
 		if (this.outString.equals("-")) {
-			this.outWriter = factory.makeSAMWriter(new SAMFileHeader(), presorted, this.outFile);
+			this.outWriter = factory.makeSAMWriter(null, presorted, System.out);
 		} else {
 			this.outFile = new File(outString);
-			this.outWriter = factory.makeSAMOrBAMWriter(new SAMFileHeader(), presorted, this.outFile);
+			this.outWriter = factory.makeSAMOrBAMWriter(null, presorted, this.outFile);
 		}
 	}
 }
