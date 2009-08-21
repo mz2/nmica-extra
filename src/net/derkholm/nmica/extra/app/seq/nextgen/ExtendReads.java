@@ -19,7 +19,7 @@ public class ExtendReads extends SAMProcessor {
 	private SAMFileWriter samWriter;
 
 	@Option(help="Expand reads by specified number of nucleotides (bound by reference sequence ends)")
-	public void by(int i) {
+	public void setBy(int i) {
 		this.extendReadsBy = i;
 	}
 	
