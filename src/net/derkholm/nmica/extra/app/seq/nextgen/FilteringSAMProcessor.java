@@ -14,7 +14,7 @@ abstract public class FilteringSAMProcessor extends SAMProcessor {
 	private String outString = "-";
 	protected SAMFileWriter outWriter;
 
-	@Option(help="Output map file (file extension will decide if it's going to be written as SAM or BAM)")
+	@Option(help="Output map file (file extension will decide if it's going to be written as SAM or BAM). If unspecified, or '-' specified, output made to stdout.", optional=true)
 	public void setOut(String str) {
 		this.outString = str;
 	}
