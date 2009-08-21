@@ -76,7 +76,7 @@ public abstract class SAMProcessor {
 		this.frequency = i;
 	}
 	
-	@Option(help="Index file for the reads")
+	@Option(help="Index file for the reads", optional=true)
 	public void setIndex(File f) {
 		this.indexFile = f;
 	}
