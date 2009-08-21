@@ -83,6 +83,7 @@ public abstract class SAMProcessor {
 	
 	@Option(help="Reference sequence names and lengths in a TSV formatted file")
 	public void setRefLengths(File f) throws NoSuchElementException, BioException, NumberFormatException, IOException {
+		try {
 		BufferedReader reader = new BufferedReader(new FileReader(f));
 		
 		String line = null;
@@ -100,8 +101,10 @@ public abstract class SAMProcessor {
 						Integer otherI = Integer.parseInt(str2);
 						return thisI.compareTo(otherI);
 					}
-				}
-		);
+				});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
 	}
 	
 	@Option(help="Mapping quality threshold (exclude reads whose mapping quality is below. default=10)", optional=true)

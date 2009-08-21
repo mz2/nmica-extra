@@ -17,21 +17,16 @@ import org.bjv2.util.cli.Option;
 public class ExtendReads extends SAMProcessor {
 	private int extendReadsBy;
 	private SAMFileWriter samWriter;
+	private String out;
 
 	@Option(help="Expand reads by specified number of nucleotides (bound by reference sequence ends)")
 	public void setBy(int i) {
 		this.extendReadsBy = i;
 	}
 	
-	@Option(help="Output map file. File extension will decide if it's going to be written as SAM or BAM.")
+	@Option(help="Output map file. File extension will decide if it's going to be written as SAM or BAM.", optional = true)
 	public void setOut(String str) {
-		SAMFileWriterFactory factory = new SAMFileWriterFactory();
-		
-		if (str.equals("-")) {
-			this.samWriter = factory.makeSAMWriter(null, false, System.out);
-		} else {
-			this.samWriter = factory.makeSAMOrBAMWriter(null, false, new File(str));
-		}
+		this.out = str;
 	}
 	
 	public void main(String[] args) throws BioException {
@@ -44,6 +39,8 @@ public class ExtendReads extends SAMProcessor {
 	
 	@Override
 	public void process(SAMRecord rec, int readIndex) {
+		
+		
 		int len = refSeqLengths.get(rec.getReferenceName());
 		
 		if (!rec.getReadNegativeStrandFlag()) {

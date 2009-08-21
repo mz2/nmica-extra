@@ -41,10 +41,7 @@ public class FilterByMappingQuality {
 		this.mapQual = i;
 	}
 	
-	@Option(help="Output map file (file extension will decide if it's going to be written as SAM or BAM)")
-	public void setOut(File f) {
-		this.outFile = f;
-	}
+
 	
 	public void main(String[] args) throws FileNotFoundException {
 		SAMFileWriterFactory factory = new SAMFileWriterFactory();
