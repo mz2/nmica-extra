@@ -1,4 +1,4 @@
-package net.derkholm.nmica.extra.app.seq.chip;
+package net.derkholm.nmica.extra.app.seq.nextgen;
 
 import java.io.BufferedReader;
 import java.io.File;
