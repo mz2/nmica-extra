@@ -128,7 +128,7 @@ public abstract class SAMProcessor {
 			this.inReader = new SAMFileReader(System.in);
 		} else {
 			if (indexFile == null && (this.queryType.equals(QueryType.CONTAINED) || this.queryType.equals(QueryType.OVERLAP))) {
-				System.err.println("Index file was not specified");
+				System.err.println("Index file was not specified but is required for query types 'contained' and 'overlap'");
 				System.exit(2);
 			}
 			
