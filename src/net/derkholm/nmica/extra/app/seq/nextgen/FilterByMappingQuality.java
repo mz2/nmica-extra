@@ -44,15 +44,7 @@ public class FilterByMappingQuality {
 
 	
 	public void main(String[] args) throws FileNotFoundException {
-		SAMFileWriterFactory factory = new SAMFileWriterFactory();
-		SAMFileWriter writer = factory.makeSAMOrBAMWriter(this.sam.getFileHeader(), false, this.outFile);
 		
-		OutputStream stream = null;
-		if (outFile == null) {
-			stream = System.out;
-		} else {
-			stream = new FileOutputStream(outFile);
-		}
 		for (final SAMRecord rec : this.sam) {
 			if (rec.getMappingQuality() < this.mapQual) {
 				writer.addAlignment(rec);
