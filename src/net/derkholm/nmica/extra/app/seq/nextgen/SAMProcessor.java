@@ -31,7 +31,7 @@ public abstract class SAMProcessor {
 	private int qualityCutoff = 10;
 	
 	private File indexFile;
-	private String in;
+	private String in = "-";
 	protected Map<String,Integer> refSeqLengths = new HashMap<String,Integer>();
 	
 	
@@ -54,7 +54,7 @@ public abstract class SAMProcessor {
 		OVERLAP
 	}
 
-	@Option(help="Input reads (SAM/BAM formatted)")
+	@Option(help="Input reads (SAM/BAM formatted). Read from stdin if not specified.", optional=true)
 	public void setMap(String in) {
 		this.in = in;
 	}

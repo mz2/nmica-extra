@@ -13,6 +13,7 @@ import net.sf.samtools.SAMFileWriterFactory;
 import net.sf.samtools.SAMRecord;
 import net.sf.samtools.SAMFileReader.ValidationStringency;
 
+import org.biojava.bio.BioException;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -24,30 +25,23 @@ public class FilterByMappingQuality extends FilteringSAMProcessor {
 	private int mapQual = 10;
 	private File outFile;
 
-
-	@Option(help="Sequencing reads mapped to reference in SAM/BAM format. " +
-			"If '-' specified, will read from stdin.")
-	public void setMap(String str) {
-		if (str.equals("-")) {
-			this.sam = new SAMFileReader(System.in);
-		} else {
-			this.sam = new SAMFileReader(new File(str));
-		}
-		sam.setValidationStringency(ValidationStringency.SILENT);
-	}
-	
 	@Option(help="Mapping quality threshold (default = 10)")
 	public void setMappingQualityAbove(int i) {
 		this.mapQual = i;
 	}
 	
-	public void main(String[] args) throws FileNotFoundException {
+	public void main(String[] args) throws FileNotFoundException, BioException {
+		initializeSAMReader();
+		initializeSAMWriter(false);
+		process();
 		
-		for (final SAMRecord rec : this.sam) {
-			if (rec.getMappingQuality() < this.mapQual) {
-				outWriter.addAlignment(rec);
-			}
-		}
 		outWriter.close();
+	}
+	
+	@Override
+	public void process(SAMRecord rec, int readIndex) {
+		if (rec.getMappingQuality() < this.mapQual) {
+			outWriter.addAlignment(rec);
+		}	
 	}
 }

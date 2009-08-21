@@ -17,23 +17,20 @@ import org.bjv2.util.cli.Option;
 public class ExtendReads extends FilteringSAMProcessor {
 	private int extendReadsBy;
 	private String out;
-	private boolean sorted = false;
 	
 	@Option(help="Expand reads by specified number of nucleotides (bound by reference sequence ends)")
 	public void setBy(int i) {
 		this.extendReadsBy = i;
 	}
 	
-	@Option(help="Data is sorted (default = false)", optional=true)
-	public void setSorted(boolean b) {
-		sorted = b;
-	}
+
 	
 	public void main(String[] args) throws BioException {
 		setIterationType(IterationType.ONE_BY_ONE);
 		
 		initializeSAMReader();
 		initializeSAMWriter(false);
+		
 		process();
 		outWriter.close();
 	}
