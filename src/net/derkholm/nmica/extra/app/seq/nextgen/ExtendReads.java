@@ -16,18 +16,14 @@ import org.bjv2.util.cli.Option;
 @App(overview = "Extend reads by specified number of nucleotides", generateStub = true)
 public class ExtendReads extends FilteringSAMProcessor {
 	private int extendReadsBy;
-	private String out;
 	
 	@Option(help="Expand reads by specified number of nucleotides (bound by reference sequence ends)")
 	public void setBy(int i) {
 		this.extendReadsBy = i;
 	}
 	
-
-	
 	public void main(String[] args) throws BioException {
 		setIterationType(IterationType.ONE_BY_ONE);
-		
 		initializeSAMReader();
 		initializeSAMWriter(false);
 		
