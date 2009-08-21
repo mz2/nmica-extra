@@ -18,7 +18,7 @@ import org.bjv2.util.cli.Option;
 
 @App(overview = "Filter mapped reads by mapping quality", generateStub = true)
 @NMExtraApp(launchName = "ngfiltermap", vm = VirtualMachine.SERVER)
-public class FilterByMappingQuality {
+public class FilterByMappingQuality extends FilteringSAMProcessor {
 
 	private SAMFileReader sam;
 	private int mapQual = 10;
@@ -41,15 +41,13 @@ public class FilterByMappingQuality {
 		this.mapQual = i;
 	}
 	
-
-	
 	public void main(String[] args) throws FileNotFoundException {
 		
 		for (final SAMRecord rec : this.sam) {
 			if (rec.getMappingQuality() < this.mapQual) {
-				writer.addAlignment(rec);
+				outWriter.addAlignment(rec);
 			}
 		}
-		writer.close();
+		outWriter.close();
 	}
 }

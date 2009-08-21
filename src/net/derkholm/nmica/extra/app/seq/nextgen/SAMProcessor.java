@@ -2,6 +2,7 @@ package net.derkholm.nmica.extra.app.seq.nextgen;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -145,7 +146,7 @@ public abstract class SAMProcessor {
 	}
 
 	//the main method in subclasses can pretty much look like this (you can customise of course)
-	public void main(String[] args) throws BioException {
+	public void main(String[] args) throws Exception {
 		initializeSAMReader();
 		process();
 	}
