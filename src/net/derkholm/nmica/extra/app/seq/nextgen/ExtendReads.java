@@ -2,6 +2,7 @@ package net.derkholm.nmica.extra.app.seq.nextgen;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
@@ -23,8 +24,8 @@ import org.bjv2.util.cli.Option;
 public class ExtendReads extends FilteringSAMProcessor {
 	private int extraCigarLength;
 	
-	@Option(help="Expand reads by specified number of nucleotides (bound by reference sequence ends)")
-	public void setBy(int i) {
+	@Option(help="Extend reads by specified number of nucleotides (bound by reference sequence ends)")
+	public void setExtendBy(int i) {
 		this.extraCigarLength = i;
 	}
 	
@@ -36,9 +37,14 @@ public class ExtendReads extends FilteringSAMProcessor {
 		process();
 		outWriter.close();
 	}
-	
+		
 	@Override
 	public void process(SAMRecord rec, int readIndex) {
+		ExtendReads.extendReadBy(rec, this.refSeqLengths, this.extraCigarLength);
+		outWriter.addAlignment(rec);
+	}
+	
+	public static void extendReadBy(SAMRecord rec, Map<String,Integer> refSeqLengths, int extraCigarLength) {
 		int len = refSeqLengths.get(rec.getReferenceName());
 		Cigar oldCigar = rec.getCigar();
 		List<CigarElement> cigarElems = new ArrayList<CigarElement>(oldCigar.getCigarElements());
@@ -71,7 +77,6 @@ public class ExtendReads extends FilteringSAMProcessor {
 			
 			rec.setAlignmentStart(Math.max(0, distFromRefStart - extraCigarLength));
 		}
-		
-		outWriter.addAlignment(rec);
 	}
+
 }

@@ -13,53 +13,34 @@ import org.bjv2.util.cli.Option;
 import org.bjv2.util.cli.UserLevel;
 
 @NMExtraApp(launchName = "ngdepth", vm = VirtualMachine.SERVER)
-@App(overview = "Output sequencing depth in a moving average", generateStub = true)
+@App(overview = "Output sequencing depth inside a window", generateStub = true)
 public class DepthMovingAverage extends SAMProcessor {
 	
 	public enum Format {
 		SQLITE,
 		TSV
 	}
-
-	
 	
 	private Format format = Format.TSV;
+	private int windowIndex;
 
 	private void setFormat(Format format) {
 		this.format = format;
 	}
 	
-	@Option(help="Query overlapping / contained reads (default=overlapping)", optional=true, userLevel=UserLevel.DEBUG)
-	public void setQuery(QueryType queryType) {
-		 super.setQueryType(queryType);
-	}
-	
-	@Option(help="Iterate in moving window / overlapping reads", optional=true, userLevel=UserLevel.DEBUG)
-	public void setIterate(IterationType iterType) {
-		if (iterType == IterationType.ONE_BY_ONE) {
-			System.err.println("Iteration type cannot be one_by_one");
-			System.exit(3);
-		}
-		super.setIterationType(iterType);
-	}
-	
 	public void main(String[] args) throws BioException {
 		setIterationType(IterationType.MOVING_WINDOW);
+		setQueryType(QueryType.OVERLAP);
 		
 		initializeSAMReader();
+		
+		this.windowIndex = 0;
 		process();
 	}
 	
 	@Override
 	public void process(final List<SAMRecord> recs, String refName, int begin, int end, int seqLength) {
 		double avg = 0.0;
-		
-		for (SAMRecord rec : recs) {
-			
-			if (format == Format.TSV) {
-				
-			}
-			
-		}
+		System.out.printf("%s\t%d\t%d\t%d\t%d%n", refName, this.windowIndex++, begin, end, recs.size());
 	}
 }

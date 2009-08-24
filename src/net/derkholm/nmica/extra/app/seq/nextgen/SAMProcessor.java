@@ -34,14 +34,15 @@ public abstract class SAMProcessor {
 	private String in = "-";
 	protected Map<String,Integer> refSeqLengths = new HashMap<String,Integer>();
 	
-	
-	
 	private int windowSize = 1;
 	protected int frequency = 1;
 	private IterationType iterationType = IterationType.ONE_BY_ONE;
 	private QueryType queryType = QueryType.RECORD;
 	private ArrayList<String> nameList;
 	private boolean includeUnmapped = false;
+	private int extendedLength;
+	private int readLength;
+	private boolean readLengthWasSet;
 
 	public enum IterationType {
 		ONE_BY_ONE,
@@ -83,6 +84,11 @@ public abstract class SAMProcessor {
 		this.indexFile = f;
 	}
 	
+	@Option(help="Extend reads by specified number of nucleotides (bound by reference sequence ends)")
+	public void setExtendTo(int i) {
+		this.extendedLength = i;
+	}
+
 	@Option(help="Reference sequence names and lengths in a TSV formatted file")
 	public void setRefLengths(File f) throws NoSuchElementException, BioException, NumberFormatException, IOException {
 		try {
@@ -109,12 +115,18 @@ public abstract class SAMProcessor {
 		}
 	}
 	
+	@Option(help="Sequencing read length", optional=true)
+	public void setReadLength(int i) {
+		this.readLengthWasSet = true;
+		this.readLength = i;
+	}
+	
 	@Option(help="Mapping quality threshold (exclude reads whose mapping quality is below. default=10)", optional=true)
 	public void setMappingQualityCutoff(int quality) {
 		this.qualityCutoff = quality;
 	}
 	
-	@Option(help="Include unmapped reads", optional=true, userLevel=UserLevel.DEBUG)
+	@Option(help="Include unmapped reads (default=false)", optional=true, userLevel=UserLevel.DEBUG)
 	public void setIncludeUnmapped(boolean b) {
 		this.includeUnmapped  = b;
 	}
@@ -158,7 +170,8 @@ public abstract class SAMProcessor {
 	}
 	
 	public void process() throws BioException {
-		
+		int halfFreq = (frequency / 2);
+
 		if (iterationType == IterationType.ONE_BY_ONE) {
 			int excludedReads = 0;
 			int readCount = 0;
@@ -166,17 +179,23 @@ public abstract class SAMProcessor {
 			for (SAMRecord record : inReader) {
 				if ((readCount++ % frequency) != 0) continue;
 				
+				
 				int quality = record.getMappingQuality();
 				if (quality < qualityCutoff) {
 					excludedReads += 1;
 					continue;
 				}
 				
+				if (this.extendedLength > 0) {
+					ExtendReads.extendReadBy(
+							record, 
+							refSeqLengths, 
+							this.extendedLength - this.readLength);
+				}
 				process(record, readCount);
 			}
 			System.err.printf("Excluded %d reads (%.2f%%)%n", excludedReads, (double)excludedReads / (double)readCount * 100.0);			
 		} else if (iterationType == IterationType.MOVING_WINDOW) {
-			int halfFreq = (frequency / 2);
 			int windowCenter = halfFreq;
 			
 			final List<SAMRecord> recs = new ArrayList<SAMRecord>();
@@ -184,9 +203,20 @@ public abstract class SAMProcessor {
 			for (String seqName : nameList) {
 				int len = refSeqLengths.get(seqName);
 				while ((windowCenter + halfFreq) < len) {
-					CloseableIterator<SAMRecord> recIterator = this.query(seqName, windowCenter - halfFreq, windowCenter + halfFreq);
+					CloseableIterator<SAMRecord> recIterator;
 					
-					iterateAndFilterToList(recIterator,recs);
+					if (this.extendedLength > 0) {
+						int extendedStart = windowCenter - extendedLength;
+						int extendedEnd = windowCenter + extendedLength;
+						
+						recIterator = this.query(seqName, extendedStart, extendedEnd);
+						iterateAndFilterToList(recIterator,windowCenter,recs);
+						
+					} else {
+						recIterator = this.query(seqName, windowCenter - halfFreq, windowCenter + halfFreq);
+						iterateAndFilterToList(recIterator,windowCenter,recs);
+					}
+					
 					process(recs,seqName,windowCenter - halfFreq,windowCenter + halfFreq,len);
 					recs.clear();
 				}
@@ -204,7 +234,7 @@ public abstract class SAMProcessor {
 				while ((windowBegin + frequency)  < len) {
 					CloseableIterator<SAMRecord> recIterator = this.query(seqName, windowBegin, windowBegin + frequency);
 					
-					iterateAndFilterToList(recIterator,recs);
+					iterateAndFilterToList(recIterator, windowBegin + (frequency / 2), recs);
 					recIterator.close();
 					process(recs,seqName,windowBegin,windowBegin + frequency,len);
 					recs.clear();
@@ -215,10 +245,31 @@ public abstract class SAMProcessor {
 		}
 	}
 
-	private List<SAMRecord> iterateAndFilterToList(CloseableIterator<SAMRecord> recIterator,final List<SAMRecord> recs) {
+	private List<SAMRecord> iterateAndFilterToList(
+			CloseableIterator<SAMRecord> recIterator,
+			int windowCenter,
+			final List<SAMRecord> recs) {
+		int winStart = windowCenter - (frequency / 2);
+		int winEnd = windowCenter + (frequency / 2);
+		
 		while (recIterator.hasNext()) {
 			SAMRecord rec = recIterator.next();
 			if (rec.getMappingQuality() < this.qualityCutoff) continue;
+			
+			
+			if (extendedLength > 0) {
+				boolean onPositiveStrand = !rec.getReadNegativeStrandFlag();
+				
+				if (onPositiveStrand) {
+					if ((rec.getAlignmentStart() + extendedLength) < winStart) continue; // if you can't extend the read to hit the win start pos
+					if (rec.getAlignmentStart() > winEnd) continue; // if the read doesn't start before the window ends
+				} else {
+					if (rec.getAlignmentEnd() < winStart) continue; //if the read doesn't start before the window starts
+					if ((rec.getAlignmentEnd() - extendedLength) > winEnd) continue; // if the read can't be extended to hit inside the window (min coordinate smaller than window's end)
+				}
+					
+			}
+			
 			recs.add(rec);
 		}
 		return recs;
