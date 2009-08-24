@@ -208,10 +208,12 @@ public abstract class SAMProcessor {
 						
 						recIterator = this.query(seqName, extendedStart, extendedEnd);
 						iterateAndFilterToList(recIterator,windowCenter,recs);
+						recIterator.close();
 						
 					} else {
 						recIterator = this.query(seqName, windowCenter - halfFreq, windowCenter + halfFreq);
 						iterateAndFilterToList(recIterator,windowCenter,recs);
+						recIterator.close();
 					}
 					
 					process(recs,seqName,windowCenter - halfFreq,windowCenter + halfFreq,len);
@@ -230,9 +232,9 @@ public abstract class SAMProcessor {
 				
 				while ((windowBegin + frequency)  < len) {
 					CloseableIterator<SAMRecord> recIterator = this.query(seqName, windowBegin, windowBegin + frequency);
-					
 					iterateAndFilterToList(recIterator, windowBegin + (frequency / 2), recs);
 					recIterator.close();
+					
 					process(recs,seqName,windowBegin,windowBegin + frequency,len);
 					recs.clear();
 				}
