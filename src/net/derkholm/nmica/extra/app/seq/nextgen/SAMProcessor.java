@@ -74,8 +74,8 @@ public abstract class SAMProcessor {
 		this.windowSize = i;
 	}
 	
-	@Option(help="Frequency of positions sampled (default=1)", optional=true)
-	public void setFreq(int i) {
+	@Option(help="Frequency of sequence windows (default=1)", optional=true)
+	public void setWindowFreq(int i) {
 		this.frequency = i;
 	}
 	
@@ -84,7 +84,7 @@ public abstract class SAMProcessor {
 		this.indexFile = f;
 	}
 	
-	@Option(help="Extend reads by specified number of nucleotides (bound by reference sequence ends)")
+	@Option(help="Extend reads by specified number of nucleotides (bound by reference sequence ends)", optional=true)
 	public void setExtendTo(int i) {
 		this.extendedLength = i;
 	}
