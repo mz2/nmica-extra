@@ -40,8 +40,9 @@ public class FilterByMappingQuality extends FilteringSAMProcessor {
 	
 	@Override
 	public void process(SAMRecord rec, int readIndex) {
-		if (rec.getMappingQuality() < this.mapQual) {
+		if (rec.getMappingQuality() > this.mapQual) {
 			outWriter.addAlignment(rec);
+		
 		}	
 	}
 }
