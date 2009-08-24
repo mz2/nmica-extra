@@ -105,9 +105,7 @@ public abstract class SAMProcessor {
 				nameList, 
 				new Comparator<String>() {
 					public int compare(String str1, String str2) {
-						Integer thisI = new Integer(Integer.parseInt(str1));
-						Integer otherI = Integer.parseInt(str2);
-						return thisI.compareTo(otherI);
+						return str1.compareTo(str2);
 					}
 				});
 		} catch (Exception e) {
