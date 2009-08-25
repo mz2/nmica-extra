@@ -192,11 +192,11 @@ public abstract class SAMProcessor {
 			}
 			System.err.printf("Excluded %d reads (%.2f%%)%n", excludedReads, (double)excludedReads / (double)readCount * 100.0);			
 		} else if (iterationType == IterationType.MOVING_WINDOW) {
-			int windowCenter = halfFreq;
 			
 			final List<SAMRecord> recs = new ArrayList<SAMRecord>();
 			
 			for (String seqName : nameList) {
+				int windowCenter = halfFreq;
 				int len = refSeqLengths.get(seqName);
 				while ((windowCenter + halfFreq) < len) {
 					CloseableIterator<SAMRecord> recIterator;
@@ -215,16 +215,16 @@ public abstract class SAMProcessor {
 					
 					process(recs,seqName,windowCenter - halfFreq,windowCenter + halfFreq,len);
 					recs.clear();
+					windowCenter += frequency;
 				}
 				
-				windowCenter += frequency;
 			}
 			
 		} else if (iterationType == IterationType.WITH_FREQUENCY) {
-			int windowBegin = 0;
 			
 			final List<SAMRecord> recs = new ArrayList<SAMRecord>();
 			for (String seqName : nameList) {
+				int windowBegin = 0;
 				int len = refSeqLengths.get(seqName);
 				
 				while ((windowBegin + frequency)  < len) {
@@ -235,9 +235,9 @@ public abstract class SAMProcessor {
 					process(recs,seqName,windowBegin,windowBegin + frequency,len);
 					recs.clear();
 				}
+				windowBegin += frequency;
 			}
 			
-			windowBegin += frequency;
 		}
 	}
 
