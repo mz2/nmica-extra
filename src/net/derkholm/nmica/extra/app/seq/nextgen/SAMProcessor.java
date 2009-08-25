@@ -167,7 +167,7 @@ public abstract class SAMProcessor {
 	}
 	
 	public void process() throws BioException {
-		int halfFreq = (frequency / 2);
+		int halfWindow = Math.max(1,this.windowSize / 2);
 
 		if (iterationType == IterationType.ONE_BY_ONE) {
 			int excludedReads = 0;
@@ -196,9 +196,9 @@ public abstract class SAMProcessor {
 			final List<SAMRecord> recs = new ArrayList<SAMRecord>();
 			
 			for (String seqName : nameList) {
-				int windowCenter = halfFreq;
+				int windowCenter = halfWindow;
 				int len = refSeqLengths.get(seqName);
-				while ((windowCenter + halfFreq) < len) {
+				while ((windowCenter + halfWindow) < len) {
 					CloseableIterator<SAMRecord> recIterator;
 					
 					if (this.extendedLength > 0) {
@@ -208,12 +208,12 @@ public abstract class SAMProcessor {
 						recIterator = this.query(seqName, extendedStart, extendedEnd);
 						iterateAndFilterToList(recIterator,windowCenter,recs);
 					} else {
-						recIterator = this.query(seqName, windowCenter - halfFreq, windowCenter + halfFreq);
+						recIterator = this.query(seqName, windowCenter - halfWindow, windowCenter + Math.max(1,halfWindow));
 						iterateAndFilterToList(recIterator,windowCenter,recs);
 					}
 					recIterator.close();
 					
-					process(recs,seqName,windowCenter - halfFreq,windowCenter + halfFreq,len);
+					process(recs,seqName,windowCenter - halfWindow,windowCenter + Math.max(1,halfWindow),len);
 					recs.clear();
 					windowCenter += frequency;
 				}
