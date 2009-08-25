@@ -13,7 +13,7 @@ import org.bjv2.util.cli.Option;
 import org.bjv2.util.cli.UserLevel;
 
 @NMExtraApp(launchName = "ngdepth", vm = VirtualMachine.SERVER)
-@App(overview = "Output sequencing depth inside a window", generateStub = true)
+@App(overview = "Output sequencing depth inside a window.", generateStub = true)
 public class DepthMovingAverage extends SAMProcessor {
 	
 	public enum Format {
@@ -32,6 +32,7 @@ public class DepthMovingAverage extends SAMProcessor {
 		setIterationType(IterationType.MOVING_WINDOW);
 		setQueryType(QueryType.OVERLAP);
 		
+		
 		initializeSAMReader();
 		
 		this.windowIndex = 0;
@@ -41,6 +42,10 @@ public class DepthMovingAverage extends SAMProcessor {
 	@Override
 	public void process(final List<SAMRecord> recs, String refName, int begin, int end, int seqLength) {
 		double avg = 0.0;
-		System.out.printf("%s\t%d\t%d\t%d\t%d%n", refName, this.windowIndex++, begin, end, recs.size());
+		int recCount = recs.size();
+		if (recCount > 0) {
+			System.out.printf("%s\t%d\t%d\t%d\t%d%n", refName, this.windowIndex, begin, end, recs.size());
+		}
+		this.windowIndex++;
 	}
 }
