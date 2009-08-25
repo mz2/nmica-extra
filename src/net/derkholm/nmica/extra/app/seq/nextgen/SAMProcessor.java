@@ -217,7 +217,7 @@ public abstract class SAMProcessor {
 					recs.clear();
 					windowCenter += frequency;
 				}
-				
+				System.err.printf(".");
 			}
 			
 		} else if (iterationType == IterationType.WITH_FREQUENCY) {
