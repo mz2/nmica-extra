@@ -221,6 +221,7 @@ public abstract class SAMProcessor {
 			}
 			
 		} else if (iterationType == IterationType.WITH_FREQUENCY) {
+			windowSize = frequency;
 			
 			final List<SAMRecord> recs = new ArrayList<SAMRecord>();
 			for (String seqName : nameList) {
@@ -241,12 +242,12 @@ public abstract class SAMProcessor {
 		}
 	}
 
-	private List<SAMRecord> iterateAndFilterToList(
+	private void iterateAndFilterToList(
 			CloseableIterator<SAMRecord> recIterator,
 			int windowCenter,
 			final List<SAMRecord> recs) {
-		int winStart = windowCenter - (frequency / 2);
-		int winEnd = windowCenter + (frequency / 2);
+		int winStart = windowCenter - (windowSize / 2);
+		int winEnd = windowCenter + (windowSize / 2);
 		
 		while (recIterator.hasNext()) {
 			SAMRecord rec = recIterator.next();
@@ -257,18 +258,47 @@ public abstract class SAMProcessor {
 				boolean onPositiveStrand = !rec.getReadNegativeStrandFlag();
 				
 				if (onPositiveStrand) {
-					if ((rec.getAlignmentStart() + extendedLength) < winStart) continue; // if you can't extend the read to hit the win start pos
-					if (rec.getAlignmentStart() > winEnd) continue; // if the read doesn't start before the window ends
+					if ((rec.getAlignmentStart() + extendedLength) < winStart) {
+						
+						System.err.printf("%d - %d on + strand cannot be extended to hit win start at %d%n", 
+								rec.getAlignmentStart(), 
+								rec.getAlignmentStart() + extendedLength,
+								winStart);
+						continue; // if you can't extend the read to hit the win start pos
+					}
+					if (rec.getAlignmentStart() > winEnd) {
+
+						System.err.printf("%d - %d on + strand cannot be extended to hit win end at %d%n", 
+								rec.getAlignmentStart(), 
+								rec.getAlignmentStart() + extendedLength,
+								winEnd);
+						continue; // if the read doesn't start before the window ends
+					}
 				} else {
-					if (rec.getAlignmentEnd() < winStart) continue; //if the read doesn't start before the window starts
-					if ((rec.getAlignmentEnd() - extendedLength) > winEnd) continue; // if the read can't be extended to hit inside the window (min coordinate smaller than window's end)
+					if (rec.getAlignmentEnd() < winStart) {
+						System.err.printf("%d - %d on - strand cannot be extended to hit win start at %d%n", 
+								rec.getAlignmentStart(), 
+								rec.getAlignmentStart() + extendedLength);
+						continue; //if the read doesn't start before the window starts
+					}
+					if ((rec.getAlignmentEnd() - extendedLength) > winEnd) {
+						System.err.printf("%d - %d on - strand cannot be extended to hit win end at %d%n", 
+								rec.getAlignmentStart(), 
+								rec.getAlignmentStart() + extendedLength,
+								winEnd);
+						continue; // if the read can't be extended to hit inside the window (min coordinate smaller than window's end)
+					}
 				}
-					
+				System.err.printf("YES! Read %d - %d (%s strand) overlaps with the target range %d - %d%n",
+						rec.getAlignmentStart(), 
+						rec.getAlignmentStart() + extendedLength, 
+						rec.getReadNegativeStrandFlag() ? "-" : "+",
+						winStart, winEnd);
 			}
 			
 			recs.add(rec);
 		}
-		return recs;
+		return;
 	}
 	
 	private CloseableIterator<SAMRecord> query(String seqName, int begin, int end) {
