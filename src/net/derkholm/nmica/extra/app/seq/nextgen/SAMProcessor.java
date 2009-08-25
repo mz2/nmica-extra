@@ -176,7 +176,6 @@ public abstract class SAMProcessor {
 			for (SAMRecord record : inReader) {
 				if ((readCount++ % frequency) != 0) continue;
 				
-				
 				int quality = record.getMappingQuality();
 				if (quality < qualityCutoff) {
 					excludedReads += 1;
@@ -208,13 +207,11 @@ public abstract class SAMProcessor {
 						
 						recIterator = this.query(seqName, extendedStart, extendedEnd);
 						iterateAndFilterToList(recIterator,windowCenter,recs);
-						recIterator.close();
-						
 					} else {
 						recIterator = this.query(seqName, windowCenter - halfFreq, windowCenter + halfFreq);
 						iterateAndFilterToList(recIterator,windowCenter,recs);
-						recIterator.close();
 					}
+					recIterator.close();
 					
 					process(recs,seqName,windowCenter - halfFreq,windowCenter + halfFreq,len);
 					recs.clear();
