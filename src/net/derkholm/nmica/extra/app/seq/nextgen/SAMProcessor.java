@@ -283,7 +283,7 @@ public abstract class SAMProcessor {
 		}
 	}
 
-	private void setCurrentRefSeqName(String seqName) {
+	protected void setCurrentRefSeqName(String seqName) {
 		this.currentRefSeqName = seqName;
 	}
 
