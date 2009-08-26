@@ -84,7 +84,7 @@ public class SampleRegions {
             }
             
             final int len = max - min;
-			final int randomEnd = min + sampleLength + random.nextInt(len-sampleLength+1);
+			final int randomEnd = min + sampleLength + random.nextInt(len-sampleLength);
 			final int randomStart = randomEnd - sampleLength;
 			
 			if (randomStart < min) {
