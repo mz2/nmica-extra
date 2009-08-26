@@ -14,7 +14,7 @@ import org.bjv2.util.cli.App;
 import sun.rmi.rmic.Names;
 
 @NMExtraApp(launchName = "ngcount", vm = VirtualMachine.SERVER)
-@App(overview = "Output the number of reads mapped to reference window.", generateStub = true)
+@App(overview = "Output the number of reads mapped to each of the reference sequences.", generateStub = true)
 public class CountReads extends SAMProcessor {
 	
 	private String[] names;
@@ -22,7 +22,9 @@ public class CountReads extends SAMProcessor {
 	private int currentRefSeqIndex;
 	
 	public void main(String[] args) throws BioException {
-		this.names = (String[]) this.refSeqLengths.keySet().toArray();
+		this.names = (String[]) 
+			this.refSeqLengths.keySet().toArray(
+				new String[this.refSeqLengths.keySet().size()]);
 		this.readCounts = new int[names.length];
 		
 		setIterationType(IterationType.MAPPED_TO_REF);
