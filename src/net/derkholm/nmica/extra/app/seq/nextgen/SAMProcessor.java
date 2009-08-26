@@ -30,8 +30,8 @@ public abstract class SAMProcessor {
 	private SequenceDB seqDB = new HashSequenceDB();
 	private int qualityCutoff = 10;
 	
-	private File indexFile;
-	private String in = "-";
+	protected File indexFile;
+	protected String in = "-";
 	protected Map<String,Integer> refSeqLengths = new HashMap<String,Integer>();
 	
 	private int windowSize = 1;

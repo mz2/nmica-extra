@@ -2,15 +2,17 @@ package net.derkholm.nmica.extra.app.seq.nextgen;
 
 import java.io.File;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
+import net.sf.samtools.SAMFileReader;
 import net.sf.samtools.SAMRecord;
+import net.sf.samtools.util.CloseableIterator;
 
 import org.biojava.bio.BioException;
 import org.bjv2.util.cli.App;
-import org.bjv2.util.cli.Option;
-import org.bjv2.util.cli.UserLevel;
 
 @NMExtraApp(launchName = "ngdepth", vm = VirtualMachine.SERVER)
 @App(overview = "Output sequencing depth inside a window.", generateStub = true)
@@ -23,22 +25,37 @@ public class DepthMovingAverage extends SAMProcessor {
 	
 	private Format format = Format.TSV;
 	private int windowIndex;
+	private Map<String, Integer> readCounts;
 
 	private void setFormat(Format format) {
 		this.format = format;
 	}
 	
 	public void main(String[] args) throws BioException {
+		this.readCounts = 
+			this.readCounts(
+					this.refSeqLengths.keySet(),
+					new File(this.in), 
+					this.indexFile);
+		
 		setIterationType(IterationType.MOVING_WINDOW);
 		setQueryType(QueryType.OVERLAP);
-		
-		
 		initializeSAMReader();
 		
 		this.windowIndex = 0;
 		process();
 	}
 	
+	private Map<String, Integer> readCounts(Set<String> keySet, File file, File indexFile) {
+		SAMFileReader reader = new SAMFileReader(file, indexFile);
+		
+		for (String ref : keySet) {
+			CloseableIterator<SAMRecord> recs = reader.queryOverlapping(ref, 0, this.refSeqLengths.get(ref));
+			
+		}
+		return null;
+	}
+
 	@Override
 	public void process(final List<SAMRecord> recs, String refName, int begin, int end, int seqLength) {
 		double avg = 0.0;

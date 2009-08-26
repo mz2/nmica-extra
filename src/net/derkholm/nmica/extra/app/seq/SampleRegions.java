@@ -12,6 +12,7 @@ import java.util.Random;
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 
+import org.biojava.bio.BioError;
 import org.biojava.bio.BioException;
 import org.biojava.bio.program.gff.GFFDocumentHandler;
 import org.biojava.bio.program.gff.GFFParser;
@@ -72,11 +73,12 @@ public class SampleRegions {
 		for (int r = 0; r < this.sampleCount; r++) {
 			final GFFRecord rec = features.get(randMultinomial(featureWeights));
 			final int len = rec.getEnd() - rec.getStart();
-			final int randomStart = random.nextInt(len - sampleLength);
-			final int randomEnd = randomStart + sampleLength;
-			
+			final int randomEnd = random.nextInt(len);
+			final int randomStart = randomEnd - sampleLength;
+			if (randomStart < rec.getStart()) {
+				throw new BioError("Region too short to sample from");
+			}
 			writer.recordLine(new GFFRecord() {
-
 				public String getComment() {
 					return null;
 				}
