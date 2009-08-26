@@ -49,7 +49,8 @@ public abstract class SAMProcessor {
 	protected File indexFile;
 	protected String in = "-";
 	protected Map<String,Integer> refSeqLengths = new HashMap<String,Integer>();
-	
+	protected Map<String,Integer> readCounts = new HashMap<String,Integer>();
+
 	private int windowSize = 1;
 	protected int frequency = 1;
 	private IterationType iterationType = IterationType.ONE_BY_ONE;
@@ -114,6 +115,24 @@ public abstract class SAMProcessor {
 						return str1.compareTo(str2);
 					}
 				});
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Option(
+		help="Read counts in a TSV formatted file " +
+				"(reference seq name + tab + counts for that ref seq)",
+				optional=true)
+	public void setReadCounts(File f) {
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader(f));
+			
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				StringTokenizer tok = new StringTokenizer(line, "\t");
+				this.readCounts.put(tok.nextToken(), Integer.parseInt(tok.nextToken()));
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
