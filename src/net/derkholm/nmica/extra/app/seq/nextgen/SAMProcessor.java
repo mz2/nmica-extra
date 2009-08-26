@@ -353,4 +353,9 @@ public abstract class SAMProcessor {
 			return inReader.queryOverlapping(seqName, begin, end);
 		}
 	}
+
+	public void setOut(File f) {
+		// TODO Auto-generated method stub
+		return;
+	}
 }
