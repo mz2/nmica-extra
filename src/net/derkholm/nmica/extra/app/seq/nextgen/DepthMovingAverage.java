@@ -146,9 +146,11 @@ public class DepthMovingAverage extends SAMProcessor {
 	public void process(final List<SAMRecord> recs, String refName, int begin, int end, int seqLength) {
 		double avg = 0.0;
 		int depth = recs.size();
+		double pvalue = this.nullDistributions.get(refName).cdf(depth);
+		
 		if (depth > 0) {
 			if (format == Format.TSV) {
-				System.out.printf("%s\t%d\t%d\t%d\t%d%n", refName, this.windowIndex, begin, end, depth);				
+				System.out.printf("%s\t%d\t%d\t%d\t%d\t%d%n", refName, this.windowIndex, begin, end, depth, pvalue);				
 			} else {
 				PreparedStatement stat;
 				try {
@@ -160,7 +162,7 @@ public class DepthMovingAverage extends SAMProcessor {
 					stat.setInt(3, begin);
 					stat.setInt(4, end);
 					stat.setFloat(5, depth);
-					stat.setDouble(6, this.nullDistributions.get(refName).cdf(depth));
+					stat.setDouble(6, pvalue);
 					stat.addBatch();
 					
 					if ((this.windowIndex % 10) == 0) {
