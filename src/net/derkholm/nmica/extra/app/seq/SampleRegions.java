@@ -135,6 +135,8 @@ public class SampleRegions {
 				}
 			});
 			
+			writer.endDocument();
+			
 			r++;
 		}
 	}
