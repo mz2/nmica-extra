@@ -32,12 +32,6 @@ public class DepthMovingAverage extends SAMProcessor {
 	}
 	
 	public void main(String[] args) throws BioException {
-		this.readCounts = 
-			this.readCounts(
-					this.refSeqLengths.keySet(),
-					new File(this.in), 
-					this.indexFile);
-		
 		setIterationType(IterationType.MOVING_WINDOW);
 		setQueryType(QueryType.OVERLAP);
 		initializeSAMReader();
@@ -46,16 +40,6 @@ public class DepthMovingAverage extends SAMProcessor {
 		process();
 	}
 	
-	private Map<String, Integer> readCounts(Set<String> keySet, File file, File indexFile) {
-		SAMFileReader reader = new SAMFileReader(file, indexFile);
-		
-		for (String ref : keySet) {
-			CloseableIterator<SAMRecord> recs = reader.queryOverlapping(ref, 0, this.refSeqLengths.get(ref));
-			
-		}
-		return null;
-	}
-
 	@Override
 	public void process(final List<SAMRecord> recs, String refName, int begin, int end, int seqLength) {
 		double avg = 0.0;
