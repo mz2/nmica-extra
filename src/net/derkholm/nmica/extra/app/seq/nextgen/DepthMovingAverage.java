@@ -47,7 +47,9 @@ public class DepthMovingAverage extends SAMProcessor {
 	public void setRefLengths(File f) throws BioException, IOException {
 		super.setRefLengths(f);
 		for (String name : this.refSeqLengths.keySet()) {
-			nullDistributions.put(name, new Poisson((double)this.refSeqLengths.get(name) / (double)this.windowSize, randomEngine));
+			double lambda = (double)this.refSeqLengths.get(name) / (double)this.windowSize;
+			System.err.println("lambda:" + lambda);
+			nullDistributions.put(name, new Poisson(lambda, randomEngine));
 		}
 	}
 	
