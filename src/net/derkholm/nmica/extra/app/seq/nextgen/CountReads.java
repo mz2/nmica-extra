@@ -47,14 +47,17 @@ public class CountReads extends SAMProcessor {
 		for (int i = 0; i < this.names.length; i++) {
 			if (this.names[i].equals(seqName)) {
 				this.currentRefSeqIndex = i;
+				return;
 			}
 		}
+		throw new IllegalStateException("Did not find an index for the reference sequence");
 	}
 	
 	public void processAndClose(
 			CloseableIterator<SAMRecord> recs, 
 			String refName, 
 			int len) {
+		System.err.println(refName);
 		while (recs.hasNext()) {
 			SAMRecord r = recs.next();
 			if (r.getMappingQuality() < this.qualityCutoff) continue;
