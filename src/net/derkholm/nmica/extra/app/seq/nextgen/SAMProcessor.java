@@ -13,6 +13,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.StringTokenizer;
 
+import javax.naming.OperationNotSupportedException;
+
 import net.sf.samtools.SAMFileReader;
 import net.sf.samtools.SAMRecord;
 import net.sf.samtools.SAMFileReader.ValidationStringency;
@@ -26,9 +28,23 @@ import org.bjv2.util.cli.UserLevel;
 
 
 public abstract class SAMProcessor {
+
+	public enum IterationType {
+		ONE_BY_ONE,
+		MOVING_WINDOW,
+		WITH_FREQUENCY,
+		MAPPED_TO_REF
+	}
+	
+	public enum QueryType {
+		RECORD,
+		CONTAINED,
+		OVERLAP
+	}
+	
 	protected SAMFileReader inReader;
 	private SequenceDB seqDB = new HashSequenceDB();
-	private int qualityCutoff = 10;
+	protected int qualityCutoff = 10;
 	
 	protected File indexFile;
 	protected String in = "-";
@@ -43,18 +59,8 @@ public abstract class SAMProcessor {
 	private int extendedLength;
 	private int readLength;
 	private boolean readLengthWasSet;
+	private String currentRefSeqName;
 
-	public enum IterationType {
-		ONE_BY_ONE,
-		MOVING_WINDOW,
-		WITH_FREQUENCY
-	}
-	
-	public enum QueryType {
-		RECORD,
-		CONTAINED,
-		OVERLAP
-	}
 
 	@Option(help="Input reads (SAM/BAM formatted). Read from stdin if not specified.", optional=true)
 	public void setMap(String in) {
@@ -129,13 +135,23 @@ public abstract class SAMProcessor {
 	}
 	
 	//override in subclass to handle QueryType.CONTAINED and QueryType.OVERLAP
-	public void process(List<SAMRecord> recs, String refName, int begin, int end, int seqLength) {
-		
+	public void process(
+			List<SAMRecord> recs, 
+			String refName, 
+			int begin, 
+			int end, 
+			int seqLength) {
+	
 	}
 	
 	//override in subclass to handle QueryType.ONE_BY_ONE
 	public void process(SAMRecord rec, int readIndex) {
 		
+	}
+	
+	//override in subclass
+	public void processAndClose(CloseableIterator<SAMRecord> recs, String refName, int len) {
+	
 	}
 	
 	public void initializeSAMReader() {
@@ -238,8 +254,18 @@ public abstract class SAMProcessor {
 				}
 				windowBegin += frequency;
 			}
-			
+		} else if (iterationType == IterationType.MAPPED_TO_REF) {
+			for (String seqName : nameList) {
+				this.setCurrentRefSeqName(seqName);
+				CloseableIterator<SAMRecord> recs = 
+					inReader.queryContained(seqName, 0, refSeqLengths.get(seqName));
+				processAndClose(recs, seqName, refSeqLengths.get(seqName));
+			}
 		}
+	}
+
+	private void setCurrentRefSeqName(String seqName) {
+		this.currentRefSeqName = seqName;
 	}
 
 	private void iterateAndFilterToList(
@@ -308,6 +334,5 @@ public abstract class SAMProcessor {
 		} else {
 			return inReader.queryOverlapping(seqName, begin, end);
 		}
-		
 	}
 }
