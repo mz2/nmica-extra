@@ -65,7 +65,7 @@ public class SampleRegions {
 		
 		for (int i = 0; i < features.size(); i++) {
 			GFFRecord r = this.features.get(i);
-			double len = r.getEnd() - r.getStart();
+			double len = Math.abs(r.getEnd() - r.getStart());
 			featureWeights[i] = len / (double)this.totalLength;
 		}
 		
@@ -73,8 +73,8 @@ public class SampleRegions {
 		
 		int r = 0; 
 		while (r < this.sampleCount) {
-			
-			final GFFRecord rec = features.get(randMultinomial(featureWeights));
+			int rMult = randMultinomial(featureWeights);
+			final GFFRecord rec = features.get(rMult);
 			
 			int min = rec.getStart();
             int max = rec.getEnd();
@@ -84,15 +84,13 @@ public class SampleRegions {
             }
             
             final int len = max - min;
-            System.err.printf("%d + %d (len:%d)", min,sampleLength,len);
-			final int randomEnd = min + sampleLength + random.nextInt(len-sampleLength+1) - 1;
-			final int randomStart = randomEnd - sampleLength;
+			final int randomEnd = min + sampleLength + random.nextInt(len-sampleLength + 2) - 1;
+			final int randomStart = randomEnd - sampleLength + 1;
 			
 			if (randomStart < min) {
-				System.err.println("Too short sequence (sample precedes beginning)");
-				continue;
+				throw new BioError("Too short sequence (sample started before region beginning)");
 			} else if (randomEnd > max) {
-				throw new BioError("Too short sequence (went past end)");
+				throw new BioError("Too short sequence (sample went past region end)");
 			}
 			writer.recordLine(new GFFRecord() {
 				public String getComment() {
@@ -155,12 +153,12 @@ public class SampleRegions {
 	private class LengthComparator implements Comparator<GFFRecord> {
 
 		public int compare(GFFRecord o1, GFFRecord o2) {
-			int o1len = o1.getEnd() - o1.getStart();
-			int o2len = o2.getEnd() - o2.getStart();
+			int o1len = Math.abs(o1.getEnd() - o1.getStart());
+			int o2len = Math.abs(o2.getEnd() - o2.getStart());
 			
-			if (o1len > o2len) {
+			if (o1len < o2len) {
 				return 1;
-			} else if (o1len < o2len) {
+			} else if (o1len > o2len) {
 				return -1;
 			} 
 			
@@ -192,9 +190,9 @@ public class SampleRegions {
             	max = record.getStart();
             }
             
-            if ((max - min) >= sampleLength) {
+            if (Math.abs(max - min) >= sampleLength) {
                 features.add(record);
-                int len = max-min;
+                int len = Math.abs(max-min);
                 totalLength += len;            	
             }
 		}
