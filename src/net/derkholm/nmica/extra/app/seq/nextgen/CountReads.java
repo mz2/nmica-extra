@@ -46,11 +46,9 @@ public class CountReads extends SAMProcessor {
 	
 	@Override
 	protected void setCurrentRefSeqName(String seqName) {
-		System.err.println("Setting current ref seq name to ");
 		for (int i = 0; i < this.names.length; i++) {
 			if (this.names[i].equals(seqName)) {
 				this.currentRefSeqIndex = i;
-				System.err.println(this.currentRefSeqIndex);
 				return;
 			}
 		}
