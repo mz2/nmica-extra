@@ -22,13 +22,14 @@ public class CountReads extends SAMProcessor {
 	private int currentRefSeqIndex;
 	
 	public void main(String[] args) throws BioException {
+		setIterationType(IterationType.MAPPED_TO_REF);
+		setQueryType(QueryType.OVERLAP);
+
 		this.names = (String[]) 
 			this.refSeqLengths.keySet().toArray(
 				new String[this.refSeqLengths.keySet().size()]);
 		this.readCounts = new int[names.length];
 		
-		setIterationType(IterationType.MAPPED_TO_REF);
-		setQueryType(QueryType.OVERLAP);
 		initializeSAMReader();
 		
 		process();
@@ -43,10 +44,13 @@ public class CountReads extends SAMProcessor {
 		}
 	}
 	
-	private void setCurrentRefSeqName(String seqName) {
+	@Override
+	protected void setCurrentRefSeqName(String seqName) {
+		System.err.println("Setting current ref seq name to ");
 		for (int i = 0; i < this.names.length; i++) {
 			if (this.names[i].equals(seqName)) {
 				this.currentRefSeqIndex = i;
+				System.err.println(this.currentRefSeqIndex);
 				return;
 			}
 		}
@@ -57,7 +61,6 @@ public class CountReads extends SAMProcessor {
 			CloseableIterator<SAMRecord> recs, 
 			String refName, 
 			int len) {
-		System.err.println(refName);
 		while (recs.hasNext()) {
 			SAMRecord r = recs.next();
 			if (r.getMappingQuality() < this.qualityCutoff) continue;
