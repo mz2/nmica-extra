@@ -47,6 +47,7 @@ public class DepthMovingAverage extends SAMProcessor {
 		if (recCount > 0) {
 			System.out.printf("%s\t%d\t%d\t%d\t%d%n", refName, this.windowIndex, begin, end, recs.size());
 		}
+		
 		this.windowIndex++;
 	}
 }

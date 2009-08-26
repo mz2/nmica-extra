@@ -19,6 +19,7 @@ import org.biojava.bio.program.gff.GFFParser;
 import org.biojava.bio.program.gff.GFFRecord;
 import org.biojava.bio.program.gff.GFFWriter;
 import org.biojava.bio.program.gff.SimpleGFFRecord;
+import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.StrandedFeature.Strand;
 import org.biojava.utils.ParserException;
 import org.bjv2.util.cli.App;
@@ -70,13 +71,27 @@ public class SampleRegions {
 		
 		GFFWriter writer = new GFFWriter(new PrintWriter(System.out));
 		
-		for (int r = 0; r < this.sampleCount; r++) {
+		int r = 0; 
+		while (r < this.sampleCount) {
+			
 			final GFFRecord rec = features.get(randMultinomial(featureWeights));
-			final int len = rec.getEnd() - rec.getStart();
-			final int randomEnd = random.nextInt(len);
+			
+			int min = rec.getStart();
+            int max = rec.getEnd();
+            if (max < min) {
+            	min = rec.getEnd();
+            	max = rec.getStart();
+            }
+            
+            final int len = max - min;
+			final int randomEnd = min + sampleLength + random.nextInt(len-sampleLength+1);
 			final int randomStart = randomEnd - sampleLength;
-			if (randomStart < rec.getStart()) {
-				throw new BioError("Region too short to sample from");
+			
+			if (randomStart < min) {
+				System.err.println("Too short sequence (sample precedes beginning)");
+				continue;
+			} else if (randomEnd > max) {
+				throw new BioError("Too short sequence (went past end)");
 			}
 			writer.recordLine(new GFFRecord() {
 				public String getComment() {
@@ -119,6 +134,8 @@ public class SampleRegions {
 					return rec.getStrand();
 				}
 			});
+			
+			r++;
 		}
 	}
 	
@@ -172,9 +189,11 @@ public class SampleRegions {
             	max = record.getStart();
             }
             
-            features.add(record);
-            int len = max-min;
-            totalLength += len;
+            if ((max - min) >= sampleLength) {
+                features.add(record);
+                int len = max-min;
+                totalLength += len;            	
+            }
 		}
 
 		public void startDocument(String arg0) {
