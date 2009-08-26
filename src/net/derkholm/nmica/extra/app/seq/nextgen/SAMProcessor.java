@@ -276,7 +276,6 @@ public abstract class SAMProcessor {
 		int winEnd = windowCenter + (windowSize / 2);
 		
 		while (recIterator.hasNext()) {
-			System.err.println("-");
 			SAMRecord rec = recIterator.next();
 			if (rec.getMappingQuality() < this.qualityCutoff) continue;
 			
