@@ -1,11 +1,13 @@
 package net.derkholm.nmica.extra.app.seq.nextgen;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -18,10 +20,12 @@ import org.biojava.bio.BioException;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
+import cern.jet.random.Poisson;
+import cern.jet.random.engine.RandomEngine;
+
 @NMExtraApp(launchName = "ngdepth", vm = VirtualMachine.SERVER)
 @App(overview = "Output sequencing depth inside a window.", generateStub = true)
 public class DepthMovingAverage extends SAMProcessor {
-	
 	public enum Format {
 		SQLITE,
 		TSV
@@ -30,14 +34,27 @@ public class DepthMovingAverage extends SAMProcessor {
 	private Format format = Format.TSV;
 	private int windowIndex;
 	private Map<String, Integer> readCounts;
+	private Map<String, Poisson> nullDistributions = new HashMap<String, Poisson>();
+	
 	private File outputFile;
 	private Connection connection;
 	private PreparedStatement insertDepthEntryStatement;
-
+	
+	private RandomEngine randomEngine = RandomEngine.makeDefault();
+	
 	@Override
 	@Option(help="Reference sequence lengths")
-	public void setRefLengths(File f) {
-		//no-op
+	public void setRefLengths(File f) throws BioException, IOException {
+		super.setRefLengths(f);
+		for (String name : this.refSeqLengths.keySet()) {
+			nullDistributions.put(name, new Poisson(this.refSeqLengths.get(name) / this.windowSize, randomEngine));
+		}
+	}
+	
+	@Override
+	@Option(help="Read counts per reference sequence")
+	public void setReadCounts(File f) {
+		super.setReadCounts(f);
 	}
 	
 	@Option(help="Output format")
@@ -72,11 +89,11 @@ public class DepthMovingAverage extends SAMProcessor {
 	PreparedStatement insertDepthEntryStatement() throws SQLException {
 		if (this.insertDepthEntryStatement == null) {
 			this.insertDepthEntryStatement = connection().prepareStatement(
-	         "insert into depth values (?, ?, ?, ?, ?, ?, ?, ?);");
+	         "insert into depth values (?, ?, ?, ?, ?, ?);");
 		}
 		return this.insertDepthEntryStatement;
 	}
-	
+		
 	@Override
 	public void main(String[] args) throws BioException, ClassNotFoundException, SQLException {
 		setIterationType(IterationType.MOVING_WINDOW);
@@ -97,8 +114,22 @@ public class DepthMovingAverage extends SAMProcessor {
 	
 	private void createDepthDatabase() throws SQLException {
 		Statement stat = connection().createStatement();
-		stat.executeUpdate("drop table if exists xmeth_window_quantitation;");
-		stat.executeUpdate("CREATE TABLE depth (" +
+		stat.executeUpdate("DROP TABLE if exists depth;");
+		stat.executeUpdate("CREATE TABLE window (" +
+				"id integer primary key," +
+				"ref_name varchar," +
+				"begin_coord integer," +
+				"end_coord integer," +
+				"depth float," +
+				"pvalue float);");
+		stat.executeUpdate("CREATE INDEX ref_name_begin_end_idx ON depth(ref_name,begin_coord,end_coord);");
+		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON depth(ref_name,begin_coord);");
+	}
+	
+	private void createPeakDatabase() throws SQLException {
+		Statement stat = connection().createStatement();
+		stat.executeUpdate("DROP TABLE if exists peak;");
+		stat.executeUpdate("CREATE TABLE peak (" +
 				"id integer primary key," +
 				"ref_name varchar," +
 				"begin_coord integer," +
@@ -114,23 +145,22 @@ public class DepthMovingAverage extends SAMProcessor {
 	@Override
 	public void process(final List<SAMRecord> recs, String refName, int begin, int end, int seqLength) {
 		double avg = 0.0;
-		int recCount = recs.size();
-		if (recCount > 0) {
+		int depth = recs.size();
+		if (depth > 0) {
 			if (format == Format.TSV) {
-				System.out.printf("%s\t%d\t%d\t%d\t%d%n", refName, this.windowIndex, begin, end, recs.size());				
+				System.out.printf("%s\t%d\t%d\t%d\t%d%n", refName, this.windowIndex, begin, end, depth);				
 			} else {
 				PreparedStatement stat;
 				try {
+					
 					stat = insertDepthEntryStatement();
 
 					stat.setInt(1, this.windowIndex);
 					stat.setString(2, refName);
 					stat.setInt(3, begin);
 					stat.setInt(4, end);
-					stat.setFloat(5, recs.size());
-					stat.setFloat(6, Float.NaN);
-					stat.setFloat(7, Float.NaN);
-					stat.setFloat(8, Float.NaN);
+					stat.setFloat(5, depth);
+					stat.setDouble(6, this.nullDistributions.get(refName).cdf(depth));
 					stat.addBatch();
 					
 					if ((this.windowIndex % 10) == 0) {

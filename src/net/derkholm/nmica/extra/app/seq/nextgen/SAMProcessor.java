@@ -51,7 +51,7 @@ public abstract class SAMProcessor {
 	protected Map<String,Integer> refSeqLengths = new HashMap<String,Integer>();
 	protected Map<String,Integer> readCounts = new HashMap<String,Integer>();
 
-	private int windowSize = 1;
+	protected int windowSize = 1;
 	protected int frequency = 1;
 	private IterationType iterationType = IterationType.ONE_BY_ONE;
 	private QueryType queryType = QueryType.RECORD;
