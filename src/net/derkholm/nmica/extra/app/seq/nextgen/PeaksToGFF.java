@@ -45,7 +45,7 @@ public class PeaksToGFF {
 		this.peaksReader = f;
 	}
 	
-	@Option(help="Positions to fetch around peak maximae")
+	@Option(help="Positions to fetch around peak maximae", optional=true)
 	public void setAroundPeak(int i) {
 		this.aroundPeak = i;
 	}
