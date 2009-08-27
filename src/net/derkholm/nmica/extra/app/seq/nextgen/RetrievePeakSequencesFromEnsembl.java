@@ -427,6 +427,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		
 		int peakId = 1;
 		while ((line = br.readLine()) != null) {
+			System.err.printf(".");
 			//ignore comment lines regardless of exact format
 			if (Pattern.compile("^#").matcher(line).find()) {
 				continue;
@@ -516,7 +517,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 							peakStartCoord, peakEndCoord);	
 					continue;
 				}
-				peaks.add(new PeakEntry(
+				peaks.add(
+					new PeakEntry(
 						id, 
 						chromo, 
 						peakStartCoord, 
@@ -525,7 +527,15 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						pValue,
 						foldChange));
 			} else {
-				peaks.add(new PeakEntry(id, chromo, startCoord, endCoord, peakCoord, pValue, foldChange));	
+				peaks.add(
+					new PeakEntry(
+						id, 
+						chromo, 
+						startCoord, 
+						endCoord, 
+						peakCoord, 
+						pValue, 
+						foldChange));	
 			}
 		}
 		return peaks;
