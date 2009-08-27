@@ -62,6 +62,10 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	private int chunkLength;
 
 	private File seqDBFile;
+
+	private int nearbyGenes;
+
+	private int nearbyGeneWindowSize = 1000000;
 	
 	@Option(help="Peaks")
 	public void setPeaks(File f) {
@@ -114,6 +118,16 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	@Option(help="Cut sequences to chunks of the specified size", optional=true)
 	public void setChunkLength(int chunkLength) {
 		this.chunkLength = chunkLength;
+	}
+	
+	@Option(help="Retrieve nearby genes (specified number of them)", optional=true)
+	public void setNearbyGenes(int n) {
+		this.nearbyGenes = n;
+	}
+	
+	@Option(help="Maximum window size to look for nearby genes (default = 1 megabase)", optional=true)
+	public void setNearbyGeneWindowSize(int ws) {
+		this.nearbyGeneWindowSize = ws;
 	}
 	
 	public static class PeakEntry {
@@ -387,6 +401,32 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			Location mask = Location.empty;
 			
 			Location loc = new RangeLocation(peak.startCoord,peak.endCoord);
+			
+			
+			if (this.nearbyGenes > 0) {
+				
+				FeatureHolder genes = 
+					chromoSeq.filter(
+						new FeatureFilter.And(
+							new FeatureFilter.OverlapsLocation(
+								new RangeLocation(
+									peak.startCoord - nearbyGeneWindowSize, 
+									peak.endCoord + nearbyGeneWindowSize)), 
+							new FeatureFilter.Or(
+								new FeatureFilter.ByType("gene"),
+								new FeatureFilter.ByType("Gene"))));
+					
+				Iterator geneIterator = genes.features();
+				while (geneIterator.hasNext()) {
+					Feature gf = (Feature) geneIterator.next();
+					RangeLocation gl = (RangeLocation) gf.getLocation();
+					
+					System.err.printf("%s : %d - %d", gf.getType(), gl.getMin(), gl.getMax());
+				}
+				
+				continue;
+			}
+			
 			
 			if (this.repeatMask) {
 				FeatureHolder repeats = chromoSeq.filter(new FeatureFilter.And(
