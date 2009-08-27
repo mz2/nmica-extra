@@ -79,6 +79,7 @@ public class PeaksToGFF {
 			maxCount = peaks.size();
 		}
 		
+		System.err.printf("Parsed %d peaks", peaks.size());
 		GFFWriter writer = new GFFWriter(new PrintWriter(System.out));
 		
 		Iterator<PeakEntry> peakIterator = peaks.iterator();
@@ -128,9 +129,11 @@ public class PeaksToGFF {
 				public Strand getStrand() {
 					return StrandedFeature.UNKNOWN;
 				}
-				
 			});
+			
+			i++;
 		}
 		writer.endDocument();
+
 	}
 }
