@@ -44,7 +44,7 @@ public abstract class SAMProcessor {
 	
 	protected SAMFileReader inReader;
 	private SequenceDB seqDB = new HashSequenceDB();
-	protected int qualityCutoff = 10;
+	protected int qualityCutoff = 0;
 	
 	protected File indexFile;
 	protected String in = "-";
@@ -61,6 +61,7 @@ public abstract class SAMProcessor {
 	private int readLength;
 	private boolean readLengthWasSet;
 	private String currentRefSeqName;
+	private int readQualityCutoff;
 
 
 	@Option(help="Input reads (SAM/BAM formatted). Read from stdin if not specified.", optional=true)
@@ -148,6 +149,10 @@ public abstract class SAMProcessor {
 		this.qualityCutoff = quality;
 	}
 	
+	public void setReadQualityAbove(int quality) {
+		this.readQualityCutoff = quality;
+	}
+	
 	@Option(help="Include unmapped reads (default=false)", optional=true, userLevel=UserLevel.DEBUG)
 	public void setIncludeUnmapped(boolean b) {
 		this.includeUnmapped  = b;
@@ -212,7 +217,17 @@ public abstract class SAMProcessor {
 				if ((readCount++ % frequency) != 0) continue;
 				
 				int quality = record.getMappingQuality();
-				if (quality < qualityCutoff) {
+				if ((qualityCutoff > 0) && (quality < qualityCutoff)) {
+					excludedReads += 1;
+					continue;
+				}
+				
+				if (record.getReadUnmappedFlag()) {
+					excludedReads += 1;
+					continue;
+				}
+				
+				if ((readQualityCutoff > 0) && (record.getIntegerAttribute("UQ") < readQualityCutoff)) {
 					excludedReads += 1;
 					continue;
 				}
@@ -225,7 +240,10 @@ public abstract class SAMProcessor {
 				}
 				process(record, readCount);
 			}
-			System.err.printf("Excluded %d reads (%.2f%%)%n", excludedReads, (double)excludedReads / (double)readCount * 100.0);			
+			System.err.printf(
+				"Excluded %d reads (%.2f%%)%n", 
+				excludedReads, 
+				(double)excludedReads / (double)readCount * 100.0);			
 		} else if (iterationType == IterationType.MOVING_WINDOW) {
 			
 			final List<SAMRecord> recs = new ArrayList<SAMRecord>();

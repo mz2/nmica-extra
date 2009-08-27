@@ -1,4 +1,4 @@
-package net.derkholm.nmica.extra.app.seq;
+package net.derkholm.nmica.extra.app.seq.nextgen;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -17,6 +17,8 @@ import java.util.regex.Pattern;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
+import net.derkholm.nmica.extra.app.seq.RetrieveEnsemblSequences;
+import net.derkholm.nmica.extra.app.seq.SequenceSplitter;
 
 import org.biojava.bio.Annotation;
 import org.biojava.bio.seq.Feature;
