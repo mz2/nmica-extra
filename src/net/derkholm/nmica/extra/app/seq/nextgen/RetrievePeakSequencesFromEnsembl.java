@@ -42,7 +42,9 @@ import org.bjv2.util.cli.Option;
 public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	public static enum RankOrder {
     	ASC,
+    	ASC_FOLD_CHANGE,
     	DESC,
+    	DESC_FOLD_CHANGE,
     	NONE
     }
 	
@@ -141,6 +143,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		public final int peakCoord;
 		public final double pValue;
 		public final double foldChange;
+		public final double fdr;
 		
 		public PeakEntry(
 				String id2, 
@@ -149,7 +152,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				int endCoord, 
 				int peakCoord, 
 				double value, 
-				double foldChange) {
+				double foldChange, 
+				double fdr) {
 			this.id = id2;
 			this.seqName = seqName;
 			this.startCoord = startCoord;
@@ -157,6 +161,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			this.peakCoord = peakCoord;
 			this.pValue = value;
 			this.foldChange = foldChange;
+			this.fdr = fdr;
 		}
 
 		@Override
@@ -194,17 +199,30 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	public static class PeakEntryAscComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
 
 		public int compare(PeakEntry o1, PeakEntry o2) {
-			return Double.compare(o1.pValue, o2.pValue);
+			int pvalCompare = Double.compare(o1.pValue, o2.pValue);
+			if (pvalCompare != 0) return pvalCompare;
+			
+			int fdrCompare = -Double.compare(o1.fdr, o2.fdr);
+			if (fdrCompare != 0) return fdrCompare;
+			
+			return 0;
 		}
-		
 	}
 	
 	public static class PeakEntryDescComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
 
 		public int compare(PeakEntry o1, PeakEntry o2) {
-			return -Double.compare(o1.pValue, o2.pValue);
+			int pvalCompare = -Double.compare(o1.pValue, o2.pValue);
+			if (pvalCompare != 0) return pvalCompare;
+			
+			int fdrCompare = Double.compare(o1.fdr, o2.fdr);
+			if (fdrCompare != 0) return fdrCompare;
+			
+			int foldChangeCompare = Double.compare(o1.foldChange, o2.foldChange);
+			if (foldChangeCompare != 0) return foldChangeCompare;
+			
+			return o1.id.compareTo(o2.id);
 		}
-		
 	}
 	
 	public static class PeakEntryRandomComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
@@ -413,6 +431,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			int minLength,
 			int maxLength) throws IOException {
 		PeakEntryComparator comp = null;
+		int peakCount = 0;
 		if (rankOrder == RankOrder.ASC) {
 			comp = new PeakEntryAscComparitor();
 		} else if (rankOrder == RankOrder.DESC) {
@@ -427,7 +446,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		
 		int peakId = 1;
 		while ((line = br.readLine()) != null) {
-			System.err.printf(".");
+			
 			//ignore comment lines regardless of exact format
 			if (Pattern.compile("^#").matcher(line).find()) {
 				continue;
@@ -455,6 +474,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			int peakCoord;
 			double pValue;
 			double foldChange = Double.NaN;
+			double fdr = Double.NaN;
 			
 			StringTokenizer tok = new StringTokenizer(line,"\t");
 			
@@ -473,9 +493,9 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				endCoord = Integer.parseInt(tok.nextToken()) - 1; //1-based coords
 				tok.nextToken();//length
 				peakCoord  = startCoord + Integer.parseInt(tok.nextToken());//summit reported relative to start coord
-				tok.nextToken(); //tags
-				pValue = Double.parseDouble(tok.nextToken());
+				pValue = Double.parseDouble(tok.nextToken()); //p-value
 				foldChange = Double.parseDouble(tok.nextToken());
+				fdr = Double.parseDouble(tok.nextToken());
 				//fold enrichment
 				//false discovery rate
 				
@@ -499,14 +519,18 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				endCoord = Integer.parseInt(tok.nextToken());
 				peakCoord = (int)Math.round(Double.parseDouble(tok.nextToken()));
 				pValue = Double.parseDouble(tok.nextToken());
-					
 			}
-			
-			boolean maxLengthCondition = Math.abs(startCoord - endCoord) < maxLength;
-			if (!maxLengthCondition) continue;
-			boolean minLengthCondition = Math.abs(startCoord - endCoord) > minLength;
-			if (!minLengthCondition) continue;
 
+			boolean maxLengthCondition = (Math.abs(startCoord - endCoord) < maxLength);
+			if ((maxLength > 0)&!maxLengthCondition) {
+				System.err.println("Maximum length condition not met");
+				continue;
+			}
+			boolean minLengthCondition = (Math.abs(startCoord - endCoord) > minLength) && (minLength > 0);
+			if ((minLength > 0)&!minLengthCondition) {
+				System.err.println("Minimum length condition not met");
+				continue;
+			}
 			if (aroundPeak > 0) {
 				int halfLength = (int) Math.round((double)aroundPeak / 2.0);
 				int peakStartCoord = Math.max(startCoord,peakCoord - halfLength);
@@ -517,6 +541,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 							peakStartCoord, peakEndCoord);	
 					continue;
 				}
+				peakCount++;
+				System.err.printf(".");
 				peaks.add(
 					new PeakEntry(
 						id, 
@@ -525,8 +551,11 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						peakEndCoord, 
 						peakCoord, 
 						pValue,
-						foldChange));
+						foldChange,
+						fdr));
 			} else {
+				peakCount++;
+				System.err.printf("-");
 				peaks.add(
 					new PeakEntry(
 						id, 
@@ -535,9 +564,12 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						endCoord, 
 						peakCoord, 
 						pValue, 
-						foldChange));	
+						foldChange,
+						fdr));	
 			}
+			
 		}
+		System.err.println("peaks:"+peakCount);
 		return peaks;
 	}
 }

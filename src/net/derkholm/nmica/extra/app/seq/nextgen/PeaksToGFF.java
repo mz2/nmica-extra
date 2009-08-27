@@ -91,7 +91,7 @@ public class PeaksToGFF {
 			writer.recordLine(new GFFRecord() {
 
 				public String getComment() {
-					return null;
+					return String.format("\tp-value:%.3f fdr:%.3f", peak.pValue,peak.fdr);
 				}
 
 				public int getEnd() {
@@ -106,8 +106,10 @@ public class PeaksToGFF {
 					return 0;
 				}
 
-				public Map<Object, Object> getGroupAttributes() {
-					return new HashMap<Object, Object>();
+				public Map<String, Object> getGroupAttributes() {
+					Map<String, Object> map = new HashMap<String,Object>();
+					//map.put("p-value", ""+peak.pValue);
+					return map;
 				}
 
 				public double getScore() {
