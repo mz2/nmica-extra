@@ -407,21 +407,19 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				
 				FeatureHolder genes = 
 					chromoSeq.filter(
-						new FeatureFilter.And(
 							new FeatureFilter.OverlapsLocation(
 								new RangeLocation(
 									peak.startCoord - nearbyGeneWindowSize, 
-									peak.endCoord + nearbyGeneWindowSize)), 
-							new FeatureFilter.Or(
-								new FeatureFilter.ByType("gene"),
-								new FeatureFilter.ByType("Gene"))));
+									peak.endCoord + nearbyGeneWindowSize)));
 					
 				Iterator geneIterator = genes.features();
 				while (geneIterator.hasNext()) {
 					Feature gf = (Feature) geneIterator.next();
 					RangeLocation gl = (RangeLocation) gf.getLocation();
 					
-					System.err.printf("%s : %d - %d", gf.getType(), gl.getMin(), gl.getMax());
+					for (Object o : gf.getAnnotation().asMap().keySet()) {
+						System.err.printf("%s : %s", o, gf.getAnnotation().getProperty(o));						
+					}
 				}
 				
 				continue;
