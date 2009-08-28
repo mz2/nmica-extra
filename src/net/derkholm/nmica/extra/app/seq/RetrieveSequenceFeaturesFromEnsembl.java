@@ -71,6 +71,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 			public void startDocument(String str) {}
 
 			public void recordLine(GFFRecord recLine) {
+				System.err.printf(".");
 				try {
 					SymbolList symList = seqDB.getSequence(recLine.getSeqName()).subList(recLine.getStart(), recLine.getEnd());
 					if (recLine.getStrand().equals(StrandedFeature.NEGATIVE)) {
@@ -97,5 +98,6 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 				}
 			}
 		});
+		System.err.println();
 	}
 }
