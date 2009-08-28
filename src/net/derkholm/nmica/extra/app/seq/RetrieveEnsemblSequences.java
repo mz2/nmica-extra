@@ -83,8 +83,8 @@ public class RetrieveEnsemblSequences {
 	protected String password = "";
 	protected String host = "ensembldb.ensembl.org";
 	protected String database;
-	private int port = 5306;
-	private int schemaVersion = 54;
+	protected int port = 5306;
+	protected int schemaVersion = 54;
 	private File outputFile;
 	private Connection connection;
 	private PreparedStatement get_geneStableId;

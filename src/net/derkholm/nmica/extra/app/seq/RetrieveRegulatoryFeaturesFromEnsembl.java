@@ -6,13 +6,19 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import javax.sql.DataSource;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
@@ -25,6 +31,7 @@ import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.impl.SimpleSequence;
 import org.biojava.bio.symbol.SymbolList;
+import org.biojava.utils.JDBCPooledDataSource;
 import org.biojavax.bio.seq.RichSequence;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
@@ -64,10 +71,11 @@ public class RetrieveRegulatoryFeaturesFromEnsembl extends RetrieveEnsemblSequen
 	}
 	
 	private java.sql.PreparedStatement regulatoryFeaturesStatement;
+	private java.sql.Connection funcGenConnection;
 
 	protected PreparedStatement regulatoryFeaturesStatement() throws SQLException, Exception {
 		if (this.regulatoryFeaturesStatement == null) {
-			this.regulatoryFeaturesStatement = connection().prepareStatement(
+			this.regulatoryFeaturesStatement = this.funcGenConnection.prepareStatement(
 					"SELECT seq_region.name,feature_set.name,seq_region_start,seq_region_end,seq_region_strand FROM regulatory_feature " +
 					"LEFT JOIN feature_set ON feature_set.feature_set_id to=regulatory_feature.feature_set_id " +
 					"LEFT JOIN seq_region ON seq_region.seq_region_id=regulatory_feature.seq_region_id " +
@@ -78,7 +86,14 @@ public class RetrieveRegulatoryFeaturesFromEnsembl extends RetrieveEnsemblSequen
 	}
 	
 	public void main(String[] args) throws SQLException, Exception {
-		initializeEnsemblConnection();
+		String dbURL = String.format("jdbc:mysql://%s:%d/%s", 
+											this.host,
+											this.port, 
+											this.database.replace("core", "funcgen"));
+
+		DataSource db = JDBCPooledDataSource.getDataSource(
+				"org.gjt.mm.mysql.Driver", dbURL, username, password);
+		this.funcGenConnection = db.getConnection();
 		
 		regulatoryFeaturesStatement().setString(1, this.schemaBuild());
 		regulatoryFeaturesStatement().execute();
@@ -101,6 +116,8 @@ public class RetrieveRegulatoryFeaturesFromEnsembl extends RetrieveEnsemblSequen
 			} else {
 				os = new BufferedOutputStream(new FileOutputStream(new File(this.outFileName)));
 			}
+			
+			initializeEnsemblConnection();
 		}
 		
 		List<GFFRecord> records = new ArrayList<GFFRecord>();
