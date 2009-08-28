@@ -30,7 +30,7 @@ import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
 @App(overview = "Get regulatory features from Ensembl", generateStub = true)
-@NMExtraApp(launchName = "nmregfeats", vm = VirtualMachine.SERVER)
+@NMExtraApp(launchName = "nmensemblregfeat", vm = VirtualMachine.SERVER)
 public class RetrieveRegulatoryFeaturesFromEnsembl extends RetrieveEnsemblSequences {
 
 	protected enum Format {

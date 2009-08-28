@@ -48,7 +48,7 @@ public class DepthMovingAverage extends SAMProcessor {
 		super.setRefLengths(f);
 		for (String name : this.refSeqLengths.keySet()) {
 			double lambda = 
-				(double)this.readCounts.get(name) /
+				(double)this.readCounts.get(name) * this.extendedLength /
 				(double)this.refSeqLengths.get(name)
 				 * 
 				(double)this.windowSize;

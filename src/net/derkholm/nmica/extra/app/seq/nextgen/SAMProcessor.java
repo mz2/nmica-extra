@@ -57,8 +57,8 @@ public abstract class SAMProcessor {
 	private QueryType queryType = QueryType.RECORD;
 	private ArrayList<String> nameList;
 	private boolean includeUnmapped = false;
-	private int extendedLength;
-	private int readLength;
+	protected int extendedLength;
+	protected int readLength;
 	private boolean readLengthWasSet;
 	private String currentRefSeqName;
 	private int readQualityCutoff;

@@ -79,10 +79,10 @@ public class RetrieveEnsemblSequences {
 	private int fivePrimeBegin, fivePrimeEnd;
 
 	/* Ensembl settings */
-	private String username = "anonymous";
-	private String password = "";
-	private String host = "ensembldb.ensembl.org";
-	private String database;
+	protected String username = "anonymous";
+	protected String password = "";
+	protected String host = "ensembldb.ensembl.org";
+	protected String database;
 	private int port = 5306;
 	private int schemaVersion = 54;
 	private File outputFile;
