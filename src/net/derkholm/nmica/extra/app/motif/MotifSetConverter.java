@@ -14,18 +14,27 @@ import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
 
+import org.biojava.bio.BioError;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
-import org.bjv2.util.cli.UserLevel;
 
-@App(overview = "Output XMS files in other formats", generateStub = true)
+@App(overview = "Output XMS files in other formats (input given with unnamed arguments)", generateStub = true)
 @NMExtraApp(launchName = "nmconvertxms", vm = VirtualMachine.SERVER)
 public class MotifSetConverter {
 	private OutputStream outputStream = System.out;
-	private OutputFormat outputFormat = OutputFormat.TRANSFAC;
 	
-	private enum OutputFormat {
-		TRANSFAC
+	private Format inputFormat = Format.XMS;
+	private Format outputFormat = Format.TRANSFAC;
+	
+	private enum Format {
+		XMS,
+		TRANSFAC,
+		MEME
+	}
+	
+	@Option(help="Input format (default = xms)")
+	public void setInputFormat(Format format) {
+		this.inputFormat = format;
 	}
 
 	@Option(help = "Output filename", optional = true)
@@ -35,9 +44,8 @@ public class MotifSetConverter {
 	}
 	
 	@Option(help = "Output format (default = transfac)", 
-			userLevel = UserLevel.EXPERT, 
 			optional = true)
-	public void setFormat(OutputFormat format) {
+	public void setOutputFormat(Format format) {
 		this.outputFormat = format;
 	}
 
@@ -45,17 +53,30 @@ public class MotifSetConverter {
 		List<Motif> motifList = new ArrayList<Motif>();
 		for (String filen : args) {
 			FileReader fileReader = new FileReader(new File(filen));
-			Motif[] motifs = MotifIOTools.loadMotifSetXML(fileReader);
+			
+			Motif[] motifs;
+			if (inputFormat == Format.XMS) {
+				motifs = MotifIOTools.loadMotifSetXML(fileReader);
+			} else if (inputFormat == Format.MEME) {
+				motifs = new Motif[]{MotifIOTools.loadMotifMEME(fileReader)};
+			} else {
+				motifs = null;
+				throw new BioError("Unsupported format " + inputFormat);
+			}
+			
 			if (fileReader != null)
 				fileReader.close();
 			for (Motif m : motifs)
-				motifList.add(m);
+				motifList.add(m);				
 		}
 
-		if (outputFormat == OutputFormat.TRANSFAC) {
+		if (outputFormat == Format.TRANSFAC) {
 			MotifIOTools.writeMotifSetTRANSFACFormat(
 					outputStream, 
 					motifList.toArray(new Motif[motifList.size()]));			
+		} else {
+			MotifIOTools.writeMotifSetXML(outputStream, 
+					motifList.toArray(new Motif[motifList.size()]));
 		}
 	}
 }
