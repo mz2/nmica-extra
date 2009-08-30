@@ -32,7 +32,7 @@ public class MotifSetConverter {
 		MEME
 	}
 	
-	@Option(help="Input format (default = xms)")
+	@Option(help="Input format (default = xms)",optional=true)
 	public void setInputFormat(Format format) {
 		this.inputFormat = format;
 	}
