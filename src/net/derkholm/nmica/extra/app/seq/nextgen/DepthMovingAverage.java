@@ -79,6 +79,12 @@ public class DepthMovingAverage extends SAMProcessor {
 		super.setIndex(f);
 	}
 	
+	@Override
+	@Option(help="Extended length")
+	public void setExtendedLength(int i) {
+		super.setExtendTo(i);
+	}
+	
 	private Connection connection() throws SQLException {
 		if (this.connection == null) {
 			this.connection = 
