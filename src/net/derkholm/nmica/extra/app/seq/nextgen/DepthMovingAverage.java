@@ -68,6 +68,12 @@ public class DepthMovingAverage extends SAMProcessor {
 	}
 	
 	@Override
+	@Option(help="Mapped reads")
+	public void setMap(String in) {
+		super.setMap(in);
+	}
+	
+	@Override
 	@Option(help="Index file for mapped reads")
 	public void setIndex(File f) {
 		super.setIndex(f);
