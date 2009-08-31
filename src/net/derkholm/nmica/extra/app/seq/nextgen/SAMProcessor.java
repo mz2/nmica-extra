@@ -341,41 +341,43 @@ public abstract class SAMProcessor {
 				if (onPositiveStrand) {
 					if ((rec.getAlignmentStart() + extendedLength) < winStart) {
 						
-						System.err.printf("%d - %d on + strand cannot be extended to hit win start at %d%n", 
+						/*System.err.printf("%d - %d on + strand cannot be extended to hit win start at %d%n", 
 								rec.getAlignmentStart(), 
 								rec.getAlignmentStart() + extendedLength,
-								winStart);
+								winStart);*/
 						continue; // if you can't extend the read to hit the win start pos
 					}
 					if (rec.getAlignmentStart() > winEnd) {
 
+						/*
 						System.err.printf("%d - %d on + strand cannot be extended to hit win end at %d%n", 
 								rec.getAlignmentStart(), 
 								rec.getAlignmentStart() + extendedLength,
-								winEnd);
+								winEnd);*/
 						continue; // if the read doesn't start before the window ends
 					}
 				} else {
 					if (rec.getAlignmentEnd() < winStart) {
-						System.err.printf("%d - %d on - strand cannot be extended to hit win start at %d%n", 
+						/*System.err.printf("%d - %d on - strand cannot be extended to hit win start at %d%n", 
 								rec.getAlignmentStart(), 
 								rec.getAlignmentStart() + extendedLength,
-								winStart);
+								winStart);*/
 						continue; //if the read doesn't start before the window starts
 					}
 					if ((rec.getAlignmentEnd() - extendedLength) > winEnd) {
-						System.err.printf("%d - %d on - strand cannot be extended to hit win end at %d%n", 
+						/*System.err.printf("%d - %d on - strand cannot be extended to hit win end at %d%n", 
 								rec.getAlignmentStart(), 
 								rec.getAlignmentStart() + extendedLength,
-								winEnd);
+								winEnd);*/
 						continue; // if the read can't be extended to hit inside the window (min coordinate smaller than window's end)
 					}
 				}
+				/*
 				System.err.printf("YES! Read %d - %d (%s strand) overlaps with the target range %d - %d%n",
 						rec.getAlignmentStart(), 
 						rec.getAlignmentStart() + extendedLength, 
 						rec.getReadNegativeStrandFlag() ? "-" : "+",
-						winStart, winEnd);
+						winStart, winEnd);*/
 			}
 			
 			recs.add(rec);
