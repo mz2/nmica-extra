@@ -42,6 +42,7 @@ public class CombineDepths {
 		CountDepths.createDepthDatabase(connection());
 		
 		for (String inFileName : args) {
+			System.err.printf("Adding %s%n...", inFileName);
 			Connection conn = 
 				DriverManager.getConnection(String.format(
 					"jdbc:sqlite:%s",inFileName));
