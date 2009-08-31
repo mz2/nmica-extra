@@ -24,7 +24,8 @@ public class CombineDepths {
 		this.outputFile = f;
 	}
 	
-	private Connection connection() throws SQLException {
+	private Connection connection() throws SQLException, ClassNotFoundException {
+		Class.forName("org.sqlite.JDBC");
 		if (this.connection == null) {
 			this.connection = 
 				DriverManager.getConnection(
@@ -37,7 +38,7 @@ public class CombineDepths {
 		return this.connection;
 	}
 	
-	public void main(String[] args) throws SQLException {
+	public void main(String[] args) throws SQLException, ClassNotFoundException {
 		CountDepths.createDepthDatabase(connection());
 		
 		for (String inFileName : args) {
