@@ -62,9 +62,15 @@ public class DepthMovingAverage extends SAMProcessor {
 		this.format = format;
 	}
 	
-	@Option(help="Output file")
+	@Option(help="Output file " +
+			"(suffixed with _x where x is LSB job index " +
+			"if run on LSF as part of a job array)")
 	public void setOut(File f) {
-		this.outputFile = f;
+		if (jobIndex() >= 0) {
+			this.outputFile = new File(String.format("%s%s_%d",f.getPath(),File.separator,this.jobIndex()));
+		} else {
+			this.outputFile = f;
+		}
 	}
 	
 	@Override

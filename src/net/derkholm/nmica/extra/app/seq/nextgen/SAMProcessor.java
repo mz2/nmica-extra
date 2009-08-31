@@ -211,6 +211,12 @@ public abstract class SAMProcessor {
 		}
 		this.inReader.setValidationStringency(ValidationStringency.SILENT);
 	}
+	
+	public int jobIndex() {
+		String jobIndex = System.getenv("LSB_JOBINDEX");
+		if (jobIndex == null) return -1;
+		return Integer.parseInt(jobIndex);
+	}
 
 	//the main method in subclasses can pretty much look like this (you can customise of course)
 	public void main(String[] args) throws Exception {
@@ -260,6 +266,18 @@ public abstract class SAMProcessor {
 			
 			final List<SAMRecord> recs = new ArrayList<SAMRecord>();
 			
+			/* Each chromosome is dealt as a single job in a job array */
+			if (jobIndex() >= 0) {
+				String name = nameList.get(jobIndex()-1);
+				System.err.printf(
+						"Running as part of a LSF job array. " +
+						"Will process only %s%n", name);
+				
+				ArrayList<String> names = new ArrayList<String>();
+				names.add(name);
+				this.nameList = names;
+			}
+			
 			for (String seqName : nameList) {
 				System.err.printf("Processing %s%n",seqName);
 				
@@ -291,6 +309,18 @@ public abstract class SAMProcessor {
 			windowSize = frequency;
 			
 			final List<SAMRecord> recs = new ArrayList<SAMRecord>();
+			
+			/* Each chromosome is dealt as a single job in a job array */
+			if (jobIndex() >= 0) {
+				String name = nameList.get(jobIndex()-1);
+				System.err.printf(
+						"Running as part of a LSF job array. " +
+						"Will process only %s%n", name);
+				ArrayList<String> names = new ArrayList<String>();
+				names.add(name);
+				this.nameList = names;
+			}
+
 			for (String seqName : nameList) {
 				System.err.printf("Processing %s%n",seqName);
 				
