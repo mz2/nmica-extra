@@ -48,18 +48,18 @@ public class RetrieveRegulatoryFeaturesFromEnsembl extends RetrieveEnsemblSequen
 	protected Format outputFormat = Format.GFF;
 	private String outFileName;
 	
-	@Option(help="Output format (either gff or fasta)")
+	@Option(help="Output format (either gff or fasta, default=gff)",optional=true)
 	public void setFormat(Format format) {
 		this.outputFormat = format;
 	}
 	
-	@Option(help="Output file")
+	@Option(help="Output file (outputs to stdout if not specified)",optional=true)
 	public void setOut(String str) {
 		this.outFileName = str;
 	}
 	
 	public String schemaBuild() {
-		Matcher matcher = Pattern.compile("([\\w,\\d]+\\_[\\w,\\d]+)$").matcher(this.database);
+		Matcher matcher = Pattern.compile("(\\d+\\_[\\w,\\d]+)$").matcher(this.database);
 		
 		matcher.find();
 		String str = matcher.group(1);
@@ -67,6 +67,7 @@ public class RetrieveRegulatoryFeaturesFromEnsembl extends RetrieveEnsemblSequen
 			throw new IllegalArgumentException("The database name doesn't contain a schema build");
 		}
 		
+		System.err.printf("schema build: %s%n",str);
 		return str;
 	}
 	
@@ -75,11 +76,13 @@ public class RetrieveRegulatoryFeaturesFromEnsembl extends RetrieveEnsemblSequen
 
 	protected PreparedStatement regulatoryFeaturesStatement() throws SQLException, Exception {
 		if (this.regulatoryFeaturesStatement == null) {
-			this.regulatoryFeaturesStatement = this.funcGenConnection.prepareStatement(
-					"SELECT seq_region.name,feature_set.name,seq_region_start,seq_region_end,seq_region_strand FROM regulatory_feature " +
-					"LEFT JOIN feature_set ON feature_set.feature_set_id to=regulatory_feature.feature_set_id " +
-					"LEFT JOIN seq_region ON seq_region.seq_region_id=regulatory_feature.seq_region_id " +
-					"WHERE schema_build=?");
+			String str = "SELECT seq_region.name,feature_set.name,seq_region_start,seq_region_end,seq_region_strand FROM regulatory_feature " +
+			"LEFT JOIN feature_set ON feature_set.feature_set_id=regulatory_feature.feature_set_id " +
+			"LEFT JOIN seq_region ON seq_region.seq_region_id=regulatory_feature.seq_region_id " +
+			"WHERE schema_build=?";
+			System.err.println(str);
+			System.err.println(this.schemaBuild());
+			this.regulatoryFeaturesStatement = this.funcGenConnection.prepareStatement(str);
 		} 
 		
 		return this.regulatoryFeaturesStatement;
@@ -127,7 +130,7 @@ public class RetrieveRegulatoryFeaturesFromEnsembl extends RetrieveEnsemblSequen
 			String featSetName = resultSet.getString(2);
 			int startCoord = resultSet.getInt(3);
 			int endCoord = resultSet.getInt(4);
-			StrandedFeature.Strand strand = resultSet.getBoolean(5) ? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE;
+			//StrandedFeature.Strand strand = (resultSet.getInt(5) == 1) ? StrandedFeature.POSITIVE : StrandedFeature.NEGATIVE;
 			
 			if (this.outputFormat.equals(Format.GFF)) {
 				SimpleGFFRecord rec = new SimpleGFFRecord();
@@ -135,7 +138,8 @@ public class RetrieveRegulatoryFeaturesFromEnsembl extends RetrieveEnsemblSequen
 				rec.setFeature(featSetName);
 				rec.setStart(startCoord);
 				rec.setEnd(endCoord);
-				rec.setStrand(strand);
+				rec.setSource("nmensemblregfeat");
+				rec.setStrand(StrandedFeature.UNKNOWN);
 				
 				writer.recordLine(rec);
 				writer.endDocument();
@@ -145,11 +149,10 @@ public class RetrieveRegulatoryFeaturesFromEnsembl extends RetrieveEnsemblSequen
 				
 				Sequence s = new SimpleSequence(sublist,
 													null,
-													String.format("%s;%d-%d;%s",
+													String.format("%s;%d-%d",
 																	seqRegName,
 																	startCoord,
-																	endCoord,
-																	strand.getValue()), 
+																	endCoord), 
 																	Annotation.EMPTY_ANNOTATION);
 				
 				RichSequence.IOTools.writeFasta(os, s, null);

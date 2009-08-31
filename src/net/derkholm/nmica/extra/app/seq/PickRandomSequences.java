@@ -1,10 +1,12 @@
 package net.derkholm.nmica.extra.app.seq;
 
+import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -19,14 +21,14 @@ import org.biojavax.bio.seq.RichSequenceIterator;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
-@App(overview = "Write out random sequences or sections of sequences", generateStub = true)
+@App(overview = "Write out random sequences or sections of sequences. If unnamed arguments are given, these are taken as output files and samples are divided equally amongst them.", generateStub = true)
 @NMExtraApp(launchName = "nmrandomseq", vm = VirtualMachine.SERVER)
 public class PickRandomSequences {
 	private int count = 1;
 	private File seqFile;
 	private int length = -1;
-	private boolean sampleWithReplacement;
-	private boolean sampleFragsWithReplacement;
+	private boolean sampleWithReplacement = false;
+	private boolean sampleFragsWithReplacement = false;
 	private static Random random = new Random();
 	
 	@Option(help="Number of sequences to sample (default=1)", optional=true)
@@ -35,7 +37,7 @@ public class PickRandomSequences {
 	}
 	
 	@Option(help="Input sequences")
-	public void setSequences(File seqFile) {
+	public void setSeqs(File seqFile) {
 		this.seqFile = seqFile;
 	}
 	
@@ -49,12 +51,22 @@ public class PickRandomSequences {
 		this.sampleWithReplacement = b;
 	}
 	
-	@Option(help="Sample with replacement from sequence fragments, i.e. allow the same position in input sequences more than once")
+	@Option(help="Sample with replacement from sequence fragments, i.e. allow the same position in input sequences more than once", optional=true)
 	public void setSampleFragsWithReplacement(boolean b) {
 		this.sampleFragsWithReplacement = b;
 	}
 	
 	public void main(String[] args) throws BioException, IOException {
+		OutputStream[] outputStreams;
+		if ((args != null) && (args.length > 0)) {
+			outputStreams = new OutputStream[args.length];
+			for (int i = 0; i < args.length; i++) {
+				outputStreams[i] = new BufferedOutputStream(new FileOutputStream(args[i]));
+			}
+		} else {
+			outputStreams = new OutputStream[] {System.out};
+		}
+		
 		RichSequenceIterator seqIterator = RichSequence.IOTools.readFastaDNA(new BufferedReader(new FileReader(seqFile)), null);
 		
 		List<Sequence> seqs = new ArrayList<Sequence>();
@@ -83,8 +95,12 @@ public class PickRandomSequences {
 			
 		}
 		
+		//TODO: Find out why nothing's output
+		int i = 0;
 		for (Sequence seq : chosenSeqs) {
-			RichSequence.IOTools.writeFasta(System.out, seq, null);
+			int osi = i++ % outputStreams.length;
+			RichSequence.IOTools.writeFasta(outputStreams[osi], seq, null);
+			outputStreams[osi].flush();
 		}
 		seqs = null;
 	}
