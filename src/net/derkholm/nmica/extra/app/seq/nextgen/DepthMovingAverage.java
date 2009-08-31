@@ -45,18 +45,22 @@ public class DepthMovingAverage extends SAMProcessor {
 	@Override
 	@Option(help="Reference sequence lengths")
 	public void setRefLengths(File f) throws BioException, IOException {
-		super.setRefLengths(f);
-		for (String name : this.refSeqLengths.keySet()) {
-			double lambda = 
-				(double)this.readCounts.get(name) * this.extendedLength /
-				(double)this.refSeqLengths.get(name)
-				 * 
-				(double)this.windowSize;
-			
-			System.err.println("lambda:" + lambda);
-			nullDistributions.put(
-					name, 
-					new Poisson(lambda, randomEngine));
+		try {
+			super.setRefLengths(f);
+			for (String name : this.refSeqLengths.keySet()) {
+				double lambda = 
+					(double)this.readCounts.get(name) * this.extendedLength /
+					(double)this.refSeqLengths.get(name)
+					 * 
+					(double)this.windowSize;
+				
+				System.err.println("lambda:" + lambda);
+				nullDistributions.put(
+						name, 
+						new Poisson(lambda, randomEngine));
+			}			
+		} catch (Exception e) {
+			e.printStackTrace();
 		}
 	}
 	
