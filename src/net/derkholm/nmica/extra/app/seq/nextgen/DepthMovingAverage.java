@@ -81,7 +81,7 @@ public class DepthMovingAverage extends SAMProcessor {
 	
 	@Override
 	@Option(help="Extended length")
-	public void setExtendedLength(int i) {
+	public void setExtendTo(int i) {
 		super.setExtendTo(i);
 	}
 	
