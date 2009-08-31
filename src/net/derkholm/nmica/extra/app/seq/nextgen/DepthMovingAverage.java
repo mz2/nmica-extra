@@ -101,7 +101,7 @@ public class DepthMovingAverage extends SAMProcessor {
 	PreparedStatement insertDepthEntryStatement() throws SQLException {
 		if (this.insertDepthEntryStatement == null) {
 			this.insertDepthEntryStatement = connection().prepareStatement(
-	         "insert into depth values (?, ?, ?, ?, ?, ?);");
+	         "insert into window values (?, ?, ?, ?, ?, ?);");
 		}
 		return this.insertDepthEntryStatement;
 	}
@@ -150,7 +150,7 @@ public class DepthMovingAverage extends SAMProcessor {
 	
 	private void createDepthDatabase() throws SQLException {
 		Statement stat = connection().createStatement();
-		stat.executeUpdate("DROP TABLE if exists depth;");
+		stat.executeUpdate("DROP TABLE if exists window;");
 		stat.executeUpdate(
 			"CREATE TABLE window (" +
 				"id integer primary key," +
@@ -159,8 +159,8 @@ public class DepthMovingAverage extends SAMProcessor {
 				"end_coord integer," +
 				"depth float," +
 				"pvalue float);");
-		stat.executeUpdate("CREATE INDEX ref_name_begin_end_idx ON depth(ref_name,begin_coord,end_coord);");
-		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON depth(ref_name,begin_coord);");
+		stat.executeUpdate("CREATE INDEX ref_name_begin_end_idx ON window(ref_name,begin_coord,end_coord);");
+		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON window(ref_name,begin_coord);");
 	}
 	
 
