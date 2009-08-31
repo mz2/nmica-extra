@@ -14,8 +14,10 @@ import java.util.Random;
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 
+import org.biojava.bio.Annotation;
 import org.biojava.bio.BioException;
 import org.biojava.bio.seq.Sequence;
+import org.biojava.bio.seq.impl.SimpleSequence;
 import org.biojavax.bio.seq.RichSequence;
 import org.biojavax.bio.seq.RichSequenceIterator;
 import org.bjv2.util.cli.App;
@@ -29,6 +31,7 @@ public class PickRandomSequences {
 	private int length = -1;
 	private boolean sampleWithReplacement = false;
 	private boolean sampleFragsWithReplacement = false;
+	private boolean uniqueNames;
 	private static Random random = new Random();
 	
 	@Option(help="Number of sequences to sample (default=1)", optional=true)
@@ -56,6 +59,11 @@ public class PickRandomSequences {
 		this.sampleFragsWithReplacement = b;
 	}
 	
+	@Option(help="Make output sequence names unique", optional=true)
+	public void setUnique(boolean b) {
+		this.uniqueNames = b;
+	}
+
 	public void main(String[] args) throws BioException, IOException {
 		OutputStream[] outputStreams;
 		if ((args != null) && (args.length > 0)) {
@@ -98,8 +106,20 @@ public class PickRandomSequences {
 		//TODO: Find out why nothing's output
 		int i = 0;
 		for (Sequence seq : chosenSeqs) {
+			Sequence s;
+			if (uniqueNames) {
+				s = new SimpleSequence(
+						seq.subList(
+								0, 
+								seq.length()),
+								null,
+								seq.getName() + "_" + i,
+								Annotation.EMPTY_ANNOTATION);
+			} else {
+				s = seq;
+			}
 			int osi = i++ % outputStreams.length;
-			RichSequence.IOTools.writeFasta(outputStreams[osi], seq, null);
+			RichSequence.IOTools.writeFasta(outputStreams[osi], s, null);
 			outputStreams[osi].flush();
 		}
 		seqs = null;
