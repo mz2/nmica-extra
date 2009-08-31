@@ -52,7 +52,7 @@ public class PeakCaller {
 	}
 	
 	@Option(help="Control sequencing depths")
-	public void controlDepths(File f) throws ClassNotFoundException, SQLException {
+	public void setControlDepths(File f) throws ClassNotFoundException, SQLException {
 		Class.forName("org.sqlite.JDBC");
 		this.controlDepthFile = f;
 		if (this.controlDepthConnection == null) {
