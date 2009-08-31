@@ -198,6 +198,7 @@ public class DepthMovingAverage extends SAMProcessor {
 					
 					if ((this.windowIndex % 10) == 0) {
 						int[] ids = stat.executeBatch();
+						
 						for (int id : ids) {
 							System.err.println(id);
 						}
