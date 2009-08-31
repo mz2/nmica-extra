@@ -172,10 +172,10 @@ public class DepthMovingAverage extends SAMProcessor {
 		
 		if (depth > 0) {
 			if (format == Format.TSV) {
-				System.out.printf("%s\t%d\t%d\t%d\t%d\t%.3f%n", refName, this.windowIndex, begin, end, depth, pvalue);				
+				System.out.printf("%s\t%d\t%d\t%d\t%d\t%.8f%n", refName, this.windowIndex, begin, end, depth, pvalue);				
 			} else {
 				PreparedStatement stat;
-				System.err.printf("%s\t%d\t%d\t%d\t%d\t%.3f%n", refName, this.windowIndex, begin, end, depth, pvalue);				
+				System.err.printf("%s\t%d\t%d\t%d\t%d\t%.8f%n", refName, this.windowIndex, begin, end, depth, pvalue);				
 				try {
 
 					stat = insertDepthEntryStatement();
@@ -185,7 +185,7 @@ public class DepthMovingAverage extends SAMProcessor {
 					stat.setInt(3, begin);
 					stat.setInt(4, end);
 					stat.setFloat(5, depth);
-					stat.setDouble(6, pvalue);
+					stat.setDouble(6, 1 - pvalue);
 					stat.addBatch();
 					
 					if ((this.windowIndex % 10) == 0) {
