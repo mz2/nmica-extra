@@ -25,7 +25,7 @@ import cern.jet.random.engine.RandomEngine;
 
 @NMExtraApp(launchName = "ngdepth", vm = VirtualMachine.SERVER)
 @App(overview = "Output sequencing depth inside a window.", generateStub = true)
-public class DepthMovingAverage extends SAMProcessor {
+public class CountDepths extends SAMProcessor {
 	public enum Format {
 		SQLITE,
 		TSV
@@ -142,7 +142,7 @@ public class DepthMovingAverage extends SAMProcessor {
 		
 		Class.forName("org.sqlite.JDBC");
 		if (format == Format.SQLITE) {
-			this.createDepthDatabase();
+			CountDepths.createDepthDatabase(this.connection());
 		}
 		
 		this.windowIndex = 0;
@@ -152,10 +152,12 @@ public class DepthMovingAverage extends SAMProcessor {
 		process();
 		insertDepthEntryStatement().executeBatch();
 		connection().setAutoCommit(false);
+		
+		this.connection().close();
 	}
 	
-	private void createDepthDatabase() throws SQLException {
-		Statement stat = connection().createStatement();
+	public static void createDepthDatabase(Connection conn) throws SQLException {
+		Statement stat = conn.createStatement();
 		stat.executeUpdate("DROP TABLE if exists window;");
 		stat.executeUpdate(
 			"CREATE TABLE window (" +
