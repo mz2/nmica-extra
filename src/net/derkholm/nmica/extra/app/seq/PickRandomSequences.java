@@ -111,7 +111,7 @@ public class PickRandomSequences {
 				s = new SimpleSequence(
 						seq.subList(
 								0, 
-								seq.length()),
+								seq.length()-1),
 								null,
 								seq.getName() + "_" + i,
 								Annotation.EMPTY_ANNOTATION);
