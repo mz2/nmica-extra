@@ -93,7 +93,7 @@ public class DepthMovingAverage extends SAMProcessor {
 						"jdbc:sqlite:%s",
 						this.outputFile.getPath()));
 
-			this.connection.setAutoCommit(true);
+			this.connection.setAutoCommit(false);
 		}
 		return this.connection;
 	}
@@ -197,7 +197,10 @@ public class DepthMovingAverage extends SAMProcessor {
 					stat.addBatch();
 					
 					if ((this.windowIndex % 10) == 0) {
-						stat.executeBatch();
+						int[] ids = stat.executeBatch();
+						for (int id : ids) {
+							System.err.println(id);
+						}
 					}
 				} catch (SQLException e) {
 					throw new BioError(e);
