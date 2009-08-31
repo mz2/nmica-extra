@@ -99,15 +99,7 @@ public abstract class SAMProcessor {
 
 	@Option(help="Reference sequence names and lengths in a TSV formatted file")
 	public void setRefLengths(File f) throws NoSuchElementException, BioException, NumberFormatException, IOException {
-		try {
-		BufferedReader reader = new BufferedReader(new FileReader(f));
-		
-		String line = null;
-		while ((line = reader.readLine()) != null) {
-			StringTokenizer tok = new StringTokenizer(line,"\t");
-			refSeqLengths.put(tok.nextToken(), Integer.parseInt(tok.nextToken()));
-		}
-		
+		this.refSeqLengths = SAMProcessor.parseRefLengths(f);
 		nameList = new ArrayList<String>(refSeqLengths.keySet());
 		Collections.sort(
 				nameList, 
@@ -116,29 +108,49 @@ public abstract class SAMProcessor {
 						return str1.compareTo(str2);
 					}
 				});
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
 	}
 	
+	public static Map<String, Integer> parseRefLengths(File f) {
+		Map<String, Integer> refSeqLengths = new HashMap<String, Integer>();
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader(f));
+			
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				StringTokenizer tok = new StringTokenizer(line,"\t");
+				refSeqLengths.put(tok.nextToken(), Integer.parseInt(tok.nextToken()));
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		return refSeqLengths;
+	}
+
 	@Option(
 		help="Read counts in a TSV formatted file " +
 				"(reference seq name + tab + counts for that ref seq)",
 				optional=true)
 	public void setReadCounts(File f) {
+		this.readCounts = SAMProcessor.parseReadCounts(f);
+	}
+	
+	static Map<String, Integer> parseReadCounts(File f) {
+		Map<String,Integer> readCounts = new HashMap<String,Integer>();
 		try {
 			BufferedReader reader = new BufferedReader(new FileReader(f));
 			
 			String line = null;
 			while ((line = reader.readLine()) != null) {
 				StringTokenizer tok = new StringTokenizer(line, "\t");
-				this.readCounts.put(tok.nextToken(), Integer.parseInt(tok.nextToken()));
+				readCounts.put(tok.nextToken(), Integer.parseInt(tok.nextToken()));
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		return readCounts;	
 	}
-	
+
 	@Option(help="Sequencing read length", optional=true)
 	public void setReadLength(int i) {
 		this.readLengthWasSet = true;

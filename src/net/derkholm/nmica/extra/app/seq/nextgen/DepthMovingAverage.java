@@ -110,7 +110,9 @@ public class DepthMovingAverage extends SAMProcessor {
 		initializeSAMReader();
 		
 		Class.forName("org.sqlite.JDBC");
-		if (format == Format.SQLITE) {this.createDepthDatabase();}
+		if (format == Format.SQLITE) {
+			this.createDepthDatabase();
+		}
 		
 		this.windowIndex = 0;
 		
@@ -124,7 +126,8 @@ public class DepthMovingAverage extends SAMProcessor {
 	private void createDepthDatabase() throws SQLException {
 		Statement stat = connection().createStatement();
 		stat.executeUpdate("DROP TABLE if exists depth;");
-		stat.executeUpdate("CREATE TABLE window (" +
+		stat.executeUpdate(
+			"CREATE TABLE window (" +
 				"id integer primary key," +
 				"ref_name varchar," +
 				"begin_coord integer," +
@@ -135,21 +138,6 @@ public class DepthMovingAverage extends SAMProcessor {
 		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON depth(ref_name,begin_coord);");
 	}
 	
-	private void createPeakDatabase() throws SQLException {
-		Statement stat = connection().createStatement();
-		stat.executeUpdate("DROP TABLE if exists peak;");
-		stat.executeUpdate("CREATE TABLE peak (" +
-				"id integer primary key," +
-				"ref_name varchar," +
-				"begin_coord integer," +
-				"end_coord integer," +
-				"depth float," +
-				"depth_control float," +
-				"pvalue float," +
-				"fdr float);");
-		stat.executeUpdate("CREATE INDEX ref_name_begin_end_idx ON depth(ref_name,begin_coord,end_coord);");
-		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON depth(ref_name,begin_coord);");
-	}
 
 	@Override
 	public void process(final List<SAMRecord> recs, String refName, int begin, int end, int seqLength) {
@@ -162,8 +150,9 @@ public class DepthMovingAverage extends SAMProcessor {
 				System.out.printf("%s\t%d\t%d\t%d\t%d\t%.3f%n", refName, this.windowIndex, begin, end, depth, pvalue);				
 			} else {
 				PreparedStatement stat;
+				System.err.printf("%s\t%d\t%d\t%d\t%d\t%.3f%n", refName, this.windowIndex, begin, end, depth, pvalue);				
 				try {
-					
+
 					stat = insertDepthEntryStatement();
 
 					stat.setInt(1, this.windowIndex);
