@@ -33,7 +33,6 @@ public class DepthMovingAverage extends SAMProcessor {
 	
 	private Format format = Format.TSV;
 	private int windowIndex;
-	private Map<String, Integer> readCounts;
 	private Map<String, Poisson> nullDistributions = new HashMap<String, Poisson>();
 	
 	private File outputFile;
