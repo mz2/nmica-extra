@@ -18,8 +18,8 @@ import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
 
-@NMExtraApp(launchName = "ngdepth", vm = VirtualMachine.SERVER)
-@App(overview = "Output sequencing depth inside a window.", generateStub = true)
+@NMExtraApp(launchName = "ngpeaks", vm = VirtualMachine.SERVER)
+@App(overview = "Call peaks from sequencing depth data.", generateStub = true)
 public class PeakCaller {
 	
 	private Connection depthConnection;
