@@ -359,7 +359,8 @@ public abstract class SAMProcessor {
 					if (rec.getAlignmentEnd() < winStart) {
 						System.err.printf("%d - %d on - strand cannot be extended to hit win start at %d%n", 
 								rec.getAlignmentStart(), 
-								rec.getAlignmentStart() + extendedLength);
+								rec.getAlignmentStart() + extendedLength,
+								winStart);
 						continue; //if the read doesn't start before the window starts
 					}
 					if ((rec.getAlignmentEnd() - extendedLength) > winEnd) {
