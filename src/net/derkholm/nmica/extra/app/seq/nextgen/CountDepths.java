@@ -206,7 +206,11 @@ public class CountDepths extends SAMProcessor {
 					stat.setFloat(5, depth);
 					stat.setDouble(6, pvalue);
 					
-					stat.executeUpdate();
+					int rowCount = stat.executeUpdate();
+					
+					if (rowCount != 1) {
+						throw new BioError("Row count wasn't increased by one.");
+					}
 					
 				} catch (SQLException e) {
 					throw new BioError(e);
