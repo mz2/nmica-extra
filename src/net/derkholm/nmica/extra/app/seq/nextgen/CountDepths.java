@@ -104,12 +104,16 @@ public class CountDepths extends SAMProcessor {
 		return this.connection;
 	}
 	
-	PreparedStatement insertDepthEntryStatement() throws SQLException {
+	private PreparedStatement insertDepthEntryStatement() throws SQLException {
 		if (this.insertDepthEntryStatement == null) {
-			this.insertDepthEntryStatement = connection().prepareStatement(
-	         "insert into window values (?, ?, ?, ?, ?, ?);");
+			this.insertDepthEntryStatement = CountDepths.insertDepthEntryStatement(this.connection());
 		}
-		return this.insertDepthEntryStatement;
+		return insertDepthEntryStatement;
+	}
+	
+	public static PreparedStatement insertDepthEntryStatement(Connection conn) throws SQLException {
+		return conn.prepareStatement(
+        	"insert into window values (?, ?, ?, ?, ?, ?);");
 	}
 		
 	private void initNullDistributions() {

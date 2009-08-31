@@ -3,7 +3,9 @@ package net.derkholm.nmica.extra.app.seq.nextgen;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
@@ -39,7 +41,24 @@ public class CombineDepths {
 		CountDepths.createDepthDatabase(connection());
 		
 		for (String inFileName : args) {
+			Connection conn = 
+				DriverManager.getConnection(String.format(
+					"jdbc:sqlite:%s",inFileName));
 			
+			Statement statement = conn.createStatement();
+			ResultSet results = statement.executeQuery(
+				"SELECT ref_name,begin_coord,end_coord,depth,pvalue FROM window;");
+			
+			while (results.next()) {
+				String refName = results.getString(1);
+				int begin = results.getInt(2);
+				int end = results.getInt(3);
+				double d = results.getDouble(4);
+				double p = results.getDouble(5);
+				
+				System.err.printf("%s %d %d %.2f %.2f%n",refName,begin,end,d,p);
+			}
+			results.close();
 		}
 	}
 }
