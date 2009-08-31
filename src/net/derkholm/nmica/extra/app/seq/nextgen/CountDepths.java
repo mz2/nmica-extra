@@ -114,7 +114,7 @@ public class CountDepths extends SAMProcessor {
 		
 	private void initNullDistributions() {
 		for (String name : this.refSeqLengths.keySet()) {
-			System.err.printf("%d %d %d %d", 
+			System.err.printf("%d %d %d %d ", 
 					readCounts.get(name),
 					this.extendedLength,
 					this.refSeqLengths.get(name),
