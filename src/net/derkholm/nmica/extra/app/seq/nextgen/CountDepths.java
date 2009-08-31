@@ -150,7 +150,7 @@ public class CountDepths extends SAMProcessor {
 		
 		//connection().setAutoCommit(false);
 		
-		//process();
+		process();
 		//insertDepthEntryStatement().executeBatch();
 		//insertDepthEntryStatement().close();
 		//connection().setAutoCommit(false);
