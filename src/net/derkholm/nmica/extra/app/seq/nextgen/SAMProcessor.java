@@ -261,6 +261,8 @@ public abstract class SAMProcessor {
 			final List<SAMRecord> recs = new ArrayList<SAMRecord>();
 			
 			for (String seqName : nameList) {
+				System.err.printf("Processing %s%n",seqName);
+				
 				int windowCenter = halfWindow;
 				int len = refSeqLengths.get(seqName);
 				while ((windowCenter + halfWindow) < len) {
@@ -290,6 +292,8 @@ public abstract class SAMProcessor {
 			
 			final List<SAMRecord> recs = new ArrayList<SAMRecord>();
 			for (String seqName : nameList) {
+				System.err.printf("Processing %s%n",seqName);
+				
 				int windowBegin = 0;
 				int len = refSeqLengths.get(seqName);
 				
@@ -305,6 +309,8 @@ public abstract class SAMProcessor {
 			}
 		} else if (iterationType == IterationType.MAPPED_TO_REF) {
 			for (String seqName : nameList) {
+				System.err.printf("Processing %s%n",seqName);
+				
 				this.setCurrentRefSeqName(seqName);
 				CloseableIterator<SAMRecord> recs = 
 					inReader.queryContained(seqName, 0, refSeqLengths.get(seqName));
