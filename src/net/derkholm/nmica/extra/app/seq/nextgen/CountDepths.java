@@ -105,15 +105,12 @@ public class CountDepths extends SAMProcessor {
 	}
 	
 	private PreparedStatement insertDepthEntryStatement() throws SQLException {
-		if (this.insertDepthEntryStatement == null) {
-			this.insertDepthEntryStatement = CountDepths.insertDepthEntryStatement(this.connection());
-		}
-		return insertDepthEntryStatement;
+		return CountDepths.insertDepthEntryStatement(this.connection());
 	}
 	
 	public static PreparedStatement insertDepthEntryStatement(Connection conn) throws SQLException {
 		return conn.prepareStatement(
-        	"insert into window values (?, ?, ?, ?, ?, ?);");
+        	"INSERT INTO window VALUES (?, ?, ?, ?, ?, ?);");
 	}
 		
 	private void initNullDistributions() {
@@ -144,8 +141,8 @@ public class CountDepths extends SAMProcessor {
 		setQueryType(QueryType.OVERLAP);
 		initializeSAMReader();
 		
-		Class.forName("org.sqlite.JDBC");
 		if (format == Format.SQLITE) {
+			Class.forName("org.sqlite.JDBC");
 			CountDepths.createDepthDatabase(this.connection());
 		}
 		
@@ -153,7 +150,7 @@ public class CountDepths extends SAMProcessor {
 		
 		//connection().setAutoCommit(false);
 		
-		process();
+		//process();
 		//insertDepthEntryStatement().executeBatch();
 		//insertDepthEntryStatement().close();
 		//connection().setAutoCommit(false);
