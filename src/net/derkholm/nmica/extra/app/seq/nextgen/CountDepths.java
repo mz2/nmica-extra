@@ -155,6 +155,7 @@ public class CountDepths extends SAMProcessor {
 		
 		process();
 		insertDepthEntryStatement().executeBatch();
+		insertDepthEntryStatement().close();
 		connection().setAutoCommit(false);
 		
 		this.connection().close();
@@ -173,6 +174,7 @@ public class CountDepths extends SAMProcessor {
 				"pvalue float);");
 		stat.executeUpdate("CREATE INDEX ref_name_begin_end_idx ON window(ref_name,begin_coord,end_coord);");
 		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON window(ref_name,begin_coord);");
+		stat.close();
 	}
 	
 
@@ -206,12 +208,9 @@ public class CountDepths extends SAMProcessor {
 					stat.setInt(4, end);
 					stat.setFloat(5, depth);
 					stat.setDouble(6, pvalue);
-					stat.addBatch();
 					
-					if ((this.windowIndex % 10) == 0) {
-						stat.executeBatch();
-						
-					}
+					stat.executeUpdate();
+					
 				} catch (SQLException e) {
 					throw new BioError(e);
 				}
