@@ -47,18 +47,6 @@ public class DepthMovingAverage extends SAMProcessor {
 	public void setRefLengths(File f) throws BioException, IOException {
 		try {
 			super.setRefLengths(f);
-			for (String name : this.refSeqLengths.keySet()) {
-				double lambda = 
-					(double)this.readCounts.get(name) * this.extendedLength /
-					(double)this.refSeqLengths.get(name)
-					 * 
-					(double)this.windowSize;
-				
-				System.err.println("lambda:" + lambda);
-				nullDistributions.put(
-						name, 
-						new Poisson(lambda, randomEngine));
-			}			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -107,8 +95,25 @@ public class DepthMovingAverage extends SAMProcessor {
 		return this.insertDepthEntryStatement;
 	}
 		
+	private void initNullDistributions() {
+		for (String name : this.refSeqLengths.keySet()) {
+			double lambda = 
+				(double)this.readCounts.get(name) * this.extendedLength /
+				(double)this.refSeqLengths.get(name)
+				 * 
+				(double)this.windowSize;
+			
+			System.err.println("lambda:" + lambda);
+			nullDistributions.put(
+					name, 
+					new Poisson(lambda, randomEngine));
+		}	
+	}
 	@Override
 	public void main(String[] args) throws BioException, ClassNotFoundException, SQLException {
+
+		initNullDistributions();
+		
 		setIterationType(IterationType.MOVING_WINDOW);
 		setQueryType(QueryType.OVERLAP);
 		initializeSAMReader();
