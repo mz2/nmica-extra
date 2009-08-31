@@ -110,8 +110,8 @@ public class PickRandomSequences {
 			if (uniqueNames) {
 				s = new SimpleSequence(
 						seq.subList(
-								0, 
-								seq.length()-1),
+								1, 
+								seq.length()),
 								null,
 								seq.getName() + "_" + i,
 								Annotation.EMPTY_ANNOTATION);
