@@ -13,7 +13,10 @@ import java.util.Map;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
+import net.derkholm.nmica.extra.seq.nextgen.SAMPileup;
+import net.sf.samtools.SAMFileReader;
 import net.sf.samtools.SAMRecord;
+import net.sf.samtools.util.CloseableIterator;
 
 import org.biojava.bio.BioError;
 import org.biojava.bio.BioException;
@@ -105,7 +108,10 @@ public class CountDepths extends SAMProcessor {
 	}
 	
 	private PreparedStatement insertDepthEntryStatement() throws SQLException {
-		return CountDepths.insertDepthEntryStatement(this.connection());
+		if (this.insertDepthEntryStatement == null) {
+			this.insertDepthEntryStatement = CountDepths.insertDepthEntryStatement(this.connection());
+		}
+		return this.insertDepthEntryStatement;
 	}
 	
 	public static PreparedStatement insertDepthEntryStatement(Connection conn) throws SQLException {
@@ -132,22 +138,29 @@ public class CountDepths extends SAMProcessor {
 					new Poisson(lambda, randomEngine));
 		}	
 	}
+	
+	
 	@Override
 	public void main(String[] args) throws BioException, ClassNotFoundException, SQLException {
-
 		initNullDistributions();
-		
-		setIterationType(IterationType.MOVING_WINDOW);
-		setQueryType(QueryType.OVERLAP);
-		initializeSAMReader();
 		
 		if (format == Format.SQLITE) {
 			Class.forName("org.sqlite.JDBC");
-			CountDepths.createDepthDatabase(this.connection());
+			CountDepths.createDepthTable(this.connection());
 		}
 		
 		this.windowIndex = 0;
 		
+		SAMFileReader reader = new SAMFileReader(new File(in), indexFile);
+		
+		for (String name : this.refSeqLengths.keySet()) {
+			CloseableIterator<SAMRecord> recIterator = reader.queryOverlapping(name, 0, this.refSeqLengths.get(name));
+			SAMPileup pileup = new SAMPileup(name, this.refSeqLengths.get(name), this.extendedLength);
+			while (recIterator.hasNext()) {
+				pileup.add(recIterator.next());
+			}
+			recIterator.close();
+		}
 		//connection().setAutoCommit(false);
 		
 		process();
@@ -158,7 +171,7 @@ public class CountDepths extends SAMProcessor {
 		this.connection().close();
 	}
 	
-	public static void createDepthDatabase(Connection conn) throws SQLException {
+	public static void createDepthTable(Connection conn) throws SQLException {
 		Statement stat = conn.createStatement();
 		stat.executeUpdate("DROP TABLE if exists window;");
 		stat.executeUpdate(
@@ -195,25 +208,7 @@ public class CountDepths extends SAMProcessor {
 			} else {
 				PreparedStatement stat;
 				//System.err.printf("%s\t%d\t%d\t%d\t%d\t%.8f%n", refName, this.windowIndex, begin, end, depth, pvalue);				
-				try {
-					stat = insertDepthEntryStatement();
-
-					stat.setInt(1, this.windowIndex);
-					stat.setString(2, refName);
-					stat.setInt(3, begin);
-					stat.setInt(4, end);
-					stat.setFloat(5, depth);
-					stat.setDouble(6, pvalue);
-					
-					int rowCount = stat.executeUpdate();
-					
-					if (rowCount != 1) {
-						throw new BioError("Row count wasn't increased by one.");
-					}
-					
-				} catch (SQLException e) {
-					throw new BioError(e);
-				}
+				
 			}
 		}
 		

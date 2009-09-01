@@ -42,7 +42,7 @@ public class CombineDepths {
 	}
 	
 	public void main(String[] args) throws SQLException, ClassNotFoundException {
-		CountDepths.createDepthDatabase(connection());
+		CountDepths.createDepthTable(connection());
 		PreparedStatement stat = CountDepths.insertDepthEntryStatement(this.connection());
 		
 		for (String inFileName : args) {

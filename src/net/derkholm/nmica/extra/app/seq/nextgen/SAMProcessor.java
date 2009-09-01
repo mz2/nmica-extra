@@ -123,8 +123,23 @@ public abstract class SAMProcessor {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		
 		return refSeqLengths;
+	}
+	
+	public static List<String> parseRefNamesFromRefLengthFile(File f) {
+		List<String> names = new ArrayList<String>();
+		try {
+			BufferedReader reader = new BufferedReader(new FileReader(f));
+			
+			String line = null;
+			while ((line = reader.readLine()) != null) {
+				StringTokenizer tok = new StringTokenizer(line,"\t");
+				names.add(tok.nextToken());
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return names;
 	}
 
 	@Option(
