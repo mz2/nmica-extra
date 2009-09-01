@@ -102,6 +102,7 @@ public class CalculateGCContent {
 	
 	public void main(String[] args) throws FileNotFoundException, BioException, SQLException, ClassNotFoundException {
 		Class.forName("org.sqlite.JDBC");
+		createGCContentTable(connection());
 		BufferedReader br = new BufferedReader(new FileReader(seqsFilename));
 		SequenceIterator stream = SeqIOTools.readFastaDNA(br);
 		
