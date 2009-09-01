@@ -54,7 +54,7 @@ public class CalculateGCContent {
 					if (sym == DNATools.g() || sym == DNATools.c()) ++gc;
 			    }
 			    
-			    System.out.printf("%d\t%f",(double)gc/(double)winSize);
+			    System.out.printf("%d\t%f",i,(double)gc/(double)winSize);
 			}
 		}
 	}
