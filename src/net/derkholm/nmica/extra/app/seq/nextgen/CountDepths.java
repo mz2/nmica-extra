@@ -221,7 +221,7 @@ public class CountDepths extends SAMProcessor {
 		Statement stat = conn.createStatement();
 		//stat.executeUpdate("DROP TABLE if exists window;");
 		stat.executeUpdate("CREATE TABLE window ("
-				+ "id integer primary key autoincrement," + "ref_id integer,"
+				+ "id integer primary key," + "ref_id integer,"
 				+ "begin_coord integer," + "end_coord integer,"
 				+ "depth float," + "pvalue float);");
 		stat
