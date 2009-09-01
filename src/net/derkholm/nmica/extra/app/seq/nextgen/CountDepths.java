@@ -98,7 +98,7 @@ public class CountDepths extends SAMProcessor {
 		super.setExtendTo(i);
 	}
 
-	private Connection connection() throws SQLException {
+	private Connection connection() throws SQLException, ClassNotFoundException {
 		if (this.connection == null) {
 			Class.forName("org.hsqldb.jdbcDriver");
 
