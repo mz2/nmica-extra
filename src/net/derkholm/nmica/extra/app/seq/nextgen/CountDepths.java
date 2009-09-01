@@ -177,7 +177,7 @@ public class CountDepths extends SAMProcessor {
 			
 			System.err.println("Storing pileup data to database...");
 			PreparedStatement ins = insertDepthEntryStatement();
-
+			System.err.println("Iterating through");
 			for (int i = 0,len=this.refSeqLengths.get(name); i < len; i++) {
 				int depth = pileup.depthAt(i);
 				
