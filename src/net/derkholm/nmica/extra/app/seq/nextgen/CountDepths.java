@@ -219,7 +219,7 @@ public class CountDepths extends SAMProcessor {
 
 	public static void createDepthTable(Connection conn) throws SQLException {
 		Statement stat = conn.createStatement();
-		stat.executeUpdate("DROP TABLE if exists window;");
+		//stat.executeUpdate("DROP TABLE if exists window;");
 		stat.executeUpdate("CREATE TABLE window ("
 				+ "id integer primary key autoincrement," + "ref_id integer,"
 				+ "begin_coord integer," + "end_coord integer,"
