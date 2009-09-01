@@ -100,6 +100,8 @@ public class CountDepths extends SAMProcessor {
 
 	private Connection connection() throws SQLException {
 		if (this.connection == null) {
+			Class.forName("org.hsqldb.jdbcDriver");
+
 			this.connection = DriverManager.getConnection(String.format(
 					"jdbc:hsqldb:file:%s", this.outputFile.getPath()), "sa", "");
 
