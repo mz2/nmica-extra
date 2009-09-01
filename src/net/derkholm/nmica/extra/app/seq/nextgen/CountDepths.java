@@ -110,7 +110,7 @@ public class CountDepths extends SAMProcessor {
 	
 	public static PreparedStatement insertDepthEntryStatement(Connection conn) throws SQLException {
 		return conn.prepareStatement(
-        	"INSERT INTO window VALUES (?, ?, ?, ?, ?, ?);");
+        	"INSERT INTO window VALUES (?, ?, ?, ?, ?);");
 	}
 		
 	private void initNullDistributions() {
@@ -163,7 +163,7 @@ public class CountDepths extends SAMProcessor {
 		stat.executeUpdate("DROP TABLE if exists window;");
 		stat.executeUpdate(
 			"CREATE TABLE window (" +
-				"id integer primary key," +
+				"id integer primary key autoincrement," +
 				"ref_name varchar," +
 				"begin_coord integer," +
 				"end_coord integer," +
@@ -199,12 +199,12 @@ public class CountDepths extends SAMProcessor {
 
 					stat = insertDepthEntryStatement();
 
-					stat.setInt(1, this.windowIndex);
-					stat.setString(2, refName);
-					stat.setInt(3, begin);
-					stat.setInt(4, end);
-					stat.setFloat(5, depth);
-					stat.setDouble(6, pvalue);
+					//stat.setInt(1, this.windowIndex);
+					stat.setString(1, refName);
+					stat.setInt(2, begin);
+					stat.setInt(3, end);
+					stat.setFloat(4, depth);
+					stat.setDouble(5, pvalue);
 					
 					int rowCount = stat.executeUpdate();
 					
