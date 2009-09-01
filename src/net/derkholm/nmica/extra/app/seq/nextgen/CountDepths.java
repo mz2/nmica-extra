@@ -149,6 +149,7 @@ public class CountDepths extends SAMProcessor {
 	public void main(String[] args) throws BioException, ClassNotFoundException, SQLException {
 		initNullDistributions();
 		
+		System.err.println("");
 		if (format == Format.SQLITE) {
 			Class.forName("org.sqlite.JDBC");
 			CountDepths.createDepthTable(this.connection());
@@ -180,14 +181,16 @@ public class CountDepths extends SAMProcessor {
 			for (int i = 0,len=this.refSeqLengths.get(name); i < len; i++) {
 				int depth = pileup.depthAt(i);
 				
-				ins.setInt(1, id++);
-				ins.setInt(2, refId);
-				ins.setInt(3, i);
-				ins.setInt(4, i+extendedLength);
-				ins.setDouble(5, depth);
-				ins.setDouble(6, 1.0 - nullDist.cdf(depth));
-				ins.addBatch();
-				ins.executeBatch();
+				if (depth > 0) {
+					ins.setInt(1, id++);
+					ins.setInt(2, refId);
+					ins.setInt(3, i);
+					ins.setInt(4, i+extendedLength);
+					ins.setDouble(5, depth);
+					ins.setDouble(6, 1.0 - nullDist.cdf(depth));
+					ins.addBatch();
+					ins.executeBatch();					
+				}
 			}
 			System.err.println("Done.");
 		}
