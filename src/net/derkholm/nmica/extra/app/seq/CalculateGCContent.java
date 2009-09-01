@@ -36,10 +36,10 @@ public class CalculateGCContent {
 		this.winSize = winSize;
 	}
 	
+	@Option(help="Output file")
 	public void main(String[] args) throws FileNotFoundException, BioException {
 		BufferedReader br = new BufferedReader(new FileReader(seqsFilename));
 		SequenceIterator stream = SeqIOTools.readFastaDNA(br);
-		
 		
 		while (stream.hasNext()) {
 			Sequence seq = stream.nextSequence();
@@ -54,7 +54,8 @@ public class CalculateGCContent {
 			    for (int pos = 1; pos <= winSize; ++pos) {
 					Symbol sym = symList.symbolAt(pos);
 					if (sym == DNATools.g() || sym == DNATools.c()) ++gc;
-					if (sym == DNATools.a() || sym == DNATools.t()) ++at;
+					else if (sym == DNATools.a() || sym == DNATools.t()) ++at;
+					System.err.println("%d %d",gc,at);
 			    }
 			    
 			    System.out.printf("%d\t%f%n",i,(double)gc/(double)(gc+at));
