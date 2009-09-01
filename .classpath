@@ -23,5 +23,6 @@
 	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/wstx-lgpl-3.0.2.jar"/>
 	<classpathentry kind="lib" path="lib/sam-1.03.jar"/>
 	<classpathentry kind="lib" path="lib/picard-1.03.jar"/>
+	<classpathentry kind="lib" path="lib/hsqldb.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
