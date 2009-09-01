@@ -111,6 +111,8 @@ public class CalculateGCContent {
 		
 		while (stream.hasNext()) {
 			Sequence seq = stream.nextSequence();
+			System.err.printf("Calculating GC content for %s%n");
+
 			int refId = getRefId(seq.getName());
 			
 			int len = seq.length();

@@ -33,5 +33,6 @@ public class SAMPileup {
 	public void setExtendedLength(int extendedLength) {
 		this.extendedLength = extendedLength;
 	}
-
+	
+	
 }

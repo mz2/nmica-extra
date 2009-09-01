@@ -150,15 +150,17 @@ public class CountDepths extends SAMProcessor {
 		}
 		
 		this.windowIndex = 0;
-		
 		SAMFileReader reader = new SAMFileReader(new File(in), indexFile);
 		
 		for (String name : this.refSeqLengths.keySet()) {
-			CloseableIterator<SAMRecord> recIterator = reader.queryOverlapping(name, 0, this.refSeqLengths.get(name));
-			SAMPileup pileup = new SAMPileup(name, this.refSeqLengths.get(name), this.extendedLength);
-			while (recIterator.hasNext()) {
-				pileup.add(recIterator.next());
-			}
+			System.err.printf("Calculating pileup for %s%n",name);
+			
+			SAMPileup pileup = 
+				new SAMPileup(name, this.refSeqLengths.get(name), this.extendedLength);
+
+			CloseableIterator<SAMRecord> recIterator = 
+				reader.queryOverlapping(name, 0, this.refSeqLengths.get(name));
+			while (recIterator.hasNext()) {pileup.add(recIterator.next());}
 			recIterator.close();
 		}
 		//connection().setAutoCommit(false);
