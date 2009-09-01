@@ -9,17 +9,23 @@ import net.sf.samtools.SAMRecord;
 public class SAMPileup {
 	private int extendedLength;
 	private short[] pileup;
+	private int refLength;
 
 	public SAMPileup(String refName, int refLength, int extendedLength) {
 		this.pileup = new short[refLength];
 		this.extendedLength = extendedLength;
+		this.refLength = refLength;
 	}
 	
 	public void add(SAMRecord rec) {
 		int start = rec.getAlignmentStart();
 		int end = rec.getAlignmentEnd();
-		if (!rec.getReadNegativeStrandFlag()) {for (int i = start; i < end; i++) {pileup[i]++;}}
-		else {for (int i = end - extendedLength; i < end; i++) {pileup[i]++;}}
+		if (!rec.getReadNegativeStrandFlag()) {
+			for (int i = start, endpos = Math.min(this.refLength, end); i < endpos; i++) {pileup[i]++;}
+		}
+		else {
+			for (int i = Math.max(1, end - extendedLength); i < end; i++) {pileup[i]++;}
+		}
 	}
 	
 	public int depthAt(int i) {
