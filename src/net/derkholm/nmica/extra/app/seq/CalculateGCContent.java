@@ -24,6 +24,7 @@ public class CalculateGCContent {
 
 	private File seqsFilename;
 	private int winSize;
+	private File out;
 
 	@Option(help="Sequence filename")
 	public void setSeqs(File f) {
@@ -37,6 +38,10 @@ public class CalculateGCContent {
 	}
 	
 	@Option(help="Output file")
+	public void setOut(File f) {
+		this.out = f;
+	}
+	
 	public void main(String[] args) throws FileNotFoundException, BioException {
 		BufferedReader br = new BufferedReader(new FileReader(seqsFilename));
 		SequenceIterator stream = SeqIOTools.readFastaDNA(br);
