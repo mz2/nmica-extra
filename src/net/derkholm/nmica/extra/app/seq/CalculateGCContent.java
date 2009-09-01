@@ -48,13 +48,16 @@ public class CalculateGCContent {
 			for (int i = 1; i <= (len-winSize); i++) {
 				SymbolList symList = seq.subList(i, i+winSize);
 				
+				/* ambiguous positions are ignored */
 				int gc = 0;
+				int at = 0;
 			    for (int pos = 1; pos <= winSize; ++pos) {
-					Symbol sym = seq.symbolAt(pos);
+					Symbol sym = symList.symbolAt(pos);
 					if (sym == DNATools.g() || sym == DNATools.c()) ++gc;
+					if (sym == DNATools.a() || sym == DNATools.t()) ++at;
 			    }
 			    
-			    System.out.printf("%d\t%f",i,(double)gc/(double)winSize);
+			    System.out.printf("%d\t%f%n",i,(double)gc/(double)(gc+at));
 			}
 		}
 	}
