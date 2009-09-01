@@ -16,6 +16,7 @@ import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.extra.seq.nextgen.SAMPileup;
 import net.sf.samtools.SAMFileReader;
 import net.sf.samtools.SAMRecord;
+import net.sf.samtools.SAMFileReader.ValidationStringency;
 import net.sf.samtools.util.CloseableIterator;
 
 import org.biojava.bio.BioError;
@@ -150,8 +151,11 @@ public class CountDepths extends SAMProcessor {
 		}
 		
 		this.windowIndex = 0;
+		System.err.println("Opening indexed reads...");
 		SAMFileReader reader = new SAMFileReader(new File(in), indexFile);
-		
+		System.err.println("Reads OK.");
+		reader.setValidationStringency(ValidationStringency.SILENT);
+		System.err.println("SAM file and index read");
 		for (String name : this.refSeqLengths.keySet()) {
 			System.err.printf("Calculating pileup for %s%n",name);
 			
