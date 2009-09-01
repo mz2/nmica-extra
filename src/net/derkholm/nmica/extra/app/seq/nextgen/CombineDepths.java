@@ -79,7 +79,9 @@ public class CombineDepths {
 				stat.setInt(4, end);
 				stat.setDouble(5, d);
 				stat.setDouble(6, p);
-				stat.executeUpdate();
+				
+				stat.addBatch();
+				stat.executeBatch();
 			}
 			results.close();
 		}
