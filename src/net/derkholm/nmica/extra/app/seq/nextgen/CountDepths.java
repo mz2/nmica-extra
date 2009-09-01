@@ -110,7 +110,7 @@ public class CountDepths extends SAMProcessor {
 		return this.connection;
 	}
 
-	private PreparedStatement insertDepthEntryStatement() throws SQLException {
+	private PreparedStatement insertDepthEntryStatement() throws SQLException, ClassNotFoundException {
 		if (this.insertDepthEntryStatement == null) {
 			this.insertDepthEntryStatement = CountDepths
 					.insertDepthEntryStatement(this.connection());
@@ -141,7 +141,7 @@ public class CountDepths extends SAMProcessor {
 		}
 	}
 	
-	 public void shutdown() throws SQLException {
+	 public void shutdown() throws SQLException, ClassNotFoundException {
 
 	        Statement st = connection().createStatement();
 
