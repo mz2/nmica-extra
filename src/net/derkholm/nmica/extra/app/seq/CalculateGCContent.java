@@ -59,10 +59,10 @@ public class CalculateGCContent {
 			    for (int pos = 1; pos <= winSize; ++pos) {
 					Symbol sym = symList.symbolAt(pos);
 					
-					if (sym == DNATools.g() || sym == DNATools.c()) {++gc;}
-					else if (sym == DNATools.a() || sym == DNATools.t()) {++at;}
+					if (sym.equals(DNATools.g()) || sym.equals(DNATools.c())) {++gc;}
+					else if (sym.equals(DNATools.a()) || sym.equals(DNATools.t())) {++at;}
 					
-					System.out.printf("%d %d%n",gc,at);
+					System.out.printf("%d %d (%s)%n",gc,at,sym.getName());
 			    }
 			    
 			    System.out.printf("%d\t%f\t%d\t%d%n",i,(double)gc/(double)(gc+at),winSize,symList.length());
