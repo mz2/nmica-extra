@@ -60,7 +60,7 @@ public class CalculateGCContent {
 					Symbol sym = symList.symbolAt(pos);
 					if (sym == DNATools.g() || sym == DNATools.c()) ++gc;
 					else if (sym == DNATools.a() || sym == DNATools.t()) ++at;
-					System.err.printf("%d %d%n",gc,at);
+					System.out.printf("%d %d%n",gc,at);
 			    }
 			    
 			    System.out.printf("%d\t%f%n",i,(double)gc/(double)(gc+at));
