@@ -13,6 +13,8 @@ import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.seq.SequenceIterator;
 import org.biojava.bio.seq.io.SeqIOTools;
+import org.biojava.bio.seq.io.SymbolTokenization;
+import org.biojava.bio.symbol.SimpleSymbolList;
 import org.biojava.bio.symbol.Symbol;
 import org.biojava.bio.symbol.SymbolList;
 import org.bjv2.util.cli.App;
@@ -56,6 +58,8 @@ public class CalculateGCContent {
 				/* ambiguous positions are ignored */
 				int gc = 0;
 				int at = 0;
+				
+				
 			    for (int pos = 1; pos <= winSize; ++pos) {
 					Symbol sym = symList.symbolAt(pos);
 					
@@ -64,6 +68,9 @@ public class CalculateGCContent {
 					
 					System.out.printf("%d %d (%s)%n",gc,at,sym.getName());
 			    }
+			    SymbolTokenization dnaToke = DNATools.getDNA().getTokenization("token");
+			    String seqString2 = dnaToke.tokenizeSymbolList(symList);
+			    System.err.println(seqString2);
 			    
 			    System.out.printf("%d\t%f\t%d\t%d%n",i,(double)gc/(double)(gc+at),winSize,symList.length());
 			}
