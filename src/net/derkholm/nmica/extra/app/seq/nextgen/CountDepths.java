@@ -190,7 +190,11 @@ public class CountDepths extends SAMProcessor {
 					ins.setDouble(5, (double)depth);
 					ins.setDouble(6, 1.0 - nullDist.cdf(depth));
 					ins.addBatch();
-					ins.executeBatch();
+					
+					if ((id % 100) == 0) {
+						System.err.println("Committing");
+						ins.executeBatch();						
+					}
 				}
 			}
 			System.err.println("Done.");
