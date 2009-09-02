@@ -198,7 +198,7 @@ public class CountDepths extends SAMProcessor {
 		initNullDistributions();
 
 		System.err.println("Creating output tables...");
-		if ((format == Format.HSQLDB) || (format == Format.SQLITE)) {
+		if ((format == Format.HSQLDB) || (format == Format.SQLITE) || format == Format.MYSQL) {
 			CountDepths.createDepthTable(this.connection());
 			CountDepths.createRefSeqTable(this.connection());
 		}
