@@ -111,7 +111,7 @@ public class CountDepths extends SAMProcessor {
 						"jdbc:sqlite:%s", this.outputFile.getPath()), "sa", "");
 			}
 
-			this.connection.setAutoCommit(true);
+			this.connection.setAutoCommit(false);
 		}
 		return this.connection;
 	}
@@ -230,6 +230,7 @@ public class CountDepths extends SAMProcessor {
 						System.err.printf("-");
 						ins.executeBatch();
 						System.err.printf("/");
+						connection().commit();
 						ins.clearBatch();
 						System.err.printf("|");
 					}
@@ -317,6 +318,7 @@ public class CountDepths extends SAMProcessor {
 					stat.addBatch();
 					stat.executeBatch();
 					stat.clearBatch();
+					connection().commit();
 					i++;
 				}
 
