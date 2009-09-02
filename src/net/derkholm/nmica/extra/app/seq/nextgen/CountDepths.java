@@ -226,7 +226,7 @@ public class CountDepths extends SAMProcessor {
 
 					batchCount++;
 					
-					if ((batchCount % 10000000) == 0) {
+					if ((batchCount % 1000000) == 0) {
 						ins.executeBatch();
 						connection().commit();
 						ins.clearBatch();
