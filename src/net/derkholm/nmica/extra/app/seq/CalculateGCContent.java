@@ -131,6 +131,7 @@ public class CalculateGCContent {
 			    }
 			    double gcRatio = (double)gc/(double)(gc+at);
 			   
+			    /*
 			    if (!Double.isNaN(gcRatio)) {
 				    insertStatement.setInt(1, id++);
 				    insertStatement.setInt(2, refId);
@@ -139,7 +140,7 @@ public class CalculateGCContent {
 				    insertStatement.setFloat(5, (float) gcRatio);
 				    insertStatement.addBatch();
 				    insertStatement.executeBatch();
-			    }
+			    }*/
 			}
 			
 			break;
