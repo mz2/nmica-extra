@@ -21,6 +21,7 @@ import net.sf.samtools.util.CloseableIterator;
 
 import org.biojava.bio.BioError;
 import org.biojava.bio.BioException;
+import org.biojava.utils.JDBCPooledDataSource;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -30,9 +31,11 @@ import cern.jet.random.engine.RandomEngine;
 @NMExtraApp(launchName = "ngdepth", vm = VirtualMachine.SERVER)
 @App(overview = "Output sequencing depth inside a window.", generateStub = true)
 public class CountDepths extends SAMProcessor {
-	public enum Format {
-		SQLITE, HSQLDB, TSV
-	}
+	public enum Format {SQLITE, HSQLDB, MYSQL, TSV}
+
+	private String dbURL = "jdbc:mysql://ens-research/mp4_pileup";
+	private String dbUser = "ensadmin";
+	private String dbPass = "ensembl";
 
 	private Format format = Format.TSV;
 	private int windowIndex;
@@ -111,10 +114,21 @@ public class CountDepths extends SAMProcessor {
 				Class.forName("org.hsqldb.jdbcDriver");				
 				this.connection = DriverManager.getConnection(String.format(
 						"jdbc:hsqldb:file:%s", this.outputFile.getPath()), "sa", "");
-			} else {
+			} else if (this.format == Format.SQLITE){
 				Class.forName("org.sqlite.JDBC");				
 				this.connection = DriverManager.getConnection(String.format(
 						"jdbc:sqlite:%s", this.outputFile.getPath()), "sa", "");
+			} else if (this.format == Format.MYSQL) {
+				try {
+					this.connection = JDBCPooledDataSource.getDataSource(
+							"org.gjt.mm.mysql.Driver",
+							dbURL,
+							dbUser, 
+							dbPass).getConnection();
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+
 			}
 
 			this.connection.setAutoCommit(false);
@@ -236,14 +250,15 @@ public class CountDepths extends SAMProcessor {
 					ins.setInt(4, i + extendedLength);
 					ins.setDouble(5, (double) depth);
 					ins.setDouble(6, 1.0 - nullDist.cdf(depth));
-					ins.addBatch();
+					ins.executeUpdate();
 					
+					/*
 					if ((batchCount % 1000000) == 0) {
 						ins.executeBatch();
 						connection().commit();
 						ins.clearBatch();
 						System.err.printf("~");
-					}
+					}*/
 					 
 				}
 				
@@ -252,9 +267,11 @@ public class CountDepths extends SAMProcessor {
 				}
 				
 			}
+			/*
 			ins.executeBatch();
 			connection().commit();
-			ins.clearBatch();
+			ins.clearBatch();*/
+			ins.close();
 			System.err.println("Done.");
 		}
 		// connection().setAutoCommit(false);
