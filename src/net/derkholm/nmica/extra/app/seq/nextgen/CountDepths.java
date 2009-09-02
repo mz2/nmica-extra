@@ -267,13 +267,9 @@ public class CountDepths extends SAMProcessor {
 				}
 				
 			}
-			/*
-			ins.executeBatch();
-			connection().commit();
-			ins.clearBatch();*/
-			ins.close();
-			System.err.println("Done.");
 		}
+		this.insertDepthEntryStatement();
+		System.err.println("Done.");
 		// connection().setAutoCommit(false);
 
 		//process();
@@ -319,9 +315,6 @@ public class CountDepths extends SAMProcessor {
 				System.out.printf("%s\t%d\t%d\t%d\t%d\t%.8f%n", refName,
 						this.windowIndex, begin, end, depth, pvalue);
 			} else {
-				PreparedStatement stat;
-				// System.err.printf("%s\t%d\t%d\t%d\t%d\t%.8f%n", refName,
-				// this.windowIndex, begin, end, depth, pvalue);
 
 			}
 		}
