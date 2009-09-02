@@ -206,7 +206,8 @@ public class CountDepths extends SAMProcessor {
 				int depth = pileup.depthAt(i);
 
 				if (depth > 0) {
-					PreparedStatement ins = connection().prepareStatement("INSERT INTO window VALUES (?, ?, ?, ?, ?, ?);");
+					PreparedStatement ins = this.insertDepthEntryStatement();
+					//PreparedStatement ins = connection().prepareStatement("INSERT INTO window VALUES (?, ?, ?, ?, ?, ?);");
 					System.err.println(depth);
 					ins.setInt(1, id++);
 					ins.setInt(2, refId);
@@ -215,11 +216,9 @@ public class CountDepths extends SAMProcessor {
 					ins.setDouble(5, (double) depth);
 					ins.setDouble(6, 1.0 - nullDist.cdf(depth));
 					ins.executeUpdate();
-
-					System.err.println("Committing");
-
-
 				}
+				
+				if ((i % 1e6) == 0) {System.err.print(".");}
 			}
 			System.err.println("Done.");
 		}
