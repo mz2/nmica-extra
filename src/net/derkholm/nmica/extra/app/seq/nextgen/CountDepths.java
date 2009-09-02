@@ -217,7 +217,7 @@ public class CountDepths extends SAMProcessor {
 			int readCs = this.readCounts.get(name);
 			PreparedStatement ins = this.insertDepthEntryStatement();
 			
-			for (int i = 0, len = this.refSeqLengths.get(name); i < len; i++) {
+			for (int i = 0, len = this.refSeqLengths.get(name); i < len; i=i+this.frequency) {
 				int depth = pileup.depthAt(i);
 
 				if (depth >= this.minDepth) {
@@ -275,9 +275,9 @@ public class CountDepths extends SAMProcessor {
 				+ "id integer primary key," + "ref_id integer,"
 				+ "begin_coord integer," + "end_coord integer,"
 				+ "depth float," + "pvalue float);");
-		//stat.executeUpdate("CREATE INDEX ref_name_begin_end_idx ON window(ref_id,begin_coord,end_coord);");
-		//stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON window(ref_id,begin_coord);");
-		//stat.executeUpdate("CREATE INDEX ref_name_end_idx ON window(ref_id,end_coord);");
+		stat.executeUpdate("CREATE INDEX ref_name_begin_end_idx ON window(ref_id,begin_coord,end_coord);");
+		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON window(ref_id,begin_coord);");
+		stat.executeUpdate("CREATE INDEX ref_name_end_idx ON window(ref_id,end_coord);");
 		stat.close();
 	}
 
