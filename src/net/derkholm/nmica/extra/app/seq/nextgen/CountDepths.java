@@ -226,7 +226,7 @@ public class CountDepths extends SAMProcessor {
 					System.err.printf("~");
 					batchCount++;
 					
-					if ((batchCount % 1000) == 0) {
+					if ((batchCount % 100000) == 0) {
 						System.err.printf("-");
 						ins.executeBatch();
 						System.err.printf("/");
