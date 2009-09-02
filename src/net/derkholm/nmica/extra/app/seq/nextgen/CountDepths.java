@@ -250,7 +250,8 @@ public class CountDepths extends SAMProcessor {
 
 	public static void createDepthTable(Connection conn) throws SQLException {
 		Statement stat = conn.createStatement();
-		//stat.executeUpdate("DROP TABLE if exists window;");
+		
+		stat.executeUpdate("DROP TABLE if exists window;");
 		stat.executeUpdate("CREATE TABLE window ("
 				+ "id integer primary key," + "ref_id integer,"
 				+ "begin_coord integer," + "end_coord integer,"
@@ -266,7 +267,7 @@ public class CountDepths extends SAMProcessor {
 
 	public static void createRefSeqTable(Connection conn) throws SQLException {
 		Statement stat = conn.createStatement();
-		//stat.executeUpdate("DROP TABLE if exists window;");
+		stat.executeUpdate("DROP TABLE if exists ref_seq;");
 		stat.executeUpdate("CREATE TABLE ref_seq ("
 				+ "id integer primary key,"
 				+ "name varchar);");
@@ -310,7 +311,8 @@ public class CountDepths extends SAMProcessor {
 					stat.setInt(1, i);
 					stat.setString(2, name);
 					stat.addBatch();
-					stat.executeUpdate();
+					stat.executeBatch();
+					stat.clearBatch();
 					i++;
 				}
 
