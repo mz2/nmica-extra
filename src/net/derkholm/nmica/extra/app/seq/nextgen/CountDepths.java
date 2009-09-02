@@ -230,13 +230,15 @@ public class CountDepths extends SAMProcessor {
 						ins.executeBatch();
 						connection().commit();
 						ins.clearBatch();
-						System.err.printf("~");					}
+						System.err.printf("~");
+					}
 					//ins.close();
 				}
 				
-				if ((i % 100000) == 0) {
+				if ((i % (len / 1000)) == 0) {
 					System.err.printf(".");
 				}
+				
 			}
 			System.err.println("Done.");
 		}
