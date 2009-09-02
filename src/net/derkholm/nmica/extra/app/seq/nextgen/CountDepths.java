@@ -213,7 +213,13 @@ public class CountDepths extends SAMProcessor {
 				int depth = pileup.depthAt(i);
 
 				if (depth > 0) {
-					System.err.printf("%d\t%d\t%d\t%d\%f\t\%f%n",id++,refId,i,i+extendedLength,depth,nullDist.cdf(depth));
+					System.err.printf("%d\t%d\t%d\t%d\t%f\t%f%n",
+							id++,
+							refId,
+							i,
+							i+extendedLength,
+							depth,
+							nullDist.cdf(depth));
 					
 					/*
 					PreparedStatement ins = this.insertDepthEntryStatement();
