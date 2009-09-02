@@ -226,7 +226,7 @@ public class CountDepths extends SAMProcessor {
 
 					batchCount++;
 					
-					if ((batchCount % 100000) == 0) {
+					if ((batchCount % 10000000) == 0) {
 						ins.executeBatch();
 						connection().commit();
 						ins.clearBatch();
@@ -235,7 +235,7 @@ public class CountDepths extends SAMProcessor {
 					//ins.close();
 				}
 				
-				if ((i % (len / 1000)) == 0) {
+				if ((i % (len / 100)) == 0) {
 					System.err.printf(".");
 				}
 				
