@@ -218,7 +218,7 @@ public class CountDepths extends SAMProcessor {
 					ins.executeUpdate();
 				}
 				
-				if ((i % 1e6) == 0) {System.err.print(".");}
+				if ((i % 10000) == 0) {System.err.print(".");}
 			}
 			System.err.println("Done.");
 		}
