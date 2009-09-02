@@ -46,6 +46,7 @@ public class CountDepths extends SAMProcessor {
 	private HashMap<String, Integer> refIds;
 	private List<String> refSeqNames;
 	private PreparedStatement insertRefSeqNameStatement;
+	private int minDepth = 3;
 
 	@Override
 	@Option(help = "Reference sequence lengths")
@@ -97,6 +98,11 @@ public class CountDepths extends SAMProcessor {
 	@Option(help = "Extended length")
 	public void setExtendTo(int i) {
 		super.setExtendTo(i);
+	}
+	
+	@Option(help = "Minimum depth (default=3)")
+	public void setMinDepth(int i) {
+		this.minDepth = i;
 	}
 
 	private Connection connection() throws SQLException, ClassNotFoundException {
@@ -214,7 +220,7 @@ public class CountDepths extends SAMProcessor {
 			for (int i = 0, len = this.refSeqLengths.get(name); i < len; i++) {
 				int depth = pileup.depthAt(i);
 
-				if (depth > 0) {
+				if (depth >= this.minDepth) {
 					/*
 					System.out.printf("%d\t%d\t%d\t%d\t%d\t%f%n",
 							id++,
