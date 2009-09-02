@@ -101,10 +101,15 @@ public class CountDepths extends SAMProcessor {
 
 	private Connection connection() throws SQLException, ClassNotFoundException {
 		if (this.connection == null) {
-			Class.forName("org.hsqldb.jdbcDriver");
-
-			this.connection = DriverManager.getConnection(String.format(
-					"jdbc:hsqldb:file:%s", this.outputFile.getPath()), "sa", "");
+			if (this.format == Format.HSQLDB) {
+				Class.forName("org.hsqldb.jdbcDriver");				
+				this.connection = DriverManager.getConnection(String.format(
+						"jdbc:hsqldb:file:%s", this.outputFile.getPath()), "sa", "");
+			} else {
+				Class.forName("org.sqlite.JDBC");				
+				this.connection = DriverManager.getConnection(String.format(
+						"jdbc:sqlite:%s", this.outputFile.getPath()), "sa", "");
+			}
 
 			this.connection.setAutoCommit(true);
 		}
@@ -202,12 +207,13 @@ public class CountDepths extends SAMProcessor {
 
 			System.err.println("Storing pileup data to database...");
 			System.err.println("Iterating through");
+			int batchCount = 0;
 			for (int i = 0, len = this.refSeqLengths.get(name); i < len; i++) {
 				int depth = pileup.depthAt(i);
 
 				if (depth > 0) {
-					//PreparedStatement ins = this.insertDepthEntryStatement();
-					PreparedStatement ins = connection().prepareStatement("INSERT INTO window VALUES (?, ?, ?, ?, ?, ?);");
+					PreparedStatement ins = this.insertDepthEntryStatement();
+					//PreparedStatement ins = connection().prepareStatement("INSERT INTO window VALUES (?, ?, ?, ?, ?, ?);");
 					//System.err.println(depth);
 					ins.setInt(1, id++);
 					ins.setInt(2, refId);
@@ -215,7 +221,14 @@ public class CountDepths extends SAMProcessor {
 					ins.setInt(4, i + extendedLength);
 					ins.setDouble(5, (double) depth);
 					ins.setDouble(6, 1.0 - nullDist.cdf(depth));
-					ins.executeUpdate();
+					ins.addBatch();
+					
+					batchCount++;
+					
+					if ((batchCount % 10) == 0) {
+						ins.executeBatch();
+						ins.clearBatch();
+					}
 					//ins.close();
 				}
 				

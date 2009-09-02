@@ -91,7 +91,8 @@ public class NMExtraAppProcessor implements AnnotationProcessor {
 								"${APP_DIR}/lib/picard-1.03.jar:" +
 								"${APP_DIR}/lib/sam-1.03.jar:" +
 								"${APP_DIR}/lib/hsqldb.jar:" +
-								"${APP_DIR}/lib/nmica-extra.jar%n");
+								"${APP_DIR}/lib/nmica-extra.jar:" +
+								"${APP_DIR}/lib/sqlitejdbc-v056-pure.jar%n");
 						pw.printf("%n");
 						pw.printf("${JAVA_CMD} ${JVM} ${NMICA_JVMOPTS} ${NMICA_EXTRA_JVMOPTS} -classpath ${APP_CLASSPATH} -Djava.library.path=${NMICA_HOME}/native -Dchangeless.no_dire_warning=true ${MAINCLASS} \"$@\"%n");
 
