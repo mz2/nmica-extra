@@ -100,7 +100,7 @@ public class CountDepths extends SAMProcessor {
 		super.setExtendTo(i);
 	}
 	
-	@Option(help = "Minimum depth (default=3)")
+	@Option(help = "Minimum depth (default=3)",optional=true)
 	public void setMinDepth(int i) {
 		this.minDepth = i;
 	}
