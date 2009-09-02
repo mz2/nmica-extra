@@ -216,7 +216,7 @@ public class CountDepths extends SAMProcessor {
 					ins.setDouble(5, (double) depth);
 					ins.setDouble(6, 1.0 - nullDist.cdf(depth));
 					ins.executeUpdate();
-					ins.close();
+					//ins.close();
 				}
 				
 				if ((i % 100000) == 0) {
