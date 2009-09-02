@@ -31,7 +31,7 @@ import cern.jet.random.engine.RandomEngine;
 @App(overview = "Output sequencing depth inside a window.", generateStub = true)
 public class CountDepths extends SAMProcessor {
 	public enum Format {
-		HSQLDB, TSV
+		SQLITE, HSQLDB, TSV
 	}
 
 	private Format format = Format.TSV;
@@ -45,6 +45,7 @@ public class CountDepths extends SAMProcessor {
 	private RandomEngine randomEngine = RandomEngine.makeDefault();
 	private HashMap<String, Integer> refIds;
 	private List<String> refSeqNames;
+	private PreparedStatement insertRefSeqNameStatement;
 
 	@Override
 	@Option(help = "Reference sequence lengths")
@@ -118,6 +119,21 @@ public class CountDepths extends SAMProcessor {
 		return this.insertDepthEntryStatement;
 	}
 
+	private PreparedStatement insertRefSeqNameStatement() throws SQLException, ClassNotFoundException {
+		if (this.insertRefSeqNameStatement == null) {
+			this.insertRefSeqNameStatement = CountDepths
+				.insertRefSeqNameStatement(this.connection());
+		}
+
+		return this.insertRefSeqNameStatement;
+	}
+
+	public static PreparedStatement insertRefSeqNameStatement(Connection conn)
+		throws SQLException {
+		return conn.prepareStatement(
+				"INSERT INTO ref_seq VALUES (?,?)");
+	}
+
 	public static PreparedStatement insertDepthEntryStatement(Connection conn)
 			throws SQLException {
 		return conn
@@ -140,7 +156,7 @@ public class CountDepths extends SAMProcessor {
 			nullDistributions.put(name, new Poisson(lambda, randomEngine));
 		}
 	}
-	
+
 	 public void shutdown() throws SQLException, ClassNotFoundException {
 
 	        Statement st = connection().createStatement();
@@ -156,9 +172,10 @@ public class CountDepths extends SAMProcessor {
 			ClassNotFoundException, SQLException {
 		initNullDistributions();
 
-		System.err.println("");
-		if (format == Format.HSQLDB) {
+		System.err.println("Creating output tables...");
+		if ((format == Format.HSQLDB) || (format == Format.SQLITE)) {
 			CountDepths.createDepthTable(this.connection());
+			CountDepths.createRefSeqTable(this.connection());
 		}
 
 		this.windowIndex = 0;
@@ -200,8 +217,8 @@ public class CountDepths extends SAMProcessor {
 					ins.executeUpdate();
 
 					System.err.println("Committing");
-					
-					
+
+
 				}
 			}
 			System.err.println("Done.");
@@ -232,6 +249,15 @@ public class CountDepths extends SAMProcessor {
 		stat.close();
 	}
 
+	public static void createRefSeqTable(Connection conn) throws SQLException {
+		Statement stat = conn.createStatement();
+		//stat.executeUpdate("DROP TABLE if exists window;");
+		stat.executeUpdate("CREATE TABLE ref_seq ("
+				+ "id integer primary key," + "ref_id integer,"
+				+ "name varchar);");
+		stat.close();
+	}
+
 	@Override
 	public void process(final List<SAMRecord> recs, String refName, int begin,
 			int end, int seqLength) {
@@ -259,10 +285,27 @@ public class CountDepths extends SAMProcessor {
 			this.refIds = new HashMap<String, Integer>();
 
 			int i = 0;
-			for (String name : this.refSeqNames) {
-				this.refIds.put(name, i++);
+
+			PreparedStatement stat;
+			try {
+				stat = this.insertRefSeqNameStatement();
+
+				for (String name : this.refSeqNames) {
+					this.refIds.put(name, i);
+					stat.setInt(1, i);
+					stat.setString(2, name);
+					stat.addBatch();
+					stat.executeUpdate();
+					i++;
+				}
+
+			} catch (SQLException e) {
+				e.printStackTrace();
+			} catch (ClassNotFoundException e) {
+				e.printStackTrace();
 			}
 		}
+
 		return refIds.get(seqName);
 	}
 }
