@@ -209,23 +209,21 @@ public class CountDepths extends SAMProcessor {
 			System.err.println("Iterating through");
 			int batchCount = 0;
 			int readCs = this.readCounts.get(name);
+			PreparedStatement ins = this.insertDepthEntryStatement();
+			
 			for (int i = 0, len = this.refSeqLengths.get(name); i < len; i++) {
 				int depth = pileup.depthAt(i);
 
 				if (depth > 0) {
+					/*
 					System.out.printf("%d\t%d\t%d\t%d\t%d\t%f%n",
 							id++,
 							refId,
 							i,
 							i+extendedLength,
 							depth,
-							nullDist.cdf(depth));
-					
-
-					/*
-					PreparedStatement ins = this.insertDepthEntryStatement();
-					//PreparedStatement ins = connection().prepareStatement("INSERT INTO window VALUES (?, ?, ?, ?, ?, ?);");
-					//System.err.println(depth);
+							nullDist.cdf(depth));*/
+										
 					ins.setInt(1, id++);
 					ins.setInt(2, refId);
 					ins.setInt(3, i);
@@ -234,16 +232,12 @@ public class CountDepths extends SAMProcessor {
 					ins.setDouble(6, 1.0 - nullDist.cdf(depth));
 					ins.addBatch();
 					
-
-					
 					if ((batchCount % 1000000) == 0) {
 						ins.executeBatch();
 						connection().commit();
 						ins.clearBatch();
 						System.err.printf("~");
 					}
-					//ins.close();
-					 */
 					 
 				}
 				
@@ -252,6 +246,9 @@ public class CountDepths extends SAMProcessor {
 				}
 				
 			}
+			ins.executeBatch();
+			connection().commit();
+			ins.clearBatch();
 			System.err.println("Done.");
 		}
 		// connection().setAutoCommit(false);
