@@ -22,8 +22,7 @@ public class SAMPileup {
 		int end = rec.getAlignmentEnd();
 		if (!rec.getReadNegativeStrandFlag()) {
 			for (int i = start, endpos = Math.min(this.refLength, end); i < endpos; i++) {pileup[i]++;}
-		}
-		else {
+		} else {
 			for (int i = Math.max(1, end - extendedLength); i < end; i++) {pileup[i]++;}
 		}
 	}
@@ -39,6 +38,4 @@ public class SAMPileup {
 	public void setExtendedLength(int extendedLength) {
 		this.extendedLength = extendedLength;
 	}
-	
-	
 }
