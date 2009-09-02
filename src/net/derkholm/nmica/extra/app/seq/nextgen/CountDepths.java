@@ -303,7 +303,7 @@ public class CountDepths extends SAMProcessor {
 		stat.executeUpdate("DROP TABLE if exists ref_seq;");
 		stat.executeUpdate("CREATE TABLE ref_seq ("
 				+ "id integer primary key,"
-				+ "name varchar);");
+				+ "name varchar(100));");
 		stat.close();
 	}
 
