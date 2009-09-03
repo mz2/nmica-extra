@@ -31,7 +31,7 @@ import cern.jet.random.engine.RandomEngine;
 @NMExtraApp(launchName = "ngdepth", vm = VirtualMachine.SERVER)
 @App(overview = "Output sequencing depth inside a window.", generateStub = true)
 public class CountDepths extends SAMProcessor {
-	public enum Format {SQLITE, HSQLDB, MYSQL, TSV}
+	public static enum Format {SQLITE, HSQLDB, MYSQL, TSV}
 
 	private Format format = Format.TSV;
 	private int windowIndex;
@@ -128,36 +128,50 @@ public class CountDepths extends SAMProcessor {
 		this.minDepth = i;
 	}
 
-	private Connection connection() throws SQLException, ClassNotFoundException {
+	private Connection connection() throws Exception {
 		if (this.connection == null) {
-			if (this.format == Format.HSQLDB) {
-				Class.forName("org.hsqldb.jdbcDriver");				
-				this.connection = DriverManager.getConnection(String.format(
-						"jdbc:hsqldb:file:%s", this.outputFile.getPath()), "sa", "");
-			} else if (this.format == Format.SQLITE){
-				Class.forName("org.sqlite.JDBC");				
-				this.connection = DriverManager.getConnection(String.format(
-						"jdbc:sqlite:%s", this.outputFile.getPath()), "sa", "");
-			} else if (this.format == Format.MYSQL) {
-				try {
-					this.connection = JDBCPooledDataSource.getDataSource(
-							"org.gjt.mm.mysql.Driver",
-							String.format("jdbc:mysql://%s/%s", this.dbHost, this.database),
-							dbUser, 
-							dbPassword).getConnection();
-				} catch (Exception e) {
-					System.err.println("Could not connect to database:");
-					e.printStackTrace();
-					System.exit(1);
-				}
+			if (this.format == Format.MYSQL) {
+				this.connection = CountDepths.mysqlConnection(dbHost,database,dbUser,dbPassword);
+			} else {
+				this.connection = CountDepths.connection(this.format, this.outputFile);
 			}
-
-			this.connection.setAutoCommit(false);
 		}
 		return this.connection;
 	}
+	
+	public static Connection mysqlConnection(
+			String dbHost, 
+			String database, 
+			String dbUser, 
+			String dbPassword) throws SQLException, Exception {
+		Connection con = JDBCPooledDataSource.getDataSource(
+				"org.gjt.mm.mysql.Driver",
+				String.format("jdbc:mysql://%s/%s", dbHost, database),
+				dbUser, 
+				dbPassword).getConnection();
+		con.setAutoCommit(false);
+		return con;
+	}
+	
+	public static Connection connection(Format format, File outputFile) throws SQLException, ClassNotFoundException {
+		Connection conn = null;
+		if (format == Format.HSQLDB) {
+			Class.forName("org.hsqldb.jdbcDriver");				
+			conn = DriverManager.getConnection(String.format(
+						"jdbc:hsqldb:file:%s", outputFile.getPath()), "sa", "");
+		} else if (format == Format.SQLITE){
+			Class.forName("org.sqlite.JDBC");				
+			conn =DriverManager.getConnection(String.format(
+						"jdbc:sqlite:%s", outputFile.getPath()), "sa", "");
+		} else {
+			throw new BioError("Unsupported format for writing to output file: " + outputFile);
+		}
 
-	private PreparedStatement insertDepthEntryStatement() throws SQLException, ClassNotFoundException {
+		conn.setAutoCommit(false);
+		return conn;
+	}
+
+	private PreparedStatement insertDepthEntryStatement() throws Exception {
 		if (this.insertDepthEntryStatement == null) {
 			this.insertDepthEntryStatement = CountDepths
 					.insertDepthEntryStatement(this.connection());
@@ -165,7 +179,7 @@ public class CountDepths extends SAMProcessor {
 		return this.insertDepthEntryStatement;
 	}
 
-	private PreparedStatement insertRefSeqNameStatement() throws SQLException, ClassNotFoundException {
+	private PreparedStatement insertRefSeqNameStatement() throws Exception {
 		if (this.insertRefSeqNameStatement == null) {
 			this.insertRefSeqNameStatement = CountDepths
 				.insertRefSeqNameStatement(this.connection());
@@ -203,7 +217,7 @@ public class CountDepths extends SAMProcessor {
 		}
 	}
 
-	 public void shutdown() throws SQLException, ClassNotFoundException {
+	 public void shutdown() throws Exception {
 
 	        Statement st = connection().createStatement();
 
@@ -214,15 +228,8 @@ public class CountDepths extends SAMProcessor {
 
 
 	@Override
-	public void main(String[] args) throws BioException,
-			ClassNotFoundException, SQLException {
+	public void main(String[] args) throws Exception {
 		initNullDistributions();
-
-		System.err.println("Creating output tables...");
-		if ((format == Format.HSQLDB) || (format == Format.SQLITE) || format == Format.MYSQL) {
-			CountDepths.createDepthTable(this.connection());
-			CountDepths.createRefSeqTable(this.connection());
-		}
 
 		this.windowIndex = 0;
 		System.err.println("Opening indexed reads...");
@@ -343,7 +350,7 @@ public class CountDepths extends SAMProcessor {
 		this.windowIndex++;
 	}
 
-	public int getRefId(String seqName) {
+	public int getRefId(String seqName) throws Exception {
 		if (this.refIds == null) {
 			this.refIds = new HashMap<String, Integer>();
 
