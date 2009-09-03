@@ -26,6 +26,7 @@ public class CreateDepthDatabase {
 	private Format format = Format.MYSQL;
 	private File outputFile;
 	private boolean createDatabase;
+	private boolean dropDatabase;
 
 	@Option(help="Database host")
 	public void setHost(String str) {
@@ -57,6 +58,11 @@ public class CreateDepthDatabase {
 		this.createDatabase = b;
 	}
 	
+	@Option(help="Drop database", optional=true)
+	public void setDropDatabase(boolean b) {
+		this.dropDatabase = b;
+	}
+	
 	private Connection connection() throws Exception {
 		if (this.connection == null) {
 			if (this.format == Format.MYSQL) {
@@ -68,7 +74,13 @@ public class CreateDepthDatabase {
 							dbUser,
 							dbPassword);
 					
-					PreparedStatement statement = this.connection.prepareStatement("CREATE DATABASE " + this.database +";");
+					PreparedStatement statement;
+					if (dropDatabase) {
+						statement = this.connection.prepareStatement("DROP DATABASE " + this.database + ";");
+						statement.executeUpdate();
+						statement.close();
+					}
+					statement = this.connection.prepareStatement("CREATE DATABASE " + this.database +";");
 					statement.executeUpdate();
 					statement.close();
 					statement = this.connection.prepareStatement("USE " + this.database + ";");
