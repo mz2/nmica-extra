@@ -100,6 +100,8 @@ public class RetrieveEnsemblSequences {
 
 	private String dbURL;
 
+	private String chromosome;
+
 	@Option(help = "Output format: either fasta or gff (default=fasta)",optional=true)
 	public void setFormat(Format format) {
 		this.format = format;
@@ -138,6 +140,11 @@ public class RetrieveEnsemblSequences {
 		while ((line = reader.readLine()) != null) {
 			this.ids.add(line.replace("\n", ""));
 		}
+	}
+	
+	@Option(help="Output sequences only for genes that are on the specified chromosome (ignored if ID list is specified)",optional=true)
+	public void setChromosome(String chromo) {
+		this.chromosome = chromo;
 	}
 
 	@Option(help = "Identifier type to use when filtering sequences identifiers (default = ensembl_gene, possible values: ensembl_gene|stable_id|display_label)", optional = true)
@@ -240,8 +247,20 @@ public class RetrieveEnsemblSequences {
 			DataSource db = JDBCPooledDataSource.getDataSource(
 					"org.gjt.mm.mysql.Driver", dbURL, username, password);
 			Connection con = db.getConnection();
-			PreparedStatement get_geneStableId = con
-					.prepareStatement("select stable_id from gene_stable_id;");
+			PreparedStatement get_geneStableId;
+			
+			if (this.chromosome == null) {
+				get_geneStableId = con.prepareStatement("SELECT stable_id FROM gene_stable_id;");
+			} else {
+				get_geneStableId = con.prepareStatement(
+										"SELECT stable_id FROM gene_stable_id " +
+										"LEFT JOIN gene ON gene.gene_id=gene_stable_id.gene_id " +
+										"LEFT JOIN seq_region ON seq_region.seq_region_id=gene.seq_region_id " +
+										"WHERE seq_region.name=?");
+				
+				get_geneStableId.setString(1, this.chromosome);
+			}
+			
 
 			ResultSet rs = get_geneStableId.executeQuery();
 

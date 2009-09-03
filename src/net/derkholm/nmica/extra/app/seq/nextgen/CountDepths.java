@@ -45,7 +45,7 @@ public class CountDepths extends SAMProcessor {
 	private HashMap<String, Integer> refIds;
 	private List<String> refSeqNames;
 	private PreparedStatement insertRefSeqNameStatement;
-	private int minDepth = 3;
+	private int minDepth = 1;
 	private String dbHost;
 	private String dbPassword;
 	private String dbUser;
@@ -123,7 +123,7 @@ public class CountDepths extends SAMProcessor {
 		super.setExtendTo(i);
 	}
 	
-	@Option(help = "Minimum depth (default=3)",optional=true)
+	@Option(help = "Minimum depth (default=1)",optional=true)
 	public void setMinDepth(int i) {
 		this.minDepth = i;
 	}
@@ -308,7 +308,7 @@ public class CountDepths extends SAMProcessor {
 		stat.executeUpdate("CREATE TABLE window ("
 				+ "id integer primary key," + "ref_id integer,"
 				+ "begin_coord integer," + "end_coord integer,"
-				+ "depth double," + "pvalue float);");
+				+ "depth double," + "pvalue double);");
 		stat.executeUpdate("CREATE INDEX ref_name_begin_end_idx ON window(ref_id,begin_coord,end_coord);");
 		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON window(ref_id,begin_coord);");
 		stat.executeUpdate("CREATE INDEX ref_name_end_idx ON window(ref_id,end_coord);");
