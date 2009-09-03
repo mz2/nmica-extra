@@ -235,7 +235,6 @@ public class CountDepths extends SAMProcessor {
 		System.err.println("Reads OK.");
 		reader.setValidationStringency(ValidationStringency.SILENT);
 		System.err.println("SAM file and index read");
-		int id = 0;
 		for (String name : this.refSeqLengths.keySet()) {
 			System.err.printf("Calculating pileup for %s%n", name);
 			int refId = getRefId(name);
@@ -253,22 +252,18 @@ public class CountDepths extends SAMProcessor {
 
 			System.err.println("Storing pileup data to database...");
 			System.err.println("Iterating through");
-			int batchCount = 0;
-			int readCs = this.readCounts.get(name);
 			PreparedStatement ins = this.insertDepthEntryStatement();
 			
 			for (int i = 0, len = this.refSeqLengths.get(name); i < len; i=i+this.frequency) {
 				int depth = pileup.depthAt(i);
 
 				if (depth >= this.minDepth) {
-					ins.setInt(1, id++);
-					ins.setInt(2, refId);
-					ins.setInt(3, i);
-					ins.setInt(4, i + extendedLength);
-					ins.setDouble(5, (double) depth);
-					ins.setDouble(6, 1.0 - nullDist.cdf(depth));
+					ins.setInt(1, refId);
+					ins.setInt(2, i);
+					ins.setInt(3, i + extendedLength);
+					ins.setDouble(4, (double) depth);
+					ins.setDouble(5, 1.0 - nullDist.cdf(depth));
 					ins.executeUpdate();
-					
 				}
 				
 				if ((i % (len / 100)) == 0) {
