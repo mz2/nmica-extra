@@ -33,10 +33,6 @@ import cern.jet.random.engine.RandomEngine;
 public class CountDepths extends SAMProcessor {
 	public enum Format {SQLITE, HSQLDB, MYSQL, TSV}
 
-	private String dbURL = "jdbc:mysql://ens-research/mp4_pileup";
-	private String dbUser = "ensadmin";
-	private String dbPass = "ensembl";
-
 	private Format format = Format.TSV;
 	private int windowIndex;
 	private Map<String, Poisson> nullDistributions = new HashMap<String, Poisson>();
@@ -50,7 +46,31 @@ public class CountDepths extends SAMProcessor {
 	private List<String> refSeqNames;
 	private PreparedStatement insertRefSeqNameStatement;
 	private int minDepth = 3;
+	private String dbHost;
+	private String dbPassword;
+	private String dbUser;
+	private String database;
 
+	@Option(help="Database host")
+	public void setHost(String str) {
+		this.dbHost = str;
+	}
+
+	@Option(help="Database username")
+	public void setUser(String str) {
+		this.dbUser = str;
+	}
+	
+	@Option(help="Database password")
+	public void setPassword(String str) {
+		this.dbPassword = str;
+	}
+	
+	@Option(help="Database schema name")
+	public void setDatabase(String str) {
+		this.database = str;
+	}
+	
 	@Override
 	@Option(help = "Reference sequence lengths")
 	public void setRefLengths(File f) throws BioException, IOException {
@@ -122,13 +142,14 @@ public class CountDepths extends SAMProcessor {
 				try {
 					this.connection = JDBCPooledDataSource.getDataSource(
 							"org.gjt.mm.mysql.Driver",
-							dbURL,
+							String.format("jdbc:mysql://%s/%s", this.dbHost, this.database),
 							dbUser, 
-							dbPass).getConnection();
+							dbPassword).getConnection();
 				} catch (Exception e) {
+					System.err.println("Could not connect to database:");
 					e.printStackTrace();
+					System.exit(1);
 				}
-
 			}
 
 			this.connection.setAutoCommit(false);
@@ -287,7 +308,7 @@ public class CountDepths extends SAMProcessor {
 		stat.executeUpdate("CREATE TABLE window ("
 				+ "id integer primary key," + "ref_id integer,"
 				+ "begin_coord integer," + "end_coord integer,"
-				+ "depth float," + "pvalue float);");
+				+ "depth double," + "pvalue float);");
 		stat.executeUpdate("CREATE INDEX ref_name_begin_end_idx ON window(ref_id,begin_coord,end_coord);");
 		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON window(ref_id,begin_coord);");
 		stat.executeUpdate("CREATE INDEX ref_name_end_idx ON window(ref_id,end_coord);");
