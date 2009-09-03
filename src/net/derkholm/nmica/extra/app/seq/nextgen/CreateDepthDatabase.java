@@ -76,7 +76,7 @@ public class CreateDepthDatabase {
 					
 					PreparedStatement statement;
 					if (dropDatabase) {
-						statement = this.connection.prepareStatement("DROP DATABASE " + this.database + " IF EXISTS " + this.database + ";");
+						statement = this.connection.prepareStatement("DROP DATABASE IF EXISTS " + this.database + ";");
 						statement.executeUpdate();
 						statement.close();
 					}
