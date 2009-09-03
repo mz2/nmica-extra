@@ -47,6 +47,11 @@ public class CreateDepthDatabase {
 		this.database = str;
 	}
 	
+	@Option(help="Output format (default=mysql)", optional=true)
+	public void setFormat(Format format) {
+		this.format = format;
+	}
+	
 	@Option(help="Create the database, not just the tables", optional=true)
 	public void setCreateDatabase(boolean b) {
 		this.createDatabase = b;
@@ -55,9 +60,17 @@ public class CreateDepthDatabase {
 	private Connection connection() throws Exception {
 		if (this.connection == null) {
 			if (this.format == Format.MYSQL) {
-				this.connection = CountDepths.mysqlConnection(dbHost,database,dbUser,dbPassword);
+				this.connection = 
+					CountDepths.mysqlConnection(
+						dbHost,
+						database,
+						dbUser,
+						dbPassword);
 			} else {
-				this.connection = CountDepths.connection(this.format, this.outputFile);
+				this.connection = 
+					CountDepths.connection(
+						this.format, 
+						this.outputFile);
 			}
 		}
 		return this.connection;
@@ -65,7 +78,7 @@ public class CreateDepthDatabase {
 	
 	public void main(String[] args) throws SQLException, Exception {
 		if (this.createDatabase) {
-			PreparedStatement statement = connection().prepareStatement("CREATE DATABASE " + this.database);
+			PreparedStatement statement = connection().prepareStatement("CREATE DATABASE " + this.database +";");
 			statement.executeUpdate();
 		}
 		
