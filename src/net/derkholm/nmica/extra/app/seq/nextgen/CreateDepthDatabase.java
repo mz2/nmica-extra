@@ -76,7 +76,6 @@ public class CreateDepthDatabase {
 		} else {
 			throw new BioError("Unsupported format for database creation");
 		}
-
 	}
 
 }
