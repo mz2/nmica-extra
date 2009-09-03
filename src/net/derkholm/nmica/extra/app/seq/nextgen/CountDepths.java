@@ -218,9 +218,7 @@ public class CountDepths extends SAMProcessor {
 	}
 
 	 public void shutdown() throws Exception {
-
 	        Statement st = connection().createStatement();
-
 	        st.execute("SHUTDOWN");
 	        connection().close();    // if there are no other open connection
 	    }
@@ -230,7 +228,7 @@ public class CountDepths extends SAMProcessor {
 	@Override
 	public void main(String[] args) throws Exception {
 		initNullDistributions();
-
+		
 		this.windowIndex = 0;
 		System.err.println("Opening indexed reads...");
 		SAMFileReader reader = new SAMFileReader(new File(in), indexFile);
@@ -263,15 +261,6 @@ public class CountDepths extends SAMProcessor {
 				int depth = pileup.depthAt(i);
 
 				if (depth >= this.minDepth) {
-					/*
-					System.out.printf("%d\t%d\t%d\t%d\t%d\t%f%n",
-							id++,
-							refId,
-							i,
-							i+extendedLength,
-							depth,
-							nullDist.cdf(depth));*/
-										
 					ins.setInt(1, id++);
 					ins.setInt(2, refId);
 					ins.setInt(3, i);
@@ -280,14 +269,6 @@ public class CountDepths extends SAMProcessor {
 					ins.setDouble(6, 1.0 - nullDist.cdf(depth));
 					ins.executeUpdate();
 					
-					/*
-					if ((batchCount % 1000000) == 0) {
-						ins.executeBatch();
-						connection().commit();
-						ins.clearBatch();
-						System.err.printf("~");
-					}*/
-					 
 				}
 				
 				if ((i % (len / 100)) == 0) {
@@ -298,13 +279,7 @@ public class CountDepths extends SAMProcessor {
 		}
 		this.insertDepthEntryStatement();
 		System.err.println("Done.");
-		// connection().setAutoCommit(false);
-
-		//process();
-		// insertDepthEntryStatement().executeBatch();
-		// insertDepthEntryStatement().close();
-		// connection().setAutoCommit(false);
-
+		
 		this.shutdown();
 	}
 

@@ -47,7 +47,7 @@ public class CreateDepthDatabase {
 		this.database = str;
 	}
 	
-	@Option(help="Create the database, not just the tables")
+	@Option(help="Create the database, not just the tables", optional=true)
 	public void setCreateDatabase(boolean b) {
 		this.createDatabase = b;
 	}
