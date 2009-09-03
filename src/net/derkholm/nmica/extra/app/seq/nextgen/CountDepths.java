@@ -74,8 +74,8 @@ public class CountDepths extends SAMProcessor {
 	}
 
 	@Option(help = "Output file "
-			+ "(suffixed with _x where x is LSB job index "
-			+ "if run on LSF as part of a job array)")
+			+ "(will be automatically suffixed with _x where x is LSB job index "
+			+ "if run on LSF as part of a job array)", optional=true)
 	public void setOut(File f) {
 		if (jobIndex() >= 0) {
 			this.outputFile = new File(String.format("%s_%d", f.getPath(), this

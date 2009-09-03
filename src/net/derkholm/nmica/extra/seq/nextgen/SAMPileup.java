@@ -21,9 +21,9 @@ public class SAMPileup {
 		int start = rec.getAlignmentStart();
 		int end = rec.getAlignmentEnd();
 		if (!rec.getReadNegativeStrandFlag()) {
-			for (int i = start, endpos = Math.min(this.refLength, end); i < endpos; i++) {pileup[i]++;}
+			for (int i = Math.max(start,0), endpos = Math.min(this.refLength, end); i < endpos; i++) {pileup[i]++;}
 		} else {
-			for (int i = Math.max(1, end - extendedLength); i < end; i++) {pileup[i]++;}
+			for (int i = Math.max(1, Math.min(this.refLength,end - extendedLength)); i < end; i++) {pileup[i]++;}
 		}
 	}
 	
