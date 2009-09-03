@@ -23,7 +23,7 @@ public class CreateDepthDatabase {
 	private String dbPassword;
 	private String database;
 	private Connection connection;
-	private Format format;
+	private Format format = Format.MYSQL;
 	private File outputFile;
 	private boolean createDatabase;
 
@@ -60,12 +60,29 @@ public class CreateDepthDatabase {
 	private Connection connection() throws Exception {
 		if (this.connection == null) {
 			if (this.format == Format.MYSQL) {
-				this.connection = 
-					CountDepths.mysqlConnection(
-						dbHost,
-						database,
-						dbUser,
-						dbPassword);
+				if (this.createDatabase) {
+					this.connection = 
+						CountDepths.mysqlConnection(
+							dbHost,
+							"",
+							dbUser,
+							dbPassword);
+					
+					PreparedStatement statement = this.connection.prepareStatement("CREATE DATABASE " + this.database +";");
+					statement.executeUpdate();
+					statement.close();
+					statement = this.connection.prepareStatement("USE " + this.database + ";");
+					statement.executeUpdate();
+					statement.close();
+				} else {
+					this.connection = 
+						CountDepths.mysqlConnection(
+							dbHost,
+							database,
+							dbUser,
+							dbPassword);
+					
+				}
 			} else {
 				this.connection = 
 					CountDepths.connection(
@@ -77,10 +94,7 @@ public class CreateDepthDatabase {
 	}
 	
 	public void main(String[] args) throws SQLException, Exception {
-		if (this.createDatabase) {
-			PreparedStatement statement = connection().prepareStatement("CREATE DATABASE " + this.database +";");
-			statement.executeUpdate();
-		}
+		
 		
 		System.err.println("Creating output tables...");
 		if ((format == Format.HSQLDB) || (format == Format.SQLITE) || format == Format.MYSQL) {
