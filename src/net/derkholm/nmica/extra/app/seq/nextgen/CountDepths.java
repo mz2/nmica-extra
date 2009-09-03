@@ -197,7 +197,7 @@ public class CountDepths extends SAMProcessor {
 	public static PreparedStatement insertDepthEntryStatement(Connection conn)
 			throws SQLException {
 		return conn
-				.prepareStatement("INSERT INTO window VALUES (?, ?, ?, ?, ?, ?);");
+				.prepareStatement("INSERT INTO window (ref_id,begin_coord,end_coord,depth,pvalue) VALUES (?, ?, ?, ?, ?);");
 	}
 
 	private void initNullDistributions() {
@@ -288,9 +288,11 @@ public class CountDepths extends SAMProcessor {
 		
 		stat.executeUpdate("DROP TABLE if exists window;");
 		stat.executeUpdate("CREATE TABLE window ("
-				+ "id integer primary key," + "ref_id integer,"
-				+ "begin_coord integer," + "end_coord integer,"
-				+ "depth double," + "pvalue double);");
+							+ "id integer AUTO_INCREMENT," + "ref_id INTEGER,"
+							+ "begin_coord integer," + "end_coord INTEGER,"
+							+ "depth DOUBLE," 
+							+ "pvalue DOUBLE," 
+							+ " PRIMARY KEY (id));");
 		stat.executeUpdate("CREATE INDEX ref_name_begin_end_idx ON window(ref_id,begin_coord,end_coord);");
 		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON window(ref_id,begin_coord);");
 		stat.executeUpdate("CREATE INDEX ref_name_end_idx ON window(ref_id,end_coord);");
