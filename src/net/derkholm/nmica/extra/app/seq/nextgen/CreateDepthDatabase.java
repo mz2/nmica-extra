@@ -80,7 +80,7 @@ public class CreateDepthDatabase {
 						statement.executeUpdate();
 						statement.close();
 					}
-					statement = this.connection.prepareStatement("CREATE DATABASE " + this.database +";");
+					statement = this.connection.prepareStatement("CREATE DATABASE " + this.database +" IF NOT EXISTS " + this.database + ";");
 					statement.executeUpdate();
 					statement.close();
 					statement = this.connection.prepareStatement("USE " + this.database + ";");
