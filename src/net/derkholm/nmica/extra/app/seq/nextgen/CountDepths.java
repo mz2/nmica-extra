@@ -330,29 +330,10 @@ public class CountDepths extends SAMProcessor {
 			this.refIds = new HashMap<String, Integer>();
 
 			int i = 0;
-
-			PreparedStatement stat;
-			try {
-				stat = this.insertRefSeqNameStatement();
-
-				for (String name : this.refSeqNames) {
-					this.refIds.put(name, i);
-					stat.setInt(1, i);
-					stat.setString(2, name);
-					stat.addBatch();
-					stat.executeBatch();
-					stat.clearBatch();
-					connection().commit();
-					i++;
-				}
-
-			} catch (SQLException e) {
-				e.printStackTrace();
-			} catch (ClassNotFoundException e) {
-				e.printStackTrace();
+			for (String name : this.refSeqNames) {
+				this.refIds.put(name, i++);
 			}
 		}
-
 		return refIds.get(seqName);
 	}
 }
