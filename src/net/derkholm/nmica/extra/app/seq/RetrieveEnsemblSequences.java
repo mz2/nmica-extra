@@ -102,6 +102,10 @@ public class RetrieveEnsemblSequences {
 
 	private String chromosome;
 
+	private boolean knownGene;
+
+	private boolean proteinCoding;
+
 	@Option(help = "Output format: either fasta or gff (default=fasta)",optional=true)
 	public void setFormat(Format format) {
 		this.format = format;
@@ -226,6 +230,16 @@ public class RetrieveEnsemblSequences {
 	public void setType(String type) {
 		this.type = type;
 	}
+	
+	@Option(help="Output only known genes", optional=true) 
+	public void setKnown(boolean b) {
+		this.knownGene = b;
+	}
+	
+	@Option(help="Output only protein coding genes", optional=true)
+	public void setProteinCoding(boolean b) {
+		this.proteinCoding = b;
+	}
 
 	protected void initializeEnsemblConnection() throws SQLException, Exception {
 		this.initPreparedStatements();
@@ -297,9 +311,16 @@ public class RetrieveEnsemblSequences {
 		
 		for (String gene : ids) {
 			System.err.println("" + gene);
-			FeatureHolder transcripts = seqDB
-					.filter(
-						new FeatureFilter.ByAnnotation("ensembl.gene_id",gene));
+			FeatureHolder transcripts = 
+				seqDB.filter(new FeatureFilter.ByAnnotation("ensembl.gene_id",gene));
+			
+			if (this.knownGene) {
+				transcripts = transcripts.filter(new FeatureFilter.ByAnnotation("ensembl.gene_status","KNOWN"));
+			}
+			
+			if (this.proteinCoding) {
+				transcripts = transcripts.filter(new FeatureFilter.ByAnnotation("ensembl.gene_type","protein_coding"));
+			}
 			
 			if (this.type != null) {
 				transcripts = transcripts.filter(new FeatureFilter.ByAnnotation("ensembl.gene_type",this.type));
@@ -308,8 +329,16 @@ public class RetrieveEnsemblSequences {
 			Sequence chr = null;
 			boolean reverse = false;
 			List<Location> dumpLocs = new ArrayList<Location>();
+			String outputName = "sequence";
+			
 			for (Iterator<?> fi = transcripts.features(); fi.hasNext();) {
 				StrandedFeature transcript = (StrandedFeature) fi.next();
+				
+				for (Object keyO : transcript.getAnnotation().keys()) {
+					System.err.printf("%s:%s\n",keyO,transcript.getAnnotation().getProperty(keyO));
+				}
+				outputName = 
+					String.format("%s(%s)", transcript.getAnnotation().getProperty("ensembl.gene_id"), transcript.getAnnotation().getProperty("ensembl.gene_display_label"));
 				chr = transcript.getSequence();
 				if (transcript.getStrand() != StrandedFeature.NEGATIVE) {
 					int start = transcript.getLocation().getMin();
@@ -450,7 +479,7 @@ public class RetrieveEnsemblSequences {
 						GFFRecord rec = new SimpleGFFRecord(
 								chr.getName(),
 								"nmensemblseq",
-								"noncoding-seq",
+								outputName,
 								bloc.getMin(),
 								max,
 								Double.NaN,
