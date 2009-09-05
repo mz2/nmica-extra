@@ -124,7 +124,7 @@ public class WriteCoveredSequences {
 		
 
 		
-		if (validate) {
+		if (validate && (seqDB != null)) {
 			WriteCoveredSequences.validateGFFSequenceIdentifiersAgainstSequences(locs,seqDB);
 		}
 		
