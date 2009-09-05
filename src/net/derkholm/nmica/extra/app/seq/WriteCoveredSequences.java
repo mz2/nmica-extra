@@ -128,9 +128,9 @@ public class WriteCoveredSequences {
 			WriteCoveredSequences.validateGFFSequenceIdentifiersAgainstSequences(locs,seqDB);
 		}
 		
-		for (SequenceIterator si = seqDB.sequenceIterator(); si.hasNext();) {
-			Sequence seq = si.nextSequence();
-			Location loc = locs.get(seq.getName());
+		
+		for (String seqName : locs.keySet()) {
+			Location loc = locs.get(seqName);
 			
 			
 			if (loc == null) continue;
@@ -145,7 +145,7 @@ public class WriteCoveredSequences {
 			
 			if (loc == null && negate) {
 				if (outputFormat == Format.FASTA) {
-					RichSequence.IOTools.writeFasta(System.out, seq, null);					
+					RichSequence.IOTools.writeFasta(System.out, seqDB.getSequence(seqName), null);					
 				} else {
           
           for (Iterator<?> li = loc.blockIterator(); li.hasNext(); ) {
@@ -168,7 +168,7 @@ public class WriteCoveredSequences {
             }
 
 						GFFRecord r = new SimpleGFFRecord(
-								seq.getName(),
+								seqName,
 								"nmcoveredseq",
 								"covered",
 								l.getMin(),
@@ -186,7 +186,7 @@ public class WriteCoveredSequences {
 			} else {
 				Location wanted;
 				if (negate) {
-					wanted = LocationTools.subtract(new RangeLocation(1, seq.length()), loc);
+					wanted = LocationTools.subtract(new RangeLocation(1, seqDB.getSequence(seqName).length()), loc);
 				} else {
 					wanted = loc;
 				}
@@ -210,30 +210,30 @@ public class WriteCoveredSequences {
             }
           }
 
-					if (outputFormat == Format.FASTA) {
-						RichSequence.IOTools.writeFasta(System.out, new SimpleSequence(
-								seq.subList(wl.getMin(), wl.getMax()),
-								null,
-								String.format("%s_|%d-%d|", seq.getName(), wl.getMin(), wl.getMax()),
-								Annotation.EMPTY_ANNOTATION
-						), null);						
-					} else {
-						System.err.printf("%s %s %s %s%n",seq,seq.getName(),wl,strand);
-						GFFRecord r = new SimpleGFFRecord(
-								seq.getName(),
-								"nmcoveredseq",
-								this.negate ? "uncovered" : "covered",
-								wl.getMin(),
-								wl.getMax(),
-								Double.NaN,
-								strand,
-								0,
-								"",
-								new HashMap<Object, Object>());
-						writer.recordLine(r);
-					}
-				}
-			}   
+			if (outputFormat == Format.FASTA) {
+				Sequence seq = seqDB.getSequence(seqName);
+				RichSequence.IOTools.writeFasta(System.out, new SimpleSequence(
+						seq.subList(wl.getMin(), wl.getMax()),
+						null,
+						String.format("%s_|%d-%d|", seq.getName(), wl.getMin(), wl.getMax()),
+						Annotation.EMPTY_ANNOTATION
+				), null);						
+			} else {
+				GFFRecord r = new SimpleGFFRecord(
+						seqName,
+						"nmcoveredseq",
+						this.negate ? "uncovered" : "covered",
+						wl.getMin(),
+						wl.getMax(),
+						Double.NaN,
+						strand,
+						0,
+						"",
+						new HashMap<Object, Object>());
+				writer.recordLine(r);
+			}
+		}
+	}   
 			
 			if (writer != null) writer.endDocument();
 		}   
