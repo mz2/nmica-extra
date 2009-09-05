@@ -334,9 +334,12 @@ public class RetrieveEnsemblSequences {
 			for (Iterator<?> fi = transcripts.features(); fi.hasNext();) {
 				StrandedFeature transcript = (StrandedFeature) fi.next();
 				
+				/*
 				for (Object keyO : transcript.getAnnotation().keys()) {
 					System.err.printf("%s:%s\n",keyO,transcript.getAnnotation().getProperty(keyO));
 				}
+				*/
+				
 				outputName = 
 					String.format("%s(%s)", transcript.getAnnotation().getProperty("ensembl.gene_id"), transcript.getAnnotation().getProperty("ensembl.gene_display_label"));
 				chr = transcript.getSequence();
