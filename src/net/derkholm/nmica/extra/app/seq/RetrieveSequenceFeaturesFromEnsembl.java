@@ -31,7 +31,7 @@ import org.bjv2.util.cli.Option;
 @App(overview = "Get noncoding sequences from Ensembl for motif discovery", generateStub = true)
 @NMExtraApp(launchName = "nmensemblfeat", vm = VirtualMachine.SERVER)
 public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequences {
-	
+
 	private File outFile;
 	private File featuresFile;
 
@@ -39,32 +39,32 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 	public void setOut(File f) {
 		this.outFile = f;
 	}
-	
-	@Option(help="Features file (read from stdin if not included)", optional=true) 
+
+	@Option(help="Features file (read from stdin if not included)", optional=true)
 	public void setFeatures(File f) {
 		this.featuresFile = f;
 	}
 
 	public void main(String[] args) throws SQLException, Exception {
 		initializeEnsemblConnection();
-		
+
 		final OutputStream os;
 		if (this.outFile == null) {
 			os = System.out;
 		} else {
 			os = new FileOutputStream(this.outFile);
 		}
-		
+
 		InputStream inputStream;
 		if (featuresFile == null) {
 			inputStream = System.in;
 		} else {
 			inputStream = new FileInputStream(this.featuresFile);
 		}
-		
+
 		GFFParser parser = new GFFParser();
 		parser.parse(
-				new BufferedReader(new InputStreamReader(inputStream)), 
+				new BufferedReader(new InputStreamReader(inputStream)),
 				new GFFDocumentHandler() {
 			public void commentLine(String str) {}
 			public void endDocument() {}
@@ -77,16 +77,16 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 					if (recLine.getStrand().equals(StrandedFeature.NEGATIVE)) {
 						symList = DNATools.reverseComplement(symList);
 					}
-					
-					Sequence s = new SimpleSequence(symList, null, 
-							String.format("%s;%d-%d(%s)", 
-									recLine.getSeqName(), 
-									recLine.getStart(), 
-									recLine.getEnd(), 
+
+					Sequence s = new SimpleSequence(symList, null,
+							String.format("%s;%d-%d(%s)",
+									recLine.getSeqName(),
+									Math.max(1,recLine.getStart()),
+									recLine.getEnd(),
 									recLine.getStrand()
 										.equals(StrandedFeature.POSITIVE)? "+" : "-"),
 							Annotation.EMPTY_ANNOTATION);
-					
+
 					RichSequence.IOTools.writeFasta(os, s, null);
 
 				} catch (IllegalIDException e) {
