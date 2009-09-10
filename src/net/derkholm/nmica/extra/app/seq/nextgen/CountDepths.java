@@ -235,7 +235,17 @@ public class CountDepths extends SAMProcessor {
 		System.err.println("Reads OK.");
 		reader.setValidationStringency(ValidationStringency.SILENT);
 		System.err.println("SAM file and index read");
+
+		String chromoName = null;
+		if (System.getenv().get("LSB_JOBINDEX") != null) {
+			int index = Integer.parseInt(System.getenv().get("LSB_JOBINDEX")) - 1;
+			chromoName = this.refSeqNames.get(index);
+			System.err.println("The task is being run as part of an LSF job array. Will only calculate depth for " + chromoName);
+		}
+		
 		for (String name : this.refSeqLengths.keySet()) {
+			if (chromoName != null &! name.equals(chromoName)) continue;
+			
 			System.err.printf("Calculating pileup for %s%n", name);
 			int refId = getRefId(name);
 			Poisson nullDist = this.nullDistributions.get(name);
