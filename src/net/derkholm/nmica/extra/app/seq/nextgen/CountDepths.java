@@ -248,7 +248,8 @@ public class CountDepths extends SAMProcessor {
 
 			for (String str : this.refSeqNames) {
 				if (str.equals(chromoName)) break;
-				primaryId += this.readCounts.get(str)+1;
+				
+				primaryId += this.refSeqLengths.get(str)+1;
 			}
 		}
 
