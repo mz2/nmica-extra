@@ -58,9 +58,9 @@ public class RetrieveEnsemblSequences {
     	GFF,
     	FASTA
     }
-    
+
     private Format format = Format.FASTA;
-	
+
 	/* Sequence region processing */
 	protected boolean repeatMask = true;
 	protected boolean excludeTranslations = true;
@@ -106,11 +106,13 @@ public class RetrieveEnsemblSequences {
 
 	private boolean proteinCoding;
 
+	private boolean ignoreGenesWithNoCrossReferences;
+
 	@Option(help = "Output format: either fasta or gff (default=fasta)",optional=true)
 	public void setFormat(Format format) {
 		this.format = format;
 	}
-	
+
 	@Option(help = "Repeat mask the sequences (default=true)", optional = true)
 	public void setRepeatMask(boolean b) {
 		this.repeatMask = b;
@@ -135,17 +137,17 @@ public class RetrieveEnsemblSequences {
 	public void setFilterByIds(String[] ids) {
 		this.ids.addAll(Arrays.asList(ids));
 	}
-	
+
 	@Option(help = "Filter returned sequence set based on identifier(s) in the input file (one row per identifier)", optional = true)
 	public void setFilterByIdsInFile(FileReader fr) throws IOException {
 		BufferedReader reader = new BufferedReader(fr);
 		String line = null;
-		
+
 		while ((line = reader.readLine()) != null) {
 			this.ids.add(line.replace("\n", ""));
 		}
 	}
-	
+
 	@Option(help="Output sequences only for genes that are on the specified chromosome (ignored if ID list is specified)",optional=true)
 	public void setChromosome(String chromo) {
 		this.chromosome = chromo;
@@ -160,7 +162,7 @@ public class RetrieveEnsemblSequences {
 	public void setOut(File f) {
 		this.outputFile = f;
 	}
-	
+
 	@Option(help = "Get three prime UTR sequences. "
 			+ "Example: '-threePrimeUTR 200 200' gets you sequence regions "
 			+ "from 200bp upstream to 200bp downstream of transcription "
@@ -224,45 +226,50 @@ public class RetrieveEnsemblSequences {
 	public void setSchemaVersion(int ver) {
 		this.schemaVersion = ver;
 	}
-	
+
 	@Option(help="Allowed gene type, e.g. 'protein_coding','pseudogene' " +
 			"(by default all gene types are allowed)", optional = true)
 	public void setType(String type) {
 		this.type = type;
 	}
-	
-	@Option(help="Output only known genes", optional=true) 
+
+	@Option(help="Output only known genes", optional=true)
 	public void setKnown(boolean b) {
 		this.knownGene = b;
 	}
-	
+
 	@Option(help="Output only protein coding genes", optional=true)
 	public void setProteinCoding(boolean b) {
 		this.proteinCoding = b;
 	}
 
+	@Option(help="Ignore genes that don't have cross-references", optional=true)
+	public void setIgnoreXrefless(boolean b) {
+		this.ignoreGenesWithNoCrossReferences = b;
+	}
+
 	protected void initializeEnsemblConnection() throws SQLException, Exception {
 		this.initPreparedStatements();
-		this.dbURL = String.format("jdbc:mysql://%s:%d/%s", 
+		this.dbURL = String.format("jdbc:mysql://%s:%d/%s",
 				this.host,
-				this.port, 
+				this.port,
 				this.database);
 
 		ensemblConnection = new EnsemblConnection(dbURL, username,
 				password, schemaVersion);
 		this.seqDB = ensemblConnection.getDefaultSequenceDB();
 	}
-	
+
 	public void main(String[] argv) throws Exception {
 		initializeEnsemblConnection();
-		
+
 		if (ids.size() == 0) {
 			List<String> idsList = new ArrayList<String>();
 			DataSource db = JDBCPooledDataSource.getDataSource(
 					"org.gjt.mm.mysql.Driver", dbURL, username, password);
 			Connection con = db.getConnection();
 			PreparedStatement get_geneStableId;
-			
+
 			if (this.chromosome == null) {
 				get_geneStableId = con.prepareStatement("SELECT stable_id FROM gene_stable_id;");
 			} else {
@@ -271,10 +278,10 @@ public class RetrieveEnsemblSequences {
 										"LEFT JOIN gene ON gene.gene_id=gene_stable_id.gene_id " +
 										"LEFT JOIN seq_region ON seq_region.seq_region_id=gene.seq_region_id " +
 										"WHERE seq_region.name=?");
-				
+
 				get_geneStableId.setString(1, this.chromosome);
 			}
-			
+
 
 			ResultSet rs = get_geneStableId.executeQuery();
 
@@ -294,53 +301,58 @@ public class RetrieveEnsemblSequences {
 			}
 			ids = idList;
 		}
-		
+
 		GFFWriter gffw = null;
-		
+
 		if (format == Format.GFF) {
 			gffw = new GFFWriter(new PrintWriter(new OutputStreamWriter(System.out)));
 		}
-		
+
 		PrintStream outputStream = null;
-		
+
 		if (outputFile == null) {
 			outputStream = System.out;
 		} else {
 			outputStream = new PrintStream(new FileOutputStream(outputFile));
-		}						
-		
+		}
+
 		for (String gene : ids) {
 			System.err.println("" + gene);
-			FeatureHolder transcripts = 
+			FeatureHolder transcripts =
 				seqDB.filter(new FeatureFilter.ByAnnotation("ensembl.gene_id",gene));
-			
+
 			if (this.knownGene) {
 				transcripts = transcripts.filter(new FeatureFilter.ByAnnotation("ensembl.gene_status","KNOWN"));
 			}
-			
+
 			if (this.proteinCoding) {
 				transcripts = transcripts.filter(new FeatureFilter.ByAnnotation("ensembl.gene_type","protein_coding"));
 			}
-			
+
 			if (this.type != null) {
 				transcripts = transcripts.filter(new FeatureFilter.ByAnnotation("ensembl.gene_type",this.type));
 			}
-			
+
 			Sequence chr = null;
 			boolean reverse = false;
 			List<Location> dumpLocs = new ArrayList<Location>();
 			String outputName = "sequence";
-			
+
 			for (Iterator<?> fi = transcripts.features(); fi.hasNext();) {
 				StrandedFeature transcript = (StrandedFeature) fi.next();
-				
-				/*
+
 				for (Object keyO : transcript.getAnnotation().keys()) {
 					System.err.printf("%s:%s\n",keyO,transcript.getAnnotation().getProperty(keyO));
 				}
-				*/
-				
-				outputName = 
+
+				Object o = transcript.getAnnotation().getProperty("ensembl.xrefs");
+
+				if (this.ignoreGenesWithNoCrossReferences && ((o == null) || (!(o instanceof List)) || (((List)o)).size() == 0)) {
+					System.err.printf("Ignoring transcript of gene %s because it has no cross-references%n", transcript.getAnnotation().getProperty("ensembl.id"));
+					continue;
+				}
+
+				outputName =
 					String.format("%s(%s)", transcript.getAnnotation().getProperty("ensembl.gene_id"), transcript.getAnnotation().getProperty("ensembl.gene_display_label"));
 				chr = transcript.getSequence();
 				if (transcript.getStrand() != StrandedFeature.NEGATIVE) {
@@ -357,7 +369,7 @@ public class RetrieveEnsemblSequences {
 				} else {
 					int start = transcript.getLocation().getMax();
 					int end = transcript.getLocation().getMin();
-					
+
 					if (fivePrimeBegin > 0 || fivePrimeEnd > 0) {
 						dumpLocs.add(new RangeLocation(start - fivePrimeEnd,
 								start + fivePrimeBegin));
@@ -381,7 +393,7 @@ public class RetrieveEnsemblSequences {
 				FeatureHolder translations = chr.filter(new FeatureFilter.And(
 						new FeatureFilter.ByType("translation"),
 						new FeatureFilter.OverlapsLocation(dumpLoc)));
-				
+
 				List<Location> transLocs = new ArrayList<Location>();
 				for (Iterator<?> i = translations.features(); i.hasNext();) {
 					transLocs.add(((Feature) i.next()).getLocation());
@@ -414,12 +426,12 @@ public class RetrieveEnsemblSequences {
 					List<Symbol> sl = new ArrayList<Symbol>();
 					boolean truncatedSeq = false;
 					int max = bloc.getMax();
-					
+
 					if (chr.length() < bloc.getMin()) {
 						System.err.printf(
 								"WARNING: cannot extract feature from %s:" +
 								"the beginning of feature %d - %d runs over the end of the sequence at %d)%n",
-								chr.getName(), 
+								chr.getName(),
 								bloc.getMin(),
 								bloc.getMax(),
 								chr.length());
@@ -429,11 +441,11 @@ public class RetrieveEnsemblSequences {
 						System.err.printf(
 							"WARNING: extracted feature from %s would be truncated " +
 							"(feature %d - %d runs over the end of the sequence at %d). Will not output it.%n",
-							chr.getName(), 
+							chr.getName(),
 							bloc.getMin(),
 							bloc.getMax(),
 							chr.length());
-						
+
 						//max = chr.length();
 						continue;
 					}
@@ -441,14 +453,14 @@ public class RetrieveEnsemblSequences {
 						System.err.printf(
 							"WARNING: retrieved location %d-%d on chromosome %s has a negative start coordinate on the sequence region. " +
 							"Will not output.%n",bloc.getMin(),bloc.getMax(),chr.getName());
-						
+
 						continue;
 					}
 					if (bloc.getMax() <= 1) {
 						System.err.printf(
 							"WARNING: retrieved location %d-%d on chromosome %s has a negative end coordinate on the sequence region. " +
 							"Will not output.%n",bloc.getMin(),bloc.getMax(),chr.getName());
-						
+
 						continue;
 					}
 					for (int i = bloc.getMin(); i <= max; ++i) {
@@ -458,27 +470,27 @@ public class RetrieveEnsemblSequences {
 							sl.add(DNATools.n());
 						}
 					}
-					
+
 					if (format == Format.FASTA) {
 						SymbolList ssl = new SimpleSymbolList(DNATools.getDNA(), sl);
 						if (reverse) {
 							ssl = DNATools.reverseComplement(ssl);
 						}
-						Sequence dump = new SimpleSequence(ssl, null, 
-								String.format("%s_%s_%d_%d", 
-										gene, 
-										chr.getName(), 
-										bloc.getMin(), 
+						Sequence dump = new SimpleSequence(ssl, null,
+								String.format("%s_%s_%d_%d",
+										gene,
+										chr.getName(),
+										bloc.getMin(),
 										max),
 								Annotation.EMPTY_ANNOTATION);
-						
-						new FastaFormat().writeSequence(dump, outputStream);						
+
+						new FastaFormat().writeSequence(dump, outputStream);
 					} else {
 						org.biojava.bio.seq.StrandedFeature.Strand strand = StrandedFeature.UNKNOWN;
-						
+
 						Map<String,Object> map = new HashMap<String, Object>();
 						map.put(String.format("ID=%s",gene), new ArrayList());
-						
+
 						GFFRecord rec = new SimpleGFFRecord(
 								chr.getName(),
 								"nmensemblseq",
@@ -490,7 +502,7 @@ public class RetrieveEnsemblSequences {
 								0,
 								null,
 								map);
-						
+
 						gffw.recordLine(rec);
 						gffw.endDocument();
 					}
@@ -498,13 +510,13 @@ public class RetrieveEnsemblSequences {
 			}
 
 		}
-		
+
 		if (gffw != null) {
 			gffw.endDocument();
 		}
 	}
-	
-	
+
+
 
 	protected Location feather(Location l, int amount) {
 		List<Location> spans = new ArrayList<Location>();
@@ -515,7 +527,7 @@ public class RetrieveEnsemblSequences {
 		}
 		return LocationTools.union(spans);
 	}
-	
+
 	public Connection connection() throws Exception {
 		if (this.connection == null) {
 			DataSource db = JDBCPooledDataSource.getDataSource(
@@ -529,8 +541,8 @@ public class RetrieveEnsemblSequences {
 		return connection;
 	}
 
-	
-	
+
+
 	public String ensemblIDForGeneName(String name) throws SQLException {
 		{
 			get_geneStableId.setString(1, name);
@@ -557,7 +569,7 @@ public class RetrieveEnsemblSequences {
 				}
 			}
 			rs.close();
-			
+
 			if (tid > 0) {
 				get_gsiForTranscript.setInt(1, tid);
 				rs = get_gsiForTranscript.executeQuery();
@@ -577,12 +589,12 @@ public class RetrieveEnsemblSequences {
 			}
 		}
 	}
-	
+
 	private void initPreparedStatements() throws SQLException, Exception {
 		this.get_geneStableId = connection().prepareStatement(
 				"select gene_id from gene_stable_id where stable_id = ?"
 	    );
-		
+
 		if (idType.equals("display_label")) {
 			this.get_xref = connection().prepareStatement(
 				"select ensembl_id, ensembl_object_type " +
