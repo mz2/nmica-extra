@@ -50,6 +50,7 @@ public class CountDepths extends SAMProcessor {
 	private String dbPassword;
 	private String dbUser;
 	private String database;
+	private HashMap<String, Integer> safeStartingPointIds;
 
 	@Option(help="Database host")
 	public void setHost(String str) {
@@ -86,6 +87,7 @@ public class CountDepths extends SAMProcessor {
 	@Option(help = "Read counts per reference sequence")
 	public void setReadCounts(File f) {
 		super.setReadCounts(f);
+
 	}
 
 	@Option(help = "Output format")
@@ -197,7 +199,7 @@ public class CountDepths extends SAMProcessor {
 	public static PreparedStatement insertDepthEntryStatement(Connection conn)
 			throws SQLException {
 		return conn
-				.prepareStatement("INSERT INTO depth (ref_id,coord,depth,pvalue) VALUES (?, ?, ?, ?);");
+				.prepareStatement("INSERT INTO depth VALUES (?, ?, ?, ?, ?);");
 	}
 
 	private void initNullDistributions() {
@@ -229,6 +231,7 @@ public class CountDepths extends SAMProcessor {
 	public void main(String[] args) throws Exception {
 		initNullDistributions();
 
+
 		this.windowIndex = 0;
 		System.err.println("Opening indexed reads...");
 		SAMFileReader reader = new SAMFileReader(new File(in), indexFile);
@@ -237,15 +240,21 @@ public class CountDepths extends SAMProcessor {
 		System.err.println("SAM file and index read");
 
 		String chromoName = null;
+		int primaryId = 1;
 		if (System.getenv().get("LSB_JOBINDEX") != null) {
 			int index = Integer.parseInt(System.getenv().get("LSB_JOBINDEX")) - 1;
 			chromoName = this.refSeqNames.get(index);
 			System.err.println("The task is being run as part of an LSF job array. Will only calculate depth for " + chromoName);
+
+			for (String str : this.refSeqNames) {
+				if (str.equals(chromoName)) break;
+				primaryId += this.readCounts.get(str)+1;
+			}
 		}
-		
+
 		for (String name : this.refSeqLengths.keySet()) {
 			if (chromoName != null &! name.equals(chromoName)) continue;
-			
+
 			System.err.printf("Calculating pileup for %s%n", name);
 			int refId = getRefId(name);
 			Poisson nullDist = this.nullDistributions.get(name);
@@ -268,10 +277,11 @@ public class CountDepths extends SAMProcessor {
 				int depth = pileup.depthAt(i);
 
 				if (depth >= this.minDepth) {
-					ins.setInt(1, refId);
-					ins.setInt(2, i+1);
-					ins.setDouble(3, (double) depth);
-					ins.setDouble(4, 1.0 - nullDist.cdf(depth));
+					ins.setInt(1, primaryId++);
+					ins.setInt(2, refId);
+					ins.setInt(3, i+1);
+					ins.setDouble(4, (double) depth);
+					ins.setDouble(5, 1.0 - nullDist.cdf(depth));
 					ins.executeUpdate();
 				}
 
@@ -292,7 +302,8 @@ public class CountDepths extends SAMProcessor {
 
 		stat.executeUpdate("DROP TABLE if exists depth;");
 		stat.executeUpdate("CREATE TABLE depth ("
-							+ "id integer AUTO_INCREMENT," + "ref_id INTEGER,"
+							+ "id integer,"
+							+ "ref_id INTEGER,"
 							+ "coord integer,"
 							+ "depth DOUBLE,"
 							+ "pvalue DOUBLE,"
