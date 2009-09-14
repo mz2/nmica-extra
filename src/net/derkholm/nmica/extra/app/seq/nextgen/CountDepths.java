@@ -60,17 +60,17 @@ public class CountDepths extends SAMProcessor {
 	public void setUser(String str) {
 		this.dbUser = str;
 	}
-	
+
 	@Option(help="Database password")
 	public void setPassword(String str) {
 		this.dbPassword = str;
 	}
-	
+
 	@Option(help="Database schema name")
 	public void setDatabase(String str) {
 		this.database = str;
 	}
-	
+
 	@Override
 	@Option(help = "Reference sequence lengths")
 	public void setRefLengths(File f) throws BioException, IOException {
@@ -122,7 +122,7 @@ public class CountDepths extends SAMProcessor {
 	public void setExtendTo(int i) {
 		super.setExtendTo(i);
 	}
-	
+
 	@Option(help = "Minimum depth (default=1)",optional=true)
 	public void setMinDepth(int i) {
 		this.minDepth = i;
@@ -138,29 +138,29 @@ public class CountDepths extends SAMProcessor {
 		}
 		return this.connection;
 	}
-	
+
 	public static Connection mysqlConnection(
-			String dbHost, 
-			String database, 
-			String dbUser, 
+			String dbHost,
+			String database,
+			String dbUser,
 			String dbPassword) throws SQLException, Exception {
 		Connection con = JDBCPooledDataSource.getDataSource(
 				"org.gjt.mm.mysql.Driver",
 				String.format("jdbc:mysql://%s/%s", dbHost, database),
-				dbUser, 
+				dbUser,
 				dbPassword).getConnection();
 		con.setAutoCommit(false);
 		return con;
 	}
-	
+
 	public static Connection connection(Format format, File outputFile) throws SQLException, ClassNotFoundException {
 		Connection conn = null;
 		if (format == Format.HSQLDB) {
-			Class.forName("org.hsqldb.jdbcDriver");				
+			Class.forName("org.hsqldb.jdbcDriver");
 			conn = DriverManager.getConnection(String.format(
 						"jdbc:hsqldb:file:%s", outputFile.getPath()), "sa", "");
 		} else if (format == Format.SQLITE){
-			Class.forName("org.sqlite.JDBC");				
+			Class.forName("org.sqlite.JDBC");
 			conn =DriverManager.getConnection(String.format(
 						"jdbc:sqlite:%s", outputFile.getPath()), "sa", "");
 		} else {
@@ -191,13 +191,13 @@ public class CountDepths extends SAMProcessor {
 	public static PreparedStatement insertRefSeqNameStatement(Connection conn)
 		throws SQLException {
 		return conn.prepareStatement(
-				"INSERT INTO ref_seq VALUES (?,?)");
+				"INSERT INTO ref_seq VALUES (?,?,?)");
 	}
 
 	public static PreparedStatement insertDepthEntryStatement(Connection conn)
 			throws SQLException {
 		return conn
-				.prepareStatement("INSERT INTO window (ref_id,begin_coord,end_coord,depth,pvalue) VALUES (?, ?, ?, ?, ?);");
+				.prepareStatement("INSERT INTO depth (ref_id,coord,depth,pvalue) VALUES (?, ?, ?, ?);");
 	}
 
 	private void initNullDistributions() {
@@ -228,7 +228,7 @@ public class CountDepths extends SAMProcessor {
 	@Override
 	public void main(String[] args) throws Exception {
 		initNullDistributions();
-		
+
 		this.windowIndex = 0;
 		System.err.println("Opening indexed reads...");
 		SAMFileReader reader = new SAMFileReader(new File(in), indexFile);
@@ -263,44 +263,41 @@ public class CountDepths extends SAMProcessor {
 			System.err.println("Storing pileup data to database...");
 			System.err.println("Iterating through");
 			PreparedStatement ins = this.insertDepthEntryStatement();
-			
+
 			for (int i = 0, len = this.refSeqLengths.get(name); i < len; i=i+this.frequency) {
 				int depth = pileup.depthAt(i);
 
 				if (depth >= this.minDepth) {
 					ins.setInt(1, refId);
-					ins.setInt(2, i);
-					ins.setInt(3, i + extendedLength);
-					ins.setDouble(4, (double) depth);
-					ins.setDouble(5, 1.0 - nullDist.cdf(depth));
+					ins.setInt(2, i+1);
+					ins.setDouble(3, (double) depth);
+					ins.setDouble(4, 1.0 - nullDist.cdf(depth));
 					ins.executeUpdate();
 				}
-				
+
 				if ((i % (len / 100)) == 0) {
 					System.err.printf(".");
 				}
-				
+
 			}
 		}
 		this.insertDepthEntryStatement();
 		System.err.println("Done.");
-		
+
 		this.shutdown();
 	}
 
 	public static void createDepthTable(Connection conn) throws SQLException {
 		Statement stat = conn.createStatement();
-		
-		stat.executeUpdate("DROP TABLE if exists window;");
-		stat.executeUpdate("CREATE TABLE window ("
+
+		stat.executeUpdate("DROP TABLE if exists depth;");
+		stat.executeUpdate("CREATE TABLE depth ("
 							+ "id integer AUTO_INCREMENT," + "ref_id INTEGER,"
-							+ "begin_coord integer," + "end_coord INTEGER,"
-							+ "depth DOUBLE," 
-							+ "pvalue DOUBLE," 
+							+ "coord integer,"
+							+ "depth DOUBLE,"
+							+ "pvalue DOUBLE,"
 							+ " PRIMARY KEY (id));");
-		stat.executeUpdate("CREATE INDEX ref_name_begin_end_idx ON window(ref_id,begin_coord,end_coord);");
-		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON window(ref_id,begin_coord);");
-		stat.executeUpdate("CREATE INDEX ref_name_end_idx ON window(ref_id,end_coord);");
+		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON depth(ref_id,coord);");
 		stat.close();
 	}
 
@@ -309,7 +306,8 @@ public class CountDepths extends SAMProcessor {
 		stat.executeUpdate("DROP TABLE if exists ref_seq;");
 		stat.executeUpdate("CREATE TABLE ref_seq ("
 				+ "id integer primary key,"
-				+ "name varchar(100));");
+				+ "name varchar(100),"
+				+ "read_count double);");
 		stat.close();
 	}
 
