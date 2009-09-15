@@ -220,9 +220,11 @@ public class CountDepths extends SAMProcessor {
 	}
 
 	 public void shutdown() throws Exception {
-	        Statement st = connection().createStatement();
-	        st.execute("SHUTDOWN");
-	        connection().close();    // if there are no other open connection
+	        if (this.format == Format.HSQLDB) {
+	        	Statement st = connection().createStatement();
+		        st.execute("SHUTDOWN");
+		        connection().close();    // if there are no other open connection
+	        }
 	    }
 
 
@@ -230,8 +232,7 @@ public class CountDepths extends SAMProcessor {
 	@Override
 	public void main(String[] args) throws Exception {
 		initNullDistributions();
-
-
+		
 		this.windowIndex = 0;
 		System.err.println("Opening indexed reads...");
 		SAMFileReader reader = new SAMFileReader(new File(in), indexFile);
@@ -316,7 +317,8 @@ public class CountDepths extends SAMProcessor {
 	public static void createRefSeqTable(Connection conn) throws SQLException {
 		Statement stat = conn.createStatement();
 		stat.executeUpdate("DROP TABLE if exists ref_seq;");
-		stat.executeUpdate("CREATE TABLE ref_seq ("
+		stat.executeUpdate(
+				"CREATE TABLE ref_seq ("
 				+ "id integer primary key,"
 				+ "name varchar(100),"
 				+ "read_count double);");
