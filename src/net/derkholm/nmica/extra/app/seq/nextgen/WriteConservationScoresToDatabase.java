@@ -29,7 +29,7 @@ import org.bjv2.util.cli.Option;
 @NMExtraApp(launchName = "ngconservation", vm = VirtualMachine.SERVER)
 @App(overview = "Write conservation scores to a database", generateStub = true)
 public class WriteConservationScoresToDatabase {
-	
+
 	public static PreparedStatement insertDepthEntryStatement(Connection conn)
 		throws SQLException {
 		return conn.prepareStatement("INSERT INTO conservation VALUES (?, ?, ?, ?);");
@@ -44,18 +44,18 @@ public class WriteConservationScoresToDatabase {
 	private String database;
 	private Connection connection;
 	private HashMap<String, Integer> refIds;
-	
+
 	@Option(help="Input files. Files that do not fit the pattern ^chr(.*).data.gz will be ignored.")
 	public void setConservationScores(File[] f) {
 		this.files = f;
 	}
-	
+
 	@Option(help = "Reference sequence lengths")
 	public void setRefLengths(File f) throws NoSuchElementException, BioException, NumberFormatException, IOException {
 		this.refSeqLengths = SAMProcessor.parseRefLengths(f);
 		this.refSeqNames = SAMProcessor.parseRefNamesFromRefLengthFile(f);
 	}
-	
+
 
 	@Option(help="Database host")
 	public void setHost(String str) {
@@ -76,17 +76,17 @@ public class WriteConservationScoresToDatabase {
 	public void setDatabase(String str) {
 		this.database = str;
 	}
-	
+
 	private Connection connection() throws SQLException, Exception {
 		if (this.connection == null) {
-			this.connection = WriteConservationScoresToDatabase.connection(this.dbHost, 
-																		   this.database, 
-																		   this.dbUser, 
+			this.connection = WriteConservationScoresToDatabase.connection(this.dbHost,
+																		   this.database,
+																		   this.dbUser,
 																		   this.dbPassword);
 		}
 		return this.connection;
 	}
-	
+
 	public static Connection connection(
 			String dbHost,
 			String database,
@@ -111,11 +111,11 @@ public class WriteConservationScoresToDatabase {
 
 			for (String str : this.refSeqNames) {
 				if (str.equals(chromoName)) break;
-				
+
 				primaryId += this.refSeqLengths.get(str)+1;
 			}
 		}
-		
+
 		Pattern headerPattern = Pattern.compile("^fixedStep chrom=chr(\\S)+ start=(\\d+) step=(\\d+)");
 		PreparedStatement insertStatement = WriteConservationScoresToDatabase.insertDepthEntryStatement(this.connection());
 		for (File f : this.files) {
@@ -123,7 +123,7 @@ public class WriteConservationScoresToDatabase {
 			String chrName = null;
 			Matcher randomM  = Pattern.compile("^chr(.*)\\_random.data.gz").matcher(f.getName());
 			Matcher m = Pattern.compile("^chr(.*).data.gz").matcher(f.getName());
-			
+
 			if (randomM.find()) {
 				System.err.printf("Ignoring file %s%n",f.getName());
 				continue;
@@ -135,7 +135,7 @@ public class WriteConservationScoresToDatabase {
 				System.exit(1);
 			}
 			int refId = getRefId(chrName);
-			
+
 			BufferedReader in = new BufferedReader(
 									new InputStreamReader(
 										new GZIPInputStream(
@@ -146,7 +146,7 @@ public class WriteConservationScoresToDatabase {
 			int i = 1; //positions start from 1 as this database is made for a DAS data source
 			while ((line = in.readLine()) != null) {
 				Matcher headerM = headerPattern.matcher(line);
-				
+
 				if (headerM.find()) {
 					System.err.printf("Found header line:%s%n",line);
 					if (!headerM.group(1).equals(chrName)) {
@@ -157,24 +157,26 @@ public class WriteConservationScoresToDatabase {
 					step = Integer.parseInt(headerM.group(3));
 					continue;
 				}
-				
+
 				double consScore = Double.parseDouble(line);
 				insertStatement.setInt(1, primaryId++);
 				insertStatement.setInt(2, refId);
 				insertStatement.setInt(3, i);
 				insertStatement.setDouble(4, (double) consScore);
 				insertStatement.addBatch();
-				
+
 				i += step;
-			}
-			if ((i % 1000) == 0) {
-				insertStatement.executeBatch();
-				insertStatement.clearBatch();
+
+				if ((i % 1000) == 0) {
+					insertStatement.executeBatch();
+					insertStatement.clearBatch();
+				}
+
 			}
 		}
 		insertStatement.execute();
 	}
-	
+
 	public int getRefId(String seqName) throws Exception {
 		if (this.refIds == null) {
 			this.refIds = new HashMap<String, Integer>();
