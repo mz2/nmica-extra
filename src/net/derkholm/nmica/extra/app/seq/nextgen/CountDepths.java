@@ -293,17 +293,18 @@ public class CountDepths extends SAMProcessor {
 
 			}
 		}
-		this.insertDepthEntryStatement();
 		System.err.println("Done.");
 
 		this.shutdown();
 	}
 
-	public static void createDepthTable(Connection conn) throws SQLException {
+	public static void createDepthTable(Connection conn, boolean dropTable) throws SQLException {
 		Statement stat = conn.createStatement();
 
-		stat.executeUpdate("DROP TABLE if exists depth;");
-		stat.executeUpdate("CREATE TABLE depth ("
+		if (dropTable) {
+			stat.executeUpdate("DROP TABLE IF EXISTS depth;");			
+		}
+		stat.executeUpdate("CREATE TABLE IF NOT EXISTS depth ("
 							+ "id integer,"
 							+ "ref_id INTEGER,"
 							+ "coord integer,"
@@ -314,9 +315,11 @@ public class CountDepths extends SAMProcessor {
 		stat.close();
 	}
 
-	public static void createRefSeqTable(Connection conn) throws SQLException {
+	public static void createRefSeqTable(Connection conn, boolean dropTable) throws SQLException {
 		Statement stat = conn.createStatement();
-		stat.executeUpdate("DROP TABLE if exists ref_seq;");
+		if (dropTable) {
+			stat.executeUpdate("DROP TABLE if exists ref_seq;");			
+		}
 		stat.executeUpdate(
 				"CREATE TABLE ref_seq ("
 				+ "id integer primary key,"

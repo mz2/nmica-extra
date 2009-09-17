@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,8 +31,9 @@ public class CreateDepthDatabase {
 	private Connection connection;
 	private Format format = Format.MYSQL;
 	private File outputFile;
-	private boolean createDatabase;
-	private boolean dropDatabase;
+	private boolean createDatabase = false;
+	private boolean dropDatabase = false;
+	private boolean dropTable = false;
 	private List<String> refSeqNames;
 	private Map<String, Integer> refLengths;
 	private HashMap<String, Integer> refIds;
@@ -67,10 +69,16 @@ public class CreateDepthDatabase {
 		this.createDatabase = b;
 	}
 
-	@Option(help="Drop database", optional=true)
+	@Option(help="Drop and recreate database", optional=true)
 	public void setDropDatabase(boolean b) {
 		this.dropDatabase = b;
 	}
+	
+	@Option(help="Drop tables before inserting", optional=true)
+	public void setDropTable(boolean b) {
+		this.dropTable = b;
+	}
+
 
 	@Option(help = "Reference sequence lengths")
 	public void setRefLengths(File f) throws BioException, IOException {
@@ -136,8 +144,9 @@ public class CreateDepthDatabase {
 	public void main(String[] args) throws SQLException, Exception {
 		System.err.println("Creating output tables...");
 		if ((format == Format.HSQLDB) || (format == Format.SQLITE) || format == Format.MYSQL) {
-			CountDepths.createDepthTable(this.connection());
-			CountDepths.createRefSeqTable(this.connection());
+			CountDepths.createDepthTable(this.connection(),this.dropTable);
+			CountDepths.createRefSeqTable(this.connection(),this.dropTable);
+			CreateDepthDatabase.createConservationTable(this.connection(),this.dropTable);
 		} else {
 			throw new BioError("Unsupported format for database creation");
 		}
@@ -166,5 +175,21 @@ public class CreateDepthDatabase {
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
 		}
+	}
+	
+	public static void createConservationTable(Connection conn, boolean dropTable) throws SQLException {
+		Statement stat = conn.createStatement();
+
+		if (dropTable) {
+			stat.executeUpdate("DROP TABLE IF EXISTS conservation;");
+		}
+		stat.executeUpdate("CREATE TABLE IF NOT EXISTS conservation ("
+							+ "id integer,"
+							+ "ref_id INTEGER,"
+							+ "coord INTEGER,"
+							+ "conservation DOUBLE,"
+							+ " PRIMARY KEY (id));");
+		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON conservation(ref_id,coord);");
+		stat.close();
 	}
 }
