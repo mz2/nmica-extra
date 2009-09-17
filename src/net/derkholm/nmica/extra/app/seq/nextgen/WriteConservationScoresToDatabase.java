@@ -17,12 +17,17 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
+import net.derkholm.nmica.build.NMExtraApp;
+import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.extra.app.seq.nextgen.CountDepths.Format;
 
 import org.biojava.bio.BioException;
 import org.biojava.utils.JDBCPooledDataSource;
+import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
+@NMExtraApp(launchName = "ngconservation", vm = VirtualMachine.SERVER)
+@App(overview = "Write conservation scores to a database", generateStub = true)
 public class WriteConservationScoresToDatabase {
 	
 	public static PreparedStatement insertDepthEntryStatement(Connection conn)
