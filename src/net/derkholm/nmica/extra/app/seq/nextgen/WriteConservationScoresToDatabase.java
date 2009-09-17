@@ -118,6 +118,7 @@ public class WriteConservationScoresToDatabase {
 		
 		PreparedStatement insertStatement = WriteConservationScoresToDatabase.insertDepthEntryStatement(this.connection());
 		for (File f : this.files) {
+			System.err.printf("Handling file %s...%n",f.getPath());
 			String chrName = null;
 			Matcher randomM  = Pattern.compile("^chr(.*)\\_random.data.gz").matcher(f.getName());
 			Matcher m = Pattern.compile("^chr(.*).data.gz").matcher(f.getName());
