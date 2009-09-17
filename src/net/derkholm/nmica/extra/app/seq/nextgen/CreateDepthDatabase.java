@@ -90,7 +90,7 @@ public class CreateDepthDatabase {
 		this.refSeqNames = SAMProcessor.parseRefNamesFromRefLengthFile(f);
 	}
 
-	@Option(help = "Read counts")
+	@Option(help = "Read counts", optional=true)
 	public void setReadCounts(File f) {
 		try {
 			this.readCounts = SAMProcessor.parseReadCounts(f);
@@ -163,7 +163,11 @@ public class CreateDepthDatabase {
 				this.refIds.put(name, i);
 				stat.setInt(1, i);
 				stat.setString(2, name);
-				stat.setDouble(3, (double)this.readCounts.get(name));
+				if (this.readCounts == null) {
+					stat.setDouble(3, 0);
+				} else {
+					stat.setDouble(3, (double)this.readCounts.get(name));					
+				}
 				stat.addBatch();
 				stat.executeBatch();
 				stat.clearBatch();
