@@ -37,6 +37,7 @@ public class FilterOverlappingSequences {
 	private Format format = Format.GFF;
 	//private boolean mergeOverlapping;
 	private boolean exclude;
+	private boolean validate;
 	
 	private static enum Format {
 		GFF,
@@ -78,8 +79,28 @@ public class FilterOverlappingSequences {
 		this.ignoreNames = b;
 	}
 	
+	@Option(help="Validate input (check that sequence identifiers match)", optional=true, userLevel = UserLevel.DEBUG)
+	public void setValidate(boolean b) {
+		this.validate = b;
+	}
+	
     public void main(String[] args) throws Exception {
         final Map<String,Location> locsByChr = GFFUtils.gffToLocationMap(maskFile);
+        final Map<String,Location> featureLocsByChr = GFFUtils.gffToLocationMap(featuresFile);
+        
+        if (!validate) {
+        	System.err.println(
+        			"Will not validate the correspondence of sequence identifiers " +
+        			"between the features file and the mask file.\n" +
+        			"You can turn validation on by adding a flag -validate");
+        }
+        if (validate &! featureLocsByChr.keySet().equals(locsByChr.keySet())) {
+        	System.err.println("The sequence region names are not equal. Will exit.");
+        	System.err.printf("Features:%s%n",featureLocsByChr.keySet());
+        	System.err.printf("Mask:%s%n",locsByChr.keySet());
+        	System.exit(1);
+        }
+        
         final Location allloc;
         if (ignoreNames) {
         	allloc = LocationTools.union(locsByChr.values());

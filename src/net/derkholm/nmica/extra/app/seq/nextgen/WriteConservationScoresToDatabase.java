@@ -116,6 +116,7 @@ public class WriteConservationScoresToDatabase {
 			}
 		}
 		
+		Pattern headerPattern = Pattern.compile("^fixedStep chrom=chr.(\\S)+ start=(\\d+) step=(\\d+)");
 		PreparedStatement insertStatement = WriteConservationScoresToDatabase.insertDepthEntryStatement(this.connection());
 		for (File f : this.files) {
 			System.err.printf("Handling file %s...%n",f.getPath());
@@ -130,7 +131,8 @@ public class WriteConservationScoresToDatabase {
 				chrName = m.group(1);
 			}
 			if (refSeqLengths.get(chrName) == null) {
-				System.err.printf("No chromosome with name %s%n", refSeqLengths);
+				System.err.printf("No chromosome with name %s. Will ignore file.%n", refSeqLengths);
+				System.exit(1);
 			}
 			int refId = getRefId(chrName);
 			
@@ -140,12 +142,25 @@ public class WriteConservationScoresToDatabase {
 											new FileInputStream(f))));
 			String line = null;
 
+			int step = 1;
 			int i = 1; //positions start from 1 as this database is made for a DAS data source
 			while ((line = in.readLine()) != null) {
+				Matcher headerM = headerPattern.matcher(line);
+				
+				if (headerM.find()) {
+					if (!headerM.group(1).matches(String.format("chr%s",chrName))) {
+						System.err.printf("Chromosome name %s doesn't match expected value (%s)! Will exit.",headerM.group(1),chrName);
+						System.exit(1);
+					}
+					i = Integer.parseInt(headerM.group(2)); // the start position
+					step = Integer.parseInt(headerM.group(3));
+					continue;
+				}
+				
 				double consScore = Double.parseDouble(line);
 				insertStatement.setInt(1, primaryId++);
 				insertStatement.setInt(2, refId);
-				insertStatement.setInt(3, i+1);
+				insertStatement.setInt(3, i+step);
 				insertStatement.setDouble(4, (double) consScore);
 				insertStatement.addBatch();
 			}
