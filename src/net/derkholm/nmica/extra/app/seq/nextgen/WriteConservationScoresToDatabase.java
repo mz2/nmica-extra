@@ -45,6 +45,7 @@ public class WriteConservationScoresToDatabase {
 	private Connection connection;
 	private HashMap<String, Integer> refIds;
 	
+	@Option(help="Input files. Files that do not fit the pattern ^chr(.*).data.gz will be ignored.")
 	public void setConservationScores(File[] f) {
 		this.files = f;
 	}
