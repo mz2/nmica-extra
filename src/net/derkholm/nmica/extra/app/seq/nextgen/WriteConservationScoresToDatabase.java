@@ -148,8 +148,10 @@ public class WriteConservationScoresToDatabase {
 				Matcher headerM = headerPattern.matcher(line);
 				
 				if (headerM.find()) {
+					System.err.printf("Found header line:%s%n",line);
 					if (!headerM.group(1).matches(String.format("chr%s",chrName))) {
-						System.err.printf("Chromosome name %s doesn't match expected value (%s)! Will exit.",headerM.group(1),chrName);
+						System.err.printf(
+							"Chromosome name %s doesn't match expected value (%s)! Will exit.",headerM.group(1),chrName);
 						System.exit(1);
 					}
 					i = Integer.parseInt(headerM.group(2)); // the start position
@@ -160,9 +162,11 @@ public class WriteConservationScoresToDatabase {
 				double consScore = Double.parseDouble(line);
 				insertStatement.setInt(1, primaryId++);
 				insertStatement.setInt(2, refId);
-				insertStatement.setInt(3, i+step);
+				insertStatement.setInt(3, i);
 				insertStatement.setDouble(4, (double) consScore);
 				insertStatement.addBatch();
+				
+				i += step;
 			}
 			if ((i % 100) == 0) {
 				insertStatement.executeBatch();
