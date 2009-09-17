@@ -116,7 +116,7 @@ public class WriteConservationScoresToDatabase {
 			}
 		}
 		
-		Pattern headerPattern = Pattern.compile("^fixedStep chrom=chr.(\\S)+ start=(\\d+) step=(\\d+)");
+		Pattern headerPattern = Pattern.compile("^fixedStep chrom=chr(\\S)+ start=(\\d+) step=(\\d+)");
 		PreparedStatement insertStatement = WriteConservationScoresToDatabase.insertDepthEntryStatement(this.connection());
 		for (File f : this.files) {
 			System.err.printf("Handling file %s...%n",f.getPath());
