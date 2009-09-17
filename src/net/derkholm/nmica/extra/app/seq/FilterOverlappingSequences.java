@@ -36,6 +36,7 @@ public class FilterOverlappingSequences {
 	private File maskFile;
 	private Format format = Format.GFF;
 	//private boolean mergeOverlapping;
+	private boolean exclude;
 	
 	private static enum Format {
 		GFF,
@@ -53,6 +54,10 @@ public class FilterOverlappingSequences {
 		this.maskFile = f;
 	}
 	
+	@Option(help="Exclude those sequence regions that overlap with the mask", optional=true)
+	public void setExclude(boolean b) {
+		this.exclude = b;
+	}
 	/*
 	@Option(help="Merge overlapping features")
 	public void setMergeOverlapping(boolean b) {
@@ -109,10 +114,11 @@ public class FilterOverlappingSequences {
                 }
                 Location loc = new RangeLocation(min, max);
                 ++all;
-                if (LocationTools.overlaps(loc, refLoc)) {
+                
+                boolean overlaps = LocationTools.overlaps(loc, refLoc);
+                if ((!exclude && overlaps) || (exclude &! overlaps)) {
                 	if (format == Format.GFF)
                 		gffw.recordLine(record);
-                    ++accepted;
                 }
             }
             
