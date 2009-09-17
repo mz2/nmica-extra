@@ -79,7 +79,7 @@ public class FilterOverlappingSequences {
 		this.ignoreNames = b;
 	}
 	
-	@Option(help="Validate input (check that sequence identifiers match)", optional=true, userLevel = UserLevel.DEBUG)
+	@Option(help="Validate input (check that sequence identifiers match)", optional=true)
 	public void setValidate(boolean b) {
 		this.validate = b;
 	}
