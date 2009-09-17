@@ -149,10 +149,9 @@ public class WriteConservationScoresToDatabase {
 				
 				if (headerM.find()) {
 					System.err.printf("Found header line:%s%n",line);
-					if (!headerM.group(1).matches(String.format("chr%s",chrName))) {
+					if (!headerM.group(1).equals(chrName))) {
 						System.err.printf(
-							"Chromosome name %s doesn't match expected value (%s)! Will exit.",headerM.group(1),chrName);
-						System.exit(1);
+							"WARNING! Chromosome name %s doesn't match expected value (%s)!\n",headerM.group(1),chrName);
 					}
 					i = Integer.parseInt(headerM.group(2)); // the start position
 					step = Integer.parseInt(headerM.group(3));
