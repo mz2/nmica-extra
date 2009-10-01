@@ -120,10 +120,12 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 					int end = recLine.getEnd();
 					
 					if (expandToLength > 0) {
+						System.err.println(String.format("Before expansion: %d - %d", start, end));
 						if ((end - start + 1) < expandToLength) {
 							start = Math.max(1, start - (expandToLength / 2));
 							end = end + (expandToLength / 2);
 						}
+						System.err.println(String.format("After expansion: %d - %d", start, end));
 					}
 					
 					Sequence s = new SimpleSequence(symList, null,
