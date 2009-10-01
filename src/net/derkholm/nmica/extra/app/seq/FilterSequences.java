@@ -38,7 +38,7 @@ import org.bjv2.util.cli.UserLevel;
 
 import biobits.utils.IOTools;
 
-@App(overview = "Write out sequence regions covered by GFF features", generateStub = true)
+@App(overview = "Filter out sequence regions that do not meet criteria", generateStub = true)
 @NMExtraApp(launchName = "nmfilterseq", vm = VirtualMachine.SERVER)
 public class FilterSequences {
 

@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.sql.SQLException;
+import java.util.Iterator;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
@@ -23,6 +24,7 @@ import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.db.IllegalIDException;
 import org.biojava.bio.seq.impl.SimpleSequence;
+import org.biojava.bio.symbol.Symbol;
 import org.biojava.bio.symbol.SymbolList;
 import org.biojavax.bio.seq.RichSequence;
 import org.bjv2.util.cli.App;
@@ -34,6 +36,8 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 
 	private File outFile;
 	private File featuresFile;
+	private int expandToLength = 0;
+	private int minNonN = 1;
 
 	@Option(help="Output file",optional=true)
 	public void setOut(File f) {
@@ -44,7 +48,30 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 	public void setFeatures(File f) {
 		this.featuresFile = f;
 	}
+	
+	@Option(help="Expand to length", optional=true)
+	public void setExpandToLength(int i) {
+		this.expandToLength = i;
+	}
+	
+	@Option(help="Minimun number of gap symbols (N)", optional=true)
+	public void setMinNonN(int i) {
+		this.minNonN = i;
+	}
 
+	private static int gapSymbolCount(SymbolList seq) {
+		int numNs = 0;
+		for (Iterator<?> i = seq.iterator(); i.hasNext(); ) {
+            Symbol s = (Symbol) i.next();
+            if (s == DNATools.n() || s == seq.getAlphabet().getGapSymbol()) {
+                ++numNs;
+            }
+        }
+		
+		return numNs;
+	}
+
+	
 	public void main(String[] args) throws SQLException, Exception {
 		initializeEnsemblConnection();
 
@@ -73,16 +100,37 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 			public void recordLine(GFFRecord recLine) {
 				System.err.printf(".");
 				try {
-					SymbolList symList = seqDB.getSequence(recLine.getSeqName()).subList(recLine.getStart(), recLine.getEnd());
+					SymbolList symList = 
+						seqDB
+							.getSequence(
+								recLine.getSeqName())
+									.subList(recLine.getStart(), 
+											 recLine.getEnd());
 					if (recLine.getStrand().equals(StrandedFeature.NEGATIVE)) {
 						symList = DNATools.reverseComplement(symList);
 					}
-
+					
+					if (minNonN > 0 && 
+						RetrieveSequenceFeaturesFromEnsembl
+							.gapSymbolCount(symList) < minNonN) {
+						return;
+					}
+					
+					int start = recLine.getStart();
+					int end = recLine.getEnd();
+					
+					if (expandToLength > 0) {
+						if ((end - start + 1) < expandToLength) {
+							start = Math.max(1, start - (expandToLength / 2));
+							end = end + (expandToLength / 2);
+						}
+					}
+					
 					Sequence s = new SimpleSequence(symList, null,
 							String.format("%s;%d-%d(%s)",
 									recLine.getSeqName(),
-									Math.max(1,recLine.getStart()),
-									recLine.getEnd(),
+									Math.max(1,start),
+									end,
 									recLine.getStrand()
 										.equals(StrandedFeature.POSITIVE)? "+" : "-"),
 							Annotation.EMPTY_ANNOTATION);
