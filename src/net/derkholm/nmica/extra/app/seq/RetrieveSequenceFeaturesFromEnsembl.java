@@ -112,7 +112,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 					
 					if (minNonN > 0 && 
 						RetrieveSequenceFeaturesFromEnsembl
-							.gapSymbolCount(symList) < minNonN) {
+							.gapSymbolCount(symList) > minNonN) {
 						return;
 					}
 					
