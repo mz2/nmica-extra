@@ -100,6 +100,19 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 			public void recordLine(GFFRecord recLine) {
 				System.err.printf(".");
 				try {
+
+					int start = recLine.getStart();
+					int end = recLine.getEnd();
+					
+					if (expandToLength > 0) {
+						System.err.println(String.format("Before expansion: %d - %d", start, end));
+						if ((end - start + 1) < expandToLength) {
+							start = Math.max(1, start - (expandToLength / 2));
+							end = end + (expandToLength / 2);
+						}
+						System.err.println(String.format("After expansion: %d - %d", start, end));
+					}
+					
 					SymbolList symList = 
 						seqDB
 							.getSequence(
@@ -116,17 +129,6 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 						return;
 					}
 					
-					int start = recLine.getStart();
-					int end = recLine.getEnd();
-					
-					if (expandToLength > 0) {
-						System.err.println(String.format("Before expansion: %d - %d", start, end));
-						if ((end - start + 1) < expandToLength) {
-							start = Math.max(1, start - (expandToLength / 2));
-							end = end + (expandToLength / 2);
-						}
-						System.err.println(String.format("After expansion: %d - %d", start, end));
-					}
 					
 					Sequence s = new SimpleSequence(symList, null,
 							String.format("%s;%d-%d(%s)",
