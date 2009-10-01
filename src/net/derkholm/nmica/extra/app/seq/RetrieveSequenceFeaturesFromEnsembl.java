@@ -116,9 +116,8 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 					SymbolList symList = 
 						seqDB
 							.getSequence(
-								recLine.getSeqName())
-									.subList(recLine.getStart(), 
-											 recLine.getEnd());
+								recLine.getSeqName()).subList(start,end);
+					
 					if (recLine.getStrand().equals(StrandedFeature.NEGATIVE)) {
 						symList = DNATools.reverseComplement(symList);
 					}
