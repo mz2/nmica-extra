@@ -19,6 +19,7 @@ import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.extra.app.seq.RetrieveEnsemblSequences;
 import net.derkholm.nmica.extra.app.seq.SequenceSplitter;
+import net.derkholm.nmica.extra.app.seq.Symbol;
 
 import org.biojava.bio.Annotation;
 import org.biojava.bio.BioError;
@@ -137,6 +138,24 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		this.nearbyGeneWindowSize = ws;
 	}
 	
+	@Option(help="Minimun number of gap symbols (N)", optional=true)
+	public void setMinNonN(int i) {
+		this.minNonN = i;
+	}
+
+	private static int gapSymbolCount(SymbolList seq) {
+		int numNs = 0;
+		for (Iterator<?> i = seq.iterator(); i.hasNext(); ) {
+            Symbol s = (Symbol) i.next();
+            if (s == DNATools.n() || s == seq.getAlphabet().getGapSymbol()) {
+                ++numNs;
+            }
+        }
+		
+		return numNs;
+	}
+
+
 	public static class PeakEntry {
 		public final String id;
 		public String seqName;
@@ -387,6 +406,13 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				if ((bloc.getMax() - bloc.getMin()) < this.minLength) continue; //too short, filter out
 				
 				SymbolList symList = chromoSeq.subList(bloc.getMin(), bloc.getMax());
+				
+				if (minNonN > 0 && 
+						RetrieveSequenceFeaturesFromEnsembl
+							.gapSymbolCount(symList) > minNonN) {
+						continue;
+					}
+				
 				Sequence seq = 
 					new SimpleSequence(symList, null, 
 						String.format("%s_%d-%d;%f;%d", 

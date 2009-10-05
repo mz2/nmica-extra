@@ -148,7 +148,7 @@ public class WriteConservationScoresToDatabase {
 				Matcher headerM = headerPattern.matcher(line);
 
 				if (headerM.find()) {
-					System.err.printf("Found header line:%s%n",line);
+					//System.err.printf("Found header line:%s%n",line);
 					if (!headerM.group(1).equals(chrName)) {
 						System.err.printf(
 							"WARNING! Chromosome name %s doesn't match expected value (%s)!\n",headerM.group(1),chrName);
