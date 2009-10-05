@@ -18,11 +18,12 @@ import java.util.regex.Pattern;
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.extra.app.seq.RetrieveEnsemblSequences;
+import net.derkholm.nmica.extra.app.seq.RetrieveSequenceFeaturesFromEnsembl;
 import net.derkholm.nmica.extra.app.seq.SequenceSplitter;
-import net.derkholm.nmica.extra.app.seq.Symbol;
 
 import org.biojava.bio.Annotation;
 import org.biojava.bio.BioError;
+import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.seq.Feature;
 import org.biojava.bio.seq.FeatureFilter;
 import org.biojava.bio.seq.FeatureHolder;
@@ -32,6 +33,7 @@ import org.biojava.bio.seq.impl.SimpleSequence;
 import org.biojava.bio.symbol.Location;
 import org.biojava.bio.symbol.LocationTools;
 import org.biojava.bio.symbol.RangeLocation;
+import org.biojava.bio.symbol.Symbol;
 import org.biojava.bio.symbol.SymbolList;
 import org.biojavax.bio.seq.RichSequence;
 import org.biojavax.bio.seq.RichSequenceIterator;
@@ -74,6 +76,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	private int nearbyGenes;
 
 	private int nearbyGeneWindowSize = 1000000;
+
+	private int minNonN;
 	
 	@Option(help="Peaks")
 	public void setPeaks(File f) {
