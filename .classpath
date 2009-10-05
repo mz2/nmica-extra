@@ -11,18 +11,19 @@
 	<classpathentry kind="lib" path="lib/commons-pool-1.1.jar"/>
 	<classpathentry kind="lib" path="lib/mysql-connector-java-3.1.14-bin.jar"/>
 	<classpathentry kind="lib" path="lib/nmica-extra.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/biojava.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/bjv2-core-0.1.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/blog.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/bytecode.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/changeless.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/colt.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/Jama-1.0.2.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/nmica.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/stax-api-1.0.1.jar"/>
-	<classpathentry kind="lib" path="/Users/mp4/workspace/nmica-dev/lib/wstx-lgpl-3.0.2.jar"/>
-	<classpathentry kind="lib" path="lib/sam-1.03.jar"/>
 	<classpathentry kind="lib" path="lib/picard-1.03.jar"/>
-	<classpathentry kind="lib" path="lib/hsqldb.jar"/>
+	<classpathentry kind="lib" path="lib/sam-1.03.jar"/>
+	<classpathentry kind="lib" path="lib/sqlitejdbc-v056-pure.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/biojava.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/bjv2-core-0.1.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/blog.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/bytecode.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/changeless.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/colt.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/Jama-1.0.2.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/nmica.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/stax-api-1.0.1.jar"/>
+	<classpathentry kind="lib" path="/Users/mz2/workspace/nmica-dev/lib/wstx-lgpl-3.0.2.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.6"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

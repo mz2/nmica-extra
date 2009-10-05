@@ -21,6 +21,7 @@ import net.derkholm.nmica.extra.app.seq.RetrieveEnsemblSequences;
 import net.derkholm.nmica.extra.app.seq.SequenceSplitter;
 
 import org.biojava.bio.Annotation;
+import org.biojava.bio.BioError;
 import org.biojava.bio.seq.Feature;
 import org.biojava.bio.seq.FeatureFilter;
 import org.biojava.bio.seq.FeatureHolder;
@@ -38,7 +39,7 @@ import org.bjv2.util.cli.Option;
 
 
 @App(overview = "Get sequences from Ensembl that using peaks in the FindPeaks format", generateStub = true)
-@NMExtraApp(launchName = "nmpeakseq", vm = VirtualMachine.SERVER)
+@NMExtraApp(launchName = "nmensemblpeakseq", vm = VirtualMachine.SERVER)
 public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	public static enum RankOrder {
     	ASC,
@@ -52,7 +53,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		BED,
 		MACS,
 		SWEMBL,
-		FINDPEAKS
+		FINDPEAKS,
+		PEAKS
 	}
 	
 	private PeakFormat inputFormat = PeakFormat.BED;
@@ -512,13 +514,33 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				tok.nextToken();//Max. coverage
 				peakCoord = (int)Math.round(Double.parseDouble(tok.nextToken()));
 			
-			}else {
+			}else if (inputFormat == PeakFormat.FINDPEAKS) {
 				id = tok.nextToken();
 				chromo = tok.nextToken();
 				startCoord = Integer.parseInt(tok.nextToken());
 				endCoord = Integer.parseInt(tok.nextToken());
 				peakCoord = (int)Math.round(Double.parseDouble(tok.nextToken()));
 				pValue = Double.parseDouble(tok.nextToken());
+			} else if (inputFormat == PeakFormat.PEAKS) {
+				/* <chromosome> 
+				 * <genomic start> 
+				 * <genomic end>
+				 *  <position of peak maximum relative to genomic start> 
+				 *  <peak height> 
+				 *  <number of reads in the peak>
+				 */
+				
+				id = "" + peakId++;
+				chromo = tok.nextToken();
+				startCoord = Integer.parseInt(tok.nextToken());
+				endCoord = Integer.parseInt(tok.nextToken());
+				peakCoord = startCoord + Integer.parseInt(tok.nextToken());
+				pValue = Double.parseDouble(tok.nextToken());
+			} else {
+				throw 
+					new BioError(
+							String.format(
+								"Unexpected input format %s", inputFormat));
 			}
 
 			boolean maxLengthCondition = (Math.abs(startCoord - endCoord) < maxLength);
