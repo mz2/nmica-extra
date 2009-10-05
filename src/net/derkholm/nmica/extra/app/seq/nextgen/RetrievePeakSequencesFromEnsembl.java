@@ -430,7 +430,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				if (chunkLength > 0) {
 					List<Sequence> outSeqs = 
 						SequenceSplitter.splitSequences(
-							new RichSequence.IOTools.SingleRichSeqIterator(seq),this.minLength, this.maxLength);
+							new RichSequence.IOTools.SingleRichSeqIterator(seq),this.minLength, this.chunkLength);
 					for (Sequence s : outSeqs) {
 						RichSequence.IOTools.writeFasta(System.out, s, null);
 					}
