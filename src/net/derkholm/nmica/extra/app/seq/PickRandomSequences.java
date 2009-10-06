@@ -102,7 +102,7 @@ public class PickRandomSequences {
 			while (c > 0) {
 				Sequence randomSeq = seqs.get(random.nextInt(seqs.size()));
 				if (length > 0) {
-					int startPos = random.nextInt(randomSeq.length() - length);
+					int startPos = random.nextInt(1 + randomSeq.length() - length);
 					chosenSeqs.add(new SimpleSequence(
 											randomSeq.subList(startPos,startPos + length),
 													null,
