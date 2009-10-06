@@ -18,6 +18,9 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.TreeSet;
 
 import javax.sql.DataSource;
 
@@ -47,8 +50,6 @@ import org.biojava.bio.symbol.SymbolList;
 import org.biojava.utils.JDBCPooledDataSource;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
-
-import biobits.utils.IOTools;
 
 @App(overview = "Get noncoding sequences from Ensembl for motif discovery", generateStub = true)
 @NMExtraApp(launchName = "nmensemblseq", vm = VirtualMachine.SERVER)
@@ -108,6 +109,10 @@ public class RetrieveEnsemblSequences {
 
 	private boolean ignoreGenesWithNoCrossReferences;
 
+	private int randomGeneCount;
+	
+	private Random random = new Random();
+
 	@Option(help = "Output format: either fasta or gff (default=fasta)",optional=true)
 	public void setFormat(Format format) {
 		this.format = format;
@@ -161,6 +166,11 @@ public class RetrieveEnsemblSequences {
 	@Option(help = "Output FASTA file", optional=true)
 	public void setOut(File f) {
 		this.outputFile = f;
+	}
+	
+	@Option(help = "Retrieve transcripts for a specified number of randomly selected genes")
+	public void setSampleRandomGenes(int i) {
+		this.randomGeneCount = i;
 	}
 
 	@Option(help = "Get three prime UTR sequences. "
@@ -287,6 +297,28 @@ public class RetrieveEnsemblSequences {
 
 			while (rs.next()) {
 				idsList.add(rs.getString(1));
+			}
+			
+			if (randomGeneCount > 0) {
+				if (randomGeneCount > idsList.size()) {
+					System.err.println(
+							"Cannot choose " + randomGeneCount + 
+							" from amongst a set of " + idsList.size() + " genes.");
+					System.exit(1);
+				}
+				
+				Set<String> randomGenes = new TreeSet<String>();
+				List<String> samplableGenes = new ArrayList<String>(idsList);
+				
+				int genesToSample = randomGeneCount;
+				while (genesToSample > 0) {
+					int i = random.nextInt(samplableGenes.size());
+					String id = samplableGenes.get(i);
+					if (!randomGenes.contains(id)) {
+						genesToSample--;
+						randomGenes.add(id);
+					}
+				}
 			}
 			rs.close();
 			ids = idsList;
