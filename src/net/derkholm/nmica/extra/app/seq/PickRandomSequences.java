@@ -50,14 +50,15 @@ public class PickRandomSequences {
 	}
 	
 	@Option(help="Sample with replacement from sequences, i.e. allow same sequence in output (default=false)", optional=true)
-	public void setSampleSeqsWithReplacement(boolean b) {
+	public void setWithReplacement(boolean b) {
 		this.sampleWithReplacement = b;
 	}
 	
+	/*
 	@Option(help="Sample with replacement from sequence fragments, i.e. allow the same position in input sequences more than once", optional=true)
 	public void setSampleFragsWithReplacement(boolean b) {
 		this.sampleFragsWithReplacement = b;
-	}
+	}*/
 	
 	@Option(help="Make output sequence names unique", optional=true)
 	public void setUnique(boolean b) {
@@ -96,11 +97,22 @@ public class PickRandomSequences {
 			/* if you want to sample from sequences with replacement
 			 * or if the wanted length is specified 
 			 */
-			
-			if (length > 0) {
-				
+			int c = count;			
+			int i = 0;
+			while (c > 0) {
+				Sequence randomSeq = seqs.get(random.nextInt(seqs.size()));
+				if (length > 0) {
+					int startPos = random.nextInt(randomSeq.length() - length);
+					chosenSeqs.add(new SimpleSequence(
+											randomSeq.subList(startPos,startPos + length),
+													null,
+													randomSeq.getName() + "_" + i++,
+													Annotation.EMPTY_ANNOTATION));
+				} else {
+					chosenSeqs.add(randomSeq);
+				}
+				c--;
 			}
-			
 		}
 		
 		//TODO: Find out why nothing's output
