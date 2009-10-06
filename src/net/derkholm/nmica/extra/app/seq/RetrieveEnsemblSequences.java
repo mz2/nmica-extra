@@ -319,6 +319,8 @@ public class RetrieveEnsemblSequences {
 						randomGenes.add(id);
 					}
 				}
+				
+				idsList = new ArrayList<String>(randomGenes);
 			}
 			rs.close();
 			ids = idsList;
