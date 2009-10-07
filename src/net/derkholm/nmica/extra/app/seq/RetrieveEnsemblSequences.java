@@ -170,7 +170,7 @@ public class RetrieveEnsemblSequences {
 		this.outputFile = f;
 	}
 	
-	@Option(help = "Retrieve transcripts for a specified number of randomly selected genes")
+	@Option(help = "Retrieve transcripts for a specified number of randomly selected genes", optional=true)
 	public void setSampleRandomGenes(int i) {
 		this.randomGeneCount = i;
 	}
