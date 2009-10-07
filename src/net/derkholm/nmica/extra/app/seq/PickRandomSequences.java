@@ -115,7 +115,6 @@ public class PickRandomSequences {
 			}
 		}
 		
-		//TODO: Find out why nothing's output
 		int i = 0;
 		for (Sequence seq : chosenSeqs) {
 			Sequence s;

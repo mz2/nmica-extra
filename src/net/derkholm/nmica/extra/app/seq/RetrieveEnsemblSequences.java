@@ -107,11 +107,13 @@ public class RetrieveEnsemblSequences {
 
 	private boolean proteinCoding;
 
-	private boolean ignoreGenesWithNoCrossReferences;
+	protected boolean ignoreGenesWithNoCrossReferences;
 
 	private int randomGeneCount;
 	
 	private Random random = new Random();
+
+	private int aroundTranscript = Integer.MAX_VALUE;
 
 	@Option(help = "Output format: either fasta or gff (default=fasta)",optional=true)
 	public void setFormat(Format format) {
@@ -206,7 +208,14 @@ public class RetrieveEnsemblSequences {
 		this.fivePrimeBegin = Integer.parseInt(coordStrs[0].replace("n", "-"));
 		this.fivePrimeEnd = Integer.parseInt(coordStrs[1].replace("n","-"));
 	}
-
+	
+	@Option(help="Retrieve sequence features around transcripts. " +
+			"If you give the value 0, this retrieves the transcript features as is. " +
+			"Negative values will cull the length of the transcript by that number of nucleotides.")
+	public void setAroundTranscript(int i) {
+		this.aroundTranscript = i;
+	}
+	
 	@Option(help = "Ensembl username (default=anonymous)", optional = true)
 	public void setUser(String user) {
 		this.username = user;
@@ -400,6 +409,9 @@ public class RetrieveEnsemblSequences {
 						dumpLocs.add(new RangeLocation(end - threePrimeBegin,
 								end + threePrimeEnd));
 					}
+					if (aroundTranscript != Integer.MAX_VALUE) {
+						dumpLocs.add(new RangeLocation(start - aroundTranscript, end + aroundTranscript));
+					}
 				} else {
 					int start = transcript.getLocation().getMax();
 					int end = transcript.getLocation().getMin();
@@ -411,6 +423,9 @@ public class RetrieveEnsemblSequences {
 					if (threePrimeBegin > 0 || threePrimeEnd > 0) {
 						dumpLocs.add(new RangeLocation(end - threePrimeEnd, end
 								+ threePrimeBegin));
+					}
+					if (aroundTranscript != Integer.MAX_VALUE) {
+						dumpLocs.add(new RangeLocation(start - aroundTranscript, end + aroundTranscript));
 					}
 					reverse = true;
 				}
