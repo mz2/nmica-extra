@@ -144,7 +144,6 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 						StrandedFeature closestTranscript = null;
 						Set<StrandedFeature> features;
 						
-						
 						if (recLine.getStrand().equals(StrandedFeature.POSITIVE)) {
 							features = new TreeSet<StrandedFeature>(new DistanceComparator(recLine.getStart()));
 						} else if (recLine.getStrand().equals(StrandedFeature.NEGATIVE)) {
