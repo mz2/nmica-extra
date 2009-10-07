@@ -388,7 +388,11 @@ public class RetrieveEnsemblSequences {
 					System.err.printf("%s:%s\n",keyO,transcript.getAnnotation().getProperty(keyO));
 				}
 
-				Object o = transcript.getAnnotation().getProperty("ensembl.xrefs");
+				Object o = null;
+				
+				if (transcript.getAnnotation().containsProperty("ensembl.xrefs")) {
+					o = transcript.getAnnotation().getProperty("ensembl.xrefs");					
+				}
 
 				if (this.ignoreGenesWithNoCrossReferences && ((o == null) || (!(o instanceof List)) || (((List)o)).size() == 0)) {
 					System.err.printf("Ignoring transcript of gene %s because it has no cross-references%n", transcript.getAnnotation().getProperty("ensembl.id"));
