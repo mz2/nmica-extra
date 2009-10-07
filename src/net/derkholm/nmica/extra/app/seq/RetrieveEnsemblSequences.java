@@ -410,7 +410,8 @@ public class RetrieveEnsemblSequences {
 								end + threePrimeEnd));
 					}
 					if (aroundTranscript != Integer.MAX_VALUE) {
-						dumpLocs.add(new RangeLocation(start - aroundTranscript, end + aroundTranscript));
+						dumpLocs.add(new RangeLocation(transcript.getLocation().getMin() - aroundTranscript, 
+													   transcript.getLocation().getMax() + aroundTranscript));
 					}
 				} else {
 					int start = transcript.getLocation().getMax();
@@ -425,7 +426,8 @@ public class RetrieveEnsemblSequences {
 								+ threePrimeBegin));
 					}
 					if (aroundTranscript != Integer.MAX_VALUE) {
-						dumpLocs.add(new RangeLocation(start - aroundTranscript, end + aroundTranscript));
+						dumpLocs.add(new RangeLocation(transcript.getLocation().getMin() - aroundTranscript, 
+														transcript.getLocation().getMax() + aroundTranscript));
 					}
 					reverse = true;
 				}
