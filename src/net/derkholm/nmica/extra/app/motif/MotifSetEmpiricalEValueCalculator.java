@@ -283,9 +283,11 @@ public class MotifSetEmpiricalEValueCalculator {
 					positiveHits)));
 		}
 		
-		int i = 0;
-		for (Future<List<ScoredHit>> hitList : scoredHitFutures) {
-			this.collectedHits.addAll(hitList.get());
+		if (this.collectHits) {
+			int i = 0;
+			for (Future<List<ScoredHit>> hitList : scoredHitFutures) {
+				this.collectedHits.addAll(hitList.get());
+			}			
 		}
 		
 		threadPool.shutdown();
