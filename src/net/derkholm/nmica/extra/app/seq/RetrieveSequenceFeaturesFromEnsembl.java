@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -35,9 +36,11 @@ import org.biojava.bio.symbol.Location;
 import org.biojava.bio.symbol.RangeLocation;
 import org.biojava.bio.symbol.Symbol;
 import org.biojava.bio.symbol.SymbolList;
+import org.biojavax.SimpleRichAnnotation;
 import org.biojavax.bio.seq.RichSequence;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
+import org.bjv2.util.cli.UserLevel;
 
 @App(overview = "Get noncoding sequences from Ensembl for motif discovery", generateStub = true)
 @NMExtraApp(launchName = "nmensemblfeat", vm = VirtualMachine.SERVER)
@@ -48,6 +51,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 	private int expandToLength = 0;
 	private int minNonN = 1;
 	private int maxDistFromGene;
+	private boolean excludeUnlabelled = true;
 
 	@Option(help="Output file",optional=true)
 	public void setOut(File f) {
@@ -69,11 +73,15 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 		this.minNonN = i;
 	}
 	
-	@Option(help="Maximum distance from nearby gene (do not output if not found)", optional=true)
+	@Option(help="Label features with the closest gene (given the specified maximum distance)", optional=true)
 	public void setMaxDistanceFromGene(int i) {
 		this.maxDistFromGene = i;
 	}
 	
+	@Option(help="Exclude features that do fall within the specified maximum distance from a gene (done by default, applies only when -maxDistanceFromGene was given)", optional=true, userLevel=UserLevel.EXPERT)
+	public void setExcludeUnlabelled(boolean b) {
+		this.excludeUnlabelled  = b;
+	}
 
 	public static int gapSymbolCount(SymbolList seq) {
 		int numNs = 0;
@@ -109,121 +117,139 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 		parser.parse(
 				new BufferedReader(new InputStreamReader(inputStream)),
 				new GFFDocumentHandler() {
-			public void commentLine(String str) {}
-			public void endDocument() {}
-			public void startDocument(String str) {}
-
-			public void recordLine(GFFRecord recLine) {
-				System.err.printf(".");
-				try {
-
-					int start = recLine.getStart();
-					int end = recLine.getEnd();
-					
-					if (expandToLength > 0) {
-						if ((end - start + 1) < expandToLength) {
-							start = Math.max(1, start - (expandToLength / 2));
-							end = end + (expandToLength / 2);
-						}
-					}
-					
-					if (maxDistFromGene > 0) {
-						if (recLine.getStrand().equals(StrandedFeature.UNKNOWN)) {
-							System.err.println("WARNING: Feature does not have strand. Cannot determine distance from genes on the same strand");
-							return;
-						}
+					public void commentLine(String str) {}
+					public void endDocument() {}
+					public void startDocument(String str) {}
+		
+					public void recordLine(GFFRecord recLine) {
 						
-						FeatureHolder transcripts = seqDB.filter(
-														new FeatureFilter.And(
-															new FeatureFilter.OverlapsLocation(
-																new RangeLocation(recLine.getStart(),recLine.getEnd())),
-															new FeatureFilter.BySequenceName(recLine.getSeqName())));
-						
-						transcripts = transcripts.filter(new FeatureFilter.StrandFilter(recLine.getStrand()));
-						
-						StrandedFeature closestTranscript = null;
-						Set<StrandedFeature> features;
-						
-						if (recLine.getStrand().equals(StrandedFeature.POSITIVE)) {
-							features = new TreeSet<StrandedFeature>(new DistanceComparator(recLine.getStart()));
-						} else if (recLine.getStrand().equals(StrandedFeature.NEGATIVE)) {
-							features = new TreeSet<StrandedFeature>(new DistanceComparator(recLine.getEnd()));
-						} else {
-							throw new BioError("Feature must be stranded");
-						}
-						
-						for (Iterator<?> fi = transcripts.features(); fi.hasNext();) {
-							StrandedFeature transcript = (StrandedFeature) fi.next();
-							Location loc = transcript.getLocation();
-							int tStart,tEnd;
+						System.err.printf(".");
+						try {
+		
+							int start = recLine.getStart();
+							int end = recLine.getEnd();
 							
-							if (recLine.getStrand().equals(StrandedFeature.POSITIVE)) {
-								tStart = loc.getMin();
-								tEnd = loc.getMax();
-							} else {
-								tStart = loc.getMax();
-								tEnd = loc.getMin();
-							}
-
-							transcript.getAnnotation().getProperty("ensembl.xrefs");
-							
-							Object o = transcript.getAnnotation().getProperty("ensembl.xrefs");
-							if (ignoreGenesWithNoCrossReferences && 
-									((o == null) || 
-									(!(o instanceof List)) || 
-									(((List)o)).size() == 0)) {
-								System.err.printf("Transcript of gene %s does not have cross-references%n", transcript.getAnnotation().getProperty("ensembl.id"));
+							if (expandToLength > 0) {
+								if ((end - start + 1) < expandToLength) {
+									start = Math.max(1, start - (expandToLength / 2));
+									end = end + (expandToLength / 2);
+								}
 							}
 							
-							RangeLocation tssLocationRange = new RangeLocation(tStart, tEnd);
-							RangeLocation posLocationRange = new RangeLocation(
-									recLine.getStart()-maxDistFromGene,
-									recLine.getEnd()+maxDistFromGene);
+							String nearestGeneName = null;
 							
-							if (tssLocationRange.overlaps(posLocationRange)) {
-								System.err.println(String.format(
-									"Feature is within +/- %d the transcript of gene %s",
-									maxDistFromGene,
-									transcript.getAnnotation().getProperty("ensembl.gene_id")));
-								features.add(transcript);
+							if (maxDistFromGene > 0) {
+								if (recLine.getStrand().equals(StrandedFeature.UNKNOWN)) {
+									System.err.println("WARNING: Feature does not have strand. Cannot determine distance from genes on the same strand");
+									return;
+								}
+								
+								FeatureHolder transcripts = seqDB.filter(
+																new FeatureFilter.And(
+																	new FeatureFilter.OverlapsLocation(
+																		new RangeLocation(recLine.getStart()-maxDistFromGene,recLine.getEnd()+maxDistFromGene)),
+																	new FeatureFilter.BySequenceName(recLine.getSeqName())));
+								
+								transcripts = transcripts.filter(new FeatureFilter.StrandFilter(recLine.getStrand()));
+								
+								Set<StrandedFeature> nearbyTranscripts;
+								
+								if (recLine.getStrand().equals(StrandedFeature.POSITIVE)) {
+									nearbyTranscripts = new TreeSet<StrandedFeature>(new DistanceComparator(recLine.getStart()));
+								} else if (recLine.getStrand().equals(StrandedFeature.NEGATIVE)) {
+									nearbyTranscripts = new TreeSet<StrandedFeature>(new DistanceComparator(recLine.getEnd()));
+								} else {
+									throw new BioError("Feature must be stranded");
+								}
+								
+								for (Iterator<?> fi = transcripts.features(); fi.hasNext();) {
+									StrandedFeature transcript = (StrandedFeature) fi.next();
+									Location loc = transcript.getLocation();
+									int tStart,tEnd;
+									
+									/* There be dragons here. */
+									if (recLine.getStrand().equals(StrandedFeature.POSITIVE)) {
+										tStart = loc.getMin();
+										tEnd = loc.getMax();
+									} else {
+										tStart = loc.getMax();
+										tEnd = loc.getMin();
+									}
+		
+									
+									Object o = transcript.getAnnotation().getProperty("ensembl.xrefs");
+									if (ignoreGenesWithNoCrossReferences && 
+											((o == null) || 
+											(!(o instanceof List)) || 
+											(((List)o)).size() == 0)) {
+										System.err.printf("Transcript of gene %s does not have cross-references%n", transcript.getAnnotation().getProperty("ensembl.id"));
+									}
+									
+									RangeLocation tssLocationRange = new RangeLocation(tStart, tEnd);
+									RangeLocation posLocationRange = new RangeLocation(
+											recLine.getStart()-maxDistFromGene,
+											recLine.getEnd()+maxDistFromGene);
+									
+									if (tssLocationRange.overlaps(posLocationRange)) {
+										System.err.println(String.format(
+											"Feature is within +/- %d the transcript of gene %s",
+											maxDistFromGene,
+											transcript.getAnnotation().getProperty("ensembl.gene_id")));
+										nearbyTranscripts.add(transcript);
+									}
+									
+									List<StrandedFeature> featList = new ArrayList<StrandedFeature>(nearbyTranscripts);
+									if (featList.size() > 0) {
+										StrandedFeature f = featList.get(0);
+										nearestGeneName = (String) f.getAnnotation().getProperty("ensembl.gene_id");
+									}
+								}
 							}
+							
+							SymbolList symList = 
+								seqDB.getSequence(
+									recLine.getSeqName()).subList(start,end);
+							
+							if (recLine.getStrand().equals(StrandedFeature.NEGATIVE)) {
+								symList = DNATools.reverseComplement(symList);
+							}
+							
+							if (minNonN > 0 && 
+								RetrieveSequenceFeaturesFromEnsembl
+									.gapSymbolCount(symList) > minNonN) {
+								return;
+							}
+							
+							Annotation ann = new SimpleRichAnnotation();
+							for (Object obj : recLine.getGroupAttributes().keySet()) {
+								ann.setProperty(obj, recLine.getGroupAttributes().get(obj));
+							}
+							if (nearestGeneName != null) {
+								ann.setProperty("nearest_gene", nearestGeneName);
+							} else if (excludeUnlabelled) {
+								return;
+							}
+							
+							Sequence s = new SimpleSequence(symList, null,
+									String.format("%s;%d-%d(%s)",
+											recLine.getSeqName(),
+											Math.max(1,start),
+											end,
+											recLine.getStrand()
+												.equals(StrandedFeature.POSITIVE)? "+" : "-"),
+									ann);
+		
+							RichSequence.IOTools.writeFasta(os, s, null);
+		
+						} catch (IllegalIDException e) {
+							e.printStackTrace();
+						} catch (BioException e) {
+							e.printStackTrace();
+						} catch (IOException e) {
+							e.printStackTrace();
 						}
 					}
-					
-					SymbolList symList = 
-						seqDB.getSequence(
-							recLine.getSeqName()).subList(start,end);
-					
-					if (recLine.getStrand().equals(StrandedFeature.NEGATIVE)) {
-						symList = DNATools.reverseComplement(symList);
-					}
-					
-					if (minNonN > 0 && 
-						RetrieveSequenceFeaturesFromEnsembl
-							.gapSymbolCount(symList) > minNonN) {
-						return;
-					}
-					
-					Sequence s = new SimpleSequence(symList, null,
-							String.format("%s;%d-%d(%s)",
-									recLine.getSeqName(),
-									Math.max(1,start),
-									end,
-									recLine.getStrand()
-										.equals(StrandedFeature.POSITIVE)? "+" : "-"),
-							Annotation.EMPTY_ANNOTATION);
-
-					RichSequence.IOTools.writeFasta(os, s, null);
-
-				} catch (IllegalIDException e) {
-					e.printStackTrace();
-				} catch (BioException e) {
-					e.printStackTrace();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-			}
-		});
+				});
 		System.err.println();
 	}
 	
