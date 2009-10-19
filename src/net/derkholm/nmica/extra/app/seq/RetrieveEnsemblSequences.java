@@ -211,7 +211,8 @@ public class RetrieveEnsemblSequences {
 	
 	@Option(help="Retrieve sequence features around transcripts. " +
 			"If you give the value 0, this retrieves the transcript features as is. " +
-			"Negative values will cull the length of the transcript by that number of nucleotides.")
+			"Negative values will cull the length of the transcript by " +
+			"that number of nucleotides.", optional=true)
 	public void setAroundTranscript(int i) {
 		this.aroundTranscript = i;
 	}
@@ -347,9 +348,6 @@ public class RetrieveEnsemblSequences {
 
 		GFFWriter gffw = null;
 
-		if (format == Format.GFF) {
-			gffw = new GFFWriter(new PrintWriter(new OutputStreamWriter(System.out)));
-		}
 
 		PrintStream outputStream = null;
 
@@ -357,6 +355,10 @@ public class RetrieveEnsemblSequences {
 			outputStream = System.out;
 		} else {
 			outputStream = new PrintStream(new FileOutputStream(outputFile));
+		}
+
+		if (format == Format.GFF) {
+			gffw = new GFFWriter(new PrintWriter(new OutputStreamWriter(outputStream)));
 		}
 
 		for (String gene : ids) {
