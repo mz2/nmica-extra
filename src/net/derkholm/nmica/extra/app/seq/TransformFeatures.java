@@ -20,6 +20,7 @@ import org.biojava.bio.program.gff.GFFRecord;
 import org.biojava.bio.program.gff.GFFWriter;
 import org.biojava.bio.program.gff.SimpleGFFRecord;
 import org.bjv2.util.cli.App;
+import org.bjv2.util.cli.Option;
 
 @App(overview="Transform features in GFF files (move / scale)", generateStub=true)
 @NMExtraApp(launchName="nmtransformfeat", vm=VirtualMachine.SERVER)
@@ -31,18 +32,22 @@ public class TransformFeatures {
 	private String outFile;
 	private GFFWriter gffw;
 
+	@Option(help="Input features file (read from stdin if not specified)", optional=true)
 	public void setFeatures(File f) {
 		this.featuresFile = f;
 	}
 	
+	@Option(help="Scale regions to the specified number of nucleotides", optional=true)
 	public void setScaleTo(int i) {
 		this.scaleTo = i;
 	}
 	
+	@Option(help="Move the regions by the  specified number of nucleotides", optional=true)
 	public void setMoveBy(int i) {
 		this.moveBy = i;
 	}
 	
+	@Option(help="Output features file (written to stdout if not specified)", optional=true)
 	public void setOut(String f) {
 		this.outFile = f;
 	}
@@ -62,7 +67,6 @@ public class TransformFeatures {
 		} else {
 			inputStream = new FileInputStream(this.featuresFile);
 		}
-
 		
 		gffw = new GFFWriter(new PrintWriter(new OutputStreamWriter(os)));
 		
@@ -78,20 +82,33 @@ public class TransformFeatures {
 
 					@Override
 					public void endDocument() {
-						
+						gffw.endDocument();
 					}
 
 					@Override
 					public void recordLine(GFFRecord r) {
 						System.err.printf(".");
 
+						int start = r.getStart();
+						int end = r.getEnd();
+						int centrePoint = start + (end - start) / 2;
+						
+						int newStart, newEnd;
+						
+						if (scaleTo == 0) {
+							newStart = start;
+							newEnd = end;
+						} else {
+							newStart = Math.max(0,centrePoint - (scaleTo / 2));
+							newEnd = Math.max(0,centrePoint + (scaleTo / 2));
+						}
 						
 						GFFRecord rec = new SimpleGFFRecord(
 								r.getSeqName(),
 								r.getSource(),
 								r.getFeature(),
-								r.getStart() + moveBy,
-								r.getEnd() + moveBy,
+								newStart + moveBy,
+								newEnd + moveBy,
 								r.getScore(),
 								r.getStrand(),
 								r.getFrame(),
@@ -108,8 +125,7 @@ public class TransformFeatures {
 						// TODO Auto-generated method stub
 						
 					}
-					
-					
 				});
+		os.flush();
 	}	
 }
