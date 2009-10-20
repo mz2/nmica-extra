@@ -31,6 +31,7 @@ import org.biojava.bio.seq.Feature;
 import org.biojava.bio.seq.FeatureFilter;
 import org.biojava.bio.seq.FeatureHolder;
 import org.biojava.bio.seq.Sequence;
+import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.db.HashSequenceDB;
 import org.biojava.bio.seq.impl.SimpleSequence;
 import org.biojava.bio.symbol.Location;
@@ -43,6 +44,7 @@ import org.biojavax.bio.seq.RichSequence;
 import org.biojavax.bio.seq.RichSequenceIterator;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
+import org.bjv2.util.cli.UserLevel;
 
 
 @App(overview = "Get sequences from Ensembl that using peaks in the FindPeaks format", generateStub = true)
@@ -88,6 +90,10 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	private int minNonN;
 
 	private RankedProperty rankedProperty;
+
+	private boolean excludeUnlabelled;
+
+	private int maxDistFromGene;
 	
 	@Option(help="Peaks")
 	public void setPeaks(File f) {
@@ -111,6 +117,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	public void setOut(File f) {
 		this.outFile = f;
 	}
+	
 	
 	@Option(help="The maximum count of peaks to output",optional=true)
 	public void setMaxCount(int maxCount) {
@@ -161,7 +168,17 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	public void setMinNonN(int i) {
 		this.minNonN = i;
 	}
-
+	
+	@Option(help="Label features with the closest gene (given the specified maximum distance)", optional=true)
+	public void setMaxDistanceFromGene(int i) {
+		this.maxDistFromGene = i;
+	}
+	
+	@Option(help="Exclude features that do fall within the specified maximum distance from a gene (done by default, applies only when -maxDistanceFromGene was given)", optional=true, userLevel=UserLevel.EXPERT)
+	public void setExcludeUnlabelled(boolean b) {
+		this.excludeUnlabelled  = b;
+	}
+	
 	private static int gapSymbolCount(SymbolList seq) {
 		int numNs = 0;
 		for (Iterator<?> i = seq.iterator(); i.hasNext(); ) {
@@ -397,10 +414,37 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						continue;
 					}
 				
+				
 				Annotation annotation = new SimpleRichAnnotation();
 				annotation.setProperty("fdr", peak.fdr);
 				annotation.setProperty("score", peak.score);
 				annotation.setProperty("tag_count", peak.tagCount);
+				
+				
+				
+				String nearestGeneName = null;
+				if (maxDistFromGene > 0) {
+					
+					StrandedFeature.Template featTempl = new StrandedFeature.Template();
+					featTempl.type = "peak";
+					featTempl.source = this.inputFormat.name();
+					featTempl.location = new RangeLocation(bloc.getMin(), bloc.getMax());
+					featTempl.annotation = Annotation.EMPTY_ANNOTATION;
+					featTempl.strand= StrandedFeature.UNKNOWN;
+					
+			        StrandedFeature feat = 
+			        	(StrandedFeature)
+			        		seqDB.getSequence(peak.seqName)
+			        			.createFeature(featTempl);
+					
+					nearestGeneName = RetrieveSequenceFeaturesFromEnsembl
+												.geneWithClosestTSS(
+													feat,
+													seqDB,
+													maxDistFromGene,
+													ignoreGenesWithNoCrossReferences);
+			
+				}
 				
 				Sequence seq = 
 					new SimpleSequence(symList, null, 
