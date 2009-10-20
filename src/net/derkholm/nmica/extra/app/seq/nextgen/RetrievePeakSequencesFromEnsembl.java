@@ -20,6 +20,9 @@ import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.extra.app.seq.RetrieveEnsemblSequences;
 import net.derkholm.nmica.extra.app.seq.RetrieveSequenceFeaturesFromEnsembl;
 import net.derkholm.nmica.extra.app.seq.SequenceSplitter;
+import net.derkholm.nmica.extra.peak.PeakEntryAscComparitor;
+import net.derkholm.nmica.extra.peak.PeakEntryDescComparitor;
+import net.derkholm.nmica.extra.peak.PeakEntryRandomComparitor;
 
 import org.biojava.bio.Annotation;
 import org.biojava.bio.BioError;
@@ -35,6 +38,7 @@ import org.biojava.bio.symbol.LocationTools;
 import org.biojava.bio.symbol.RangeLocation;
 import org.biojava.bio.symbol.Symbol;
 import org.biojava.bio.symbol.SymbolList;
+import org.biojavax.SimpleRichAnnotation;
 import org.biojavax.bio.seq.RichSequence;
 import org.biojavax.bio.seq.RichSequenceIterator;
 import org.bjv2.util.cli.App;
@@ -232,71 +236,6 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		
 	}
 	
-	public static class PeakEntryAscComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
-		PeakFormat format;
-		PeakEntryDescComparitor descComparitor;
-		
-		public PeakEntryAscComparitor(PeakFormat format) {
-			this.format = format;
-			this.descComparitor = new PeakEntryDescComparitor(format);
-		}
-
-		public int compare(PeakEntry o1, PeakEntry o2) {
-			return -descComparitor.compare(o1, o2);
-		}
-	}
-	
-	public static class PeakEntryDescComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
-		PeakFormat format;
-		
-		public PeakEntryDescComparitor(PeakFormat format) {
-			this.format = format;
-		}
-		
-		public int compare(PeakEntry o1, PeakEntry o2) {
-			
-			int seqNameCompare = o1.seqName.compareTo(o2.seqName);
-			
-			if (seqNameCompare != 0) return seqNameCompare;
-			
-			if (this.format == PeakFormat.SWEMBL || this.format == PeakFormat.FINDPEAKS) {
-				int valCompare = Double.compare(o1.score, o2.score); /* Both o1 and o2 should be NaN for Swembl so this should return 0 */
-				if (valCompare != 0) return valCompare;
-
-				int fdrCompare = Double.compare(o1.fdr, o2.fdr);
-				if (fdrCompare != 0) return fdrCompare;
-				
-				int tagCountCompare = Double.compare(o1.tagCount, o2.tagCount);
-				if (tagCountCompare != 0) return tagCountCompare;
-
-			} else if (this.format == PeakFormat.MACS) {
-				int fdrCompare = Double.compare(o1.fdr, o2.fdr);
-				if (fdrCompare != 0) return fdrCompare;
-
-				int scoreCompare = -Double.compare(o1.score, o2.score);
-				if (scoreCompare != 0) return scoreCompare;
-				
-				int tagCountCompare = Double.compare(o1.tagCount, o2.tagCount);
-				if (tagCountCompare != 0) return tagCountCompare;
-				
-			} 
-			
-			return o1.id.compareTo(o2.id);
-		}
-	}
-	
-	public static class PeakEntryRandomComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
-		
-		public PeakEntryRandomComparitor() {
-			
-		}
-		
-		public int compare(PeakEntry o1, PeakEntry o2) {
-			return 0;
-		}
-	}
-	
-	
 	public void main(String[] argv) throws Exception {
 		
 		PrintStream os = null;
@@ -458,15 +397,23 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						continue;
 					}
 				
+				Annotation annotation = new SimpleRichAnnotation();
+				annotation.setProperty("fdr", peak.fdr);
+				annotation.setProperty("score", peak.score);
+				annotation.setProperty("tag_count", peak.tagCount);
+				
 				Sequence seq = 
 					new SimpleSequence(symList, null, 
-						String.format("%s_%d-%d;%f;%d", 
+						String.format("%s_%d-%d;%f;%d;fdr=%f;score=%f;tag_count=%f", 
 								peak.seqName,
 								bloc.getMin(),
 								bloc.getMax(),
 								peak.score,
-								++frag),
-						Annotation.EMPTY_ANNOTATION);
+								++frag,
+								peak.fdr,
+								peak.score,
+								peak.tagCount),
+								annotation);
 				
 				if (chunkLength > 0) {
 					List<Sequence> outSeqs = 
@@ -508,9 +455,9 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		PeakEntryComparator comp = null;
 		int peakCount = 0;
 		if (rankOrder == RankOrder.ASC) {
-			comp = new PeakEntryAscComparitor(inputFormat);
+			comp = new PeakEntryAscComparitor(false,inputFormat);
 		} else if (rankOrder == RankOrder.DESC) {
-			comp = new PeakEntryDescComparitor(inputFormat);
+			comp = new PeakEntryDescComparitor(false,inputFormat);
 		} else {
 			comp = new PeakEntryRandomComparitor();
 		}
