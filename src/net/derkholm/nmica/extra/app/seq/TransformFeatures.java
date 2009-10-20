@@ -75,17 +75,14 @@ public class TransformFeatures {
 				new BufferedReader(new InputStreamReader(inputStream)),
 				new GFFDocumentHandler() {
 
-					@Override
 					public void commentLine(String arg0) {
 						
 					}
 
-					@Override
 					public void endDocument() {
 						gffw.endDocument();
 					}
 
-					@Override
 					public void recordLine(GFFRecord r) {
 						System.err.printf(".");
 
@@ -120,7 +117,6 @@ public class TransformFeatures {
 						
 					}
 
-					@Override
 					public void startDocument(String arg0) {
 						// TODO Auto-generated method stub
 						

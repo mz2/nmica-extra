@@ -15,11 +15,11 @@ import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.extra.app.seq.nextgen.RetrievePeakSequencesFromEnsembl.PeakEntry;
 import net.derkholm.nmica.extra.app.seq.nextgen.RetrievePeakSequencesFromEnsembl.PeakFormat;
 import net.derkholm.nmica.extra.app.seq.nextgen.RetrievePeakSequencesFromEnsembl.RankOrder;
+import net.derkholm.nmica.extra.app.seq.nextgen.RetrievePeakSequencesFromEnsembl.RankedProperty;
 
-import org.biojava.bio.program.gff.GFFRecord;
 import org.biojava.bio.program.gff.GFFWriter;
+import org.biojava.bio.program.gff.SimpleGFFRecord;
 import org.biojava.bio.seq.StrandedFeature;
-import org.biojava.bio.seq.StrandedFeature.Strand;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -30,6 +30,7 @@ public class PeaksToGFF {
 	private PeakFormat format;
 	private FileReader peaksReader;
 	private RankOrder rankOrder = RetrievePeakSequencesFromEnsembl.RankOrder.DESC;
+	private RankedProperty rankedProperty = RetrievePeakSequencesFromEnsembl.RankedProperty.P_VALUE;
 	private int aroundPeak;
 	private int maxLength;
 	private int minLength;
@@ -65,12 +66,22 @@ public class PeaksToGFF {
 		this.maxCount = maxCount;
 	}
 	
+	@Option(help="Rank order", optional=true)
+	public void setRankOrder(RankOrder rankOrder) {
+		this.rankOrder = rankOrder;
+	}
+	
+	@Option(help="Ranked property", optional=true)
+	public void setRankedProperty(RankedProperty rankedProp) {
+		this.rankedProperty = rankedProp;
+	}
 	
 	public void main(String[] args) throws FileNotFoundException, IOException {
 		SortedSet<PeakEntry> peaks = RetrievePeakSequencesFromEnsembl.parsePeaks(
 				new BufferedReader(peaksReader), 
 				format, 
 				rankOrder, 
+				rankedProperty, 
 				aroundPeak, 
 				minLength, 
 				maxLength);
@@ -83,57 +94,31 @@ public class PeaksToGFF {
 		GFFWriter writer = new GFFWriter(new PrintWriter(System.out));
 		
 		Iterator<PeakEntry> peakIterator = peaks.iterator();
+		int i = maxCount;
 		
-		int i = 0;
 		while (i < maxCount) {
 			final PeakEntry peak = peakIterator.next();
+			SimpleGFFRecord rec = new SimpleGFFRecord();
+			rec.setComment(String.format("\tp-value:%.3f fdr:%.3f", peak.score,peak.fdr));
+			rec.setEnd(peak.endCoord);
+			rec.setFeature("peak");
+			rec.setFrame(0);
+			Map<String,Object> attribs = new HashMap<String,Object>();
 			
-			writer.recordLine(new GFFRecord() {
-
-				public String getComment() {
-					return String.format("\tp-value:%.3f fdr:%.3f", peak.pValue,peak.fdr);
-				}
-
-				public int getEnd() {
-					return peak.endCoord;
-				}
-
-				public String getFeature() {
-					return "peak";
-				}
-
-				public int getFrame() {
-					return 0;
-				}
-
-				public Map<String, Object> getGroupAttributes() {
-					Map<String, Object> map = new HashMap<String,Object>();
-					//map.put("p-value", ""+peak.pValue);
-					return map;
-				}
-
-				public double getScore() {
-					return peak.foldChange;
-				}
-
-				public String getSeqName() {
-					return peak.seqName;
-				}
-
-				public String getSource() {
-					return format.name();
-				}
-
-				public int getStart() {
-					return peak.startCoord;
-				}
-
-				public Strand getStrand() {
-					return StrandedFeature.UNKNOWN;
-				}
-			});
+			attribs.put("fdr", peak.fdr);
+			attribs.put("score", peak.score);
 			
-			i++;
+			
+			rec.setGroupAttributes(attribs);
+			rec.setScore(peak.fdr);
+			rec.setSeqName(peak.seqName);
+			rec.setSource(format.name());
+			rec.setStart(peak.startCoord);
+			rec.setStrand(StrandedFeature.UNKNOWN);
+			
+			writer.recordLine(rec);
+			writer.endDocument();
+			
 		}
 		writer.endDocument();
 

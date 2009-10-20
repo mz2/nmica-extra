@@ -46,11 +46,15 @@ import org.bjv2.util.cli.Option;
 public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	public static enum RankOrder {
     	ASC,
-    	ASC_FOLD_CHANGE,
     	DESC,
-    	DESC_FOLD_CHANGE,
     	NONE
     }
+	
+	public static enum RankedProperty {
+		P_VALUE,
+		FDR,
+		TAG_COUNT,
+	}
 	
 	public static enum PeakFormat {
 		BED,
@@ -78,6 +82,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	private int nearbyGeneWindowSize = 1000000;
 
 	private int minNonN;
+
+	private RankedProperty rankedProperty;
 	
 	@Option(help="Peaks")
 	public void setPeaks(File f) {
@@ -110,6 +116,11 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	@Option(help="Ranking order: asc|desc|none (default = desc)",optional=true)
 	public void setRankOrder(RankOrder order) {
 		this.rankOrder = order;
+	}
+
+	@Option(help="Ranked property: p_value|fdr|tag_count",optional=true)
+	public void setRankedProperty(RankedProperty prop) {
+		this.rankedProperty = prop;
 	}
 	
 	@Option(help="Maximum peak length (not defined by default)",optional=true)
@@ -166,9 +177,9 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		public final int startCoord;
 		public final int endCoord;
 		public final int peakCoord;
-		public final double pValue;
-		public final double foldChange;
+		public final double score;
 		public final double fdr;
+		public final double tagCount;
 		
 		public PeakEntry(
 				String id2, 
@@ -177,16 +188,16 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				int endCoord, 
 				int peakCoord, 
 				double value, 
-				double foldChange, 
-				double fdr) {
+				double fdr,
+				double tagCount) {
 			this.id = id2;
 			this.seqName = seqName;
 			this.startCoord = startCoord;
 			this.endCoord = endCoord;
 			this.peakCoord = peakCoord;
-			this.pValue = value;
-			this.foldChange = foldChange;
+			this.score = value;
 			this.fdr = fdr;
+			this.tagCount = tagCount;
 		}
 
 		@Override
@@ -222,35 +233,64 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	}
 	
 	public static class PeakEntryAscComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
+		PeakFormat format;
+		PeakEntryDescComparitor descComparitor;
+		
+		public PeakEntryAscComparitor(PeakFormat format) {
+			this.format = format;
+			this.descComparitor = new PeakEntryDescComparitor(format);
+		}
 
 		public int compare(PeakEntry o1, PeakEntry o2) {
-			int pvalCompare = Double.compare(o1.pValue, o2.pValue);
-			if (pvalCompare != 0) return pvalCompare;
-			
-			int fdrCompare = -Double.compare(o1.fdr, o2.fdr);
-			if (fdrCompare != 0) return fdrCompare;
-			
-			return 0;
+			return -descComparitor.compare(o1, o2);
 		}
 	}
 	
 	public static class PeakEntryDescComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
-
+		PeakFormat format;
+		
+		public PeakEntryDescComparitor(PeakFormat format) {
+			this.format = format;
+		}
+		
 		public int compare(PeakEntry o1, PeakEntry o2) {
-			int pvalCompare = -Double.compare(o1.pValue, o2.pValue);
-			if (pvalCompare != 0) return pvalCompare;
 			
-			int fdrCompare = Double.compare(o1.fdr, o2.fdr);
-			if (fdrCompare != 0) return fdrCompare;
+			int seqNameCompare = o1.seqName.compareTo(o2.seqName);
 			
-			int foldChangeCompare = Double.compare(o1.foldChange, o2.foldChange);
-			if (foldChangeCompare != 0) return foldChangeCompare;
+			if (seqNameCompare != 0) return seqNameCompare;
+			
+			if (this.format == PeakFormat.SWEMBL || this.format == PeakFormat.FINDPEAKS) {
+				int valCompare = Double.compare(o1.score, o2.score); /* Both o1 and o2 should be NaN for Swembl so this should return 0 */
+				if (valCompare != 0) return valCompare;
+
+				int fdrCompare = Double.compare(o1.fdr, o2.fdr);
+				if (fdrCompare != 0) return fdrCompare;
+				
+				int tagCountCompare = Double.compare(o1.tagCount, o2.tagCount);
+				if (tagCountCompare != 0) return tagCountCompare;
+
+			} else if (this.format == PeakFormat.MACS) {
+				int fdrCompare = Double.compare(o1.fdr, o2.fdr);
+				if (fdrCompare != 0) return fdrCompare;
+
+				int scoreCompare = -Double.compare(o1.score, o2.score);
+				if (scoreCompare != 0) return scoreCompare;
+				
+				int tagCountCompare = Double.compare(o1.tagCount, o2.tagCount);
+				if (tagCountCompare != 0) return tagCountCompare;
+				
+			} 
 			
 			return o1.id.compareTo(o2.id);
 		}
 	}
 	
 	public static class PeakEntryRandomComparitor extends PeakEntryComparator implements Comparator<PeakEntry> {
+		
+		public PeakEntryRandomComparitor() {
+			
+		}
+		
 		public int compare(PeakEntry o1, PeakEntry o2) {
 			return 0;
 		}
@@ -272,6 +312,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				br,
 				this.inputFormat, 
 				rankOrder, 
+				rankedProperty,
 				aroundPeak, 
 				this.minLength, 
 				this.maxLength);
@@ -423,7 +464,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 								peak.seqName,
 								bloc.getMin(),
 								bloc.getMax(),
-								peak.pValue,
+								peak.score,
 								++frag),
 						Annotation.EMPTY_ANNOTATION);
 				
@@ -459,15 +500,17 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			BufferedReader br,
 			PeakFormat inputFormat,
 			RankOrder rankOrder,
+			RankedProperty rankedProperty,
 			int aroundPeak,
 			int minLength,
 			int maxLength) throws IOException {
+		
 		PeakEntryComparator comp = null;
 		int peakCount = 0;
 		if (rankOrder == RankOrder.ASC) {
-			comp = new PeakEntryAscComparitor();
+			comp = new PeakEntryAscComparitor(inputFormat);
 		} else if (rankOrder == RankOrder.DESC) {
-			comp = new PeakEntryDescComparitor();
+			comp = new PeakEntryDescComparitor(inputFormat);
 		} else {
 			comp = new PeakEntryRandomComparitor();
 		}
@@ -478,7 +521,6 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		
 		int peakId = 1;
 		while ((line = br.readLine()) != null) {
-			
 			//ignore comment lines regardless of exact format
 			if (Pattern.compile("^#").matcher(line).find()) {
 				continue;
@@ -504,8 +546,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			int startCoord;
 			int endCoord;
 			int peakCoord;
-			double pValue;
-			double foldChange = Double.NaN;
+			double tagCount = Double.NaN;
+			double pValue = Double.NaN;
 			double fdr = Double.NaN;
 			
 			StringTokenizer tok = new StringTokenizer(line,"\t");
@@ -525,18 +567,16 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				endCoord = Integer.parseInt(tok.nextToken()) - 1; //1-based coords
 				tok.nextToken();//length
 				peakCoord  = startCoord + Integer.parseInt(tok.nextToken());//summit reported relative to start coord
-				pValue = Double.parseDouble(tok.nextToken()); //p-value
-				foldChange = Double.parseDouble(tok.nextToken());
+				tagCount = Double.parseDouble(tok.nextToken());
+				pValue = Math.pow(10.0, -Double.parseDouble(tok.nextToken()) / 10.0) ; //p-value
 				fdr = Double.parseDouble(tok.nextToken());
-				//fold enrichment
-				//false discovery rate
 				
 			} else if (inputFormat == PeakFormat.SWEMBL) {
 				chromo = tok.nextToken();
 				id = "" + peakId++;
 				startCoord = Integer.parseInt(tok.nextToken());
 				endCoord = Integer.parseInt(tok.nextToken());
-				tok.nextToken();//count
+				tagCount = Double.parseDouble(tok.nextToken());//count
 				tok.nextToken();//length
 				tok.nextToken();//uniquePos
 				pValue = Double.parseDouble(tok.nextToken());//score
@@ -565,7 +605,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				startCoord = Integer.parseInt(tok.nextToken());
 				endCoord = Integer.parseInt(tok.nextToken());
 				peakCoord = startCoord + Integer.parseInt(tok.nextToken());
-				pValue = Double.parseDouble(tok.nextToken());
+				tagCount = Double.parseDouble(tok.nextToken());
 			} else {
 				throw 
 					new BioError(
@@ -603,8 +643,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						peakEndCoord, 
 						peakCoord, 
 						pValue,
-						foldChange,
-						fdr));
+						fdr,
+						tagCount));
 			} else {
 				peakCount++;
 				System.err.printf("-");
@@ -616,8 +656,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						endCoord, 
 						peakCoord, 
 						pValue, 
-						foldChange,
-						fdr));	
+						fdr,
+						tagCount));	
 			}
 			
 		}
