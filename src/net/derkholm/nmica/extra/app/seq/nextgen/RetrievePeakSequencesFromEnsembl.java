@@ -33,6 +33,7 @@ import org.biojava.bio.seq.FeatureHolder;
 import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.db.HashSequenceDB;
+import org.biojava.bio.seq.impl.DummySequence;
 import org.biojava.bio.seq.impl.SimpleSequence;
 import org.biojava.bio.symbol.Location;
 import org.biojava.bio.symbol.LocationTools;
@@ -422,7 +423,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				
 				
 				
-				String nearestGeneName = null;
+				String nearestGeneName = peak.seqName;
 				if (maxDistFromGene > 0) {
 					
 					StrandedFeature.Template featTempl = new StrandedFeature.Template();
@@ -432,9 +433,10 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 					featTempl.annotation = Annotation.EMPTY_ANNOTATION;
 					featTempl.strand= StrandedFeature.UNKNOWN;
 					
+					
 			        StrandedFeature feat = 
 			        	(StrandedFeature)
-			        		seqDB.getSequence(peak.seqName)
+			        		new SimpleSequence(seqDB.getSequence(peak.seqName), peak.seqName, peak.seqName, Annotation.EMPTY_ANNOTATION)
 			        			.createFeature(featTempl);
 					
 					nearestGeneName = RetrieveSequenceFeaturesFromEnsembl
@@ -448,7 +450,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				
 				Sequence seq = 
 					new SimpleSequence(symList, null, 
-						String.format("%s_%d-%d;%f;%d;fdr=%f;score=%f;tag_count=%f", 
+							String.format("%s_%d-%d;%f;%d;fdr=%f;score=%f;tag_count=%f;closest_gene=%s;", 
 								peak.seqName,
 								bloc.getMin(),
 								bloc.getMax(),
@@ -456,7 +458,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 								++frag,
 								peak.fdr,
 								peak.score,
-								peak.tagCount),
+								peak.tagCount,
+								nearestGeneName),
 								annotation);
 				
 				if (chunkLength > 0) {

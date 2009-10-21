@@ -80,7 +80,8 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 		this.maxDistFromGene = i;
 	}
 	
-	@Option(help="Exclude features that do fall within the specified maximum distance from a gene (done by default, applies only when -maxDistanceFromGene was given)", optional=true, userLevel=UserLevel.EXPERT)
+	@Option(help="Exclude features that do fall within the specified maximum distance from a gene " +
+			"(done by default, applies only when -maxDistanceFromGene was given)", optional=true, userLevel=UserLevel.EXPERT)
 	public void setExcludeUnlabelled(boolean b) {
 		this.excludeUnlabelled  = b;
 	}
@@ -148,7 +149,13 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 								featTempl.annotation = Annotation.EMPTY_ANNOTATION;
 								featTempl.strand= recLine.getStrand();
 						        // System.err.println("Creating gap from " + temp.location.getMin() + " to " + temp.location.getMax());
-						        StrandedFeature feat = (StrandedFeature)seqDB.getSequence(recLine.getSeqName()).createFeature(featTempl);
+						        StrandedFeature feat = 
+						        	(StrandedFeature)new SimpleSequence(
+										        			seqDB.getSequence(recLine.getSeqName()), 
+										        			recLine.getSeqName(), 
+										        			recLine.getSeqName(), 
+										        			Annotation.EMPTY_ANNOTATION)
+							        							.createFeature(featTempl);
 								
 								nearestGeneName = RetrieveSequenceFeaturesFromEnsembl
 															.geneWithClosestTSS(
@@ -216,6 +223,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 		if (maxDistFromGene > 0) {
 			
 			
+			System.err.printf("Sequence name: %s",feature.getSequence().getName());
 			FeatureHolder transcripts = seqDB.filter(
 											new FeatureFilter.And(
 												new FeatureFilter.OverlapsLocation(
