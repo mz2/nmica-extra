@@ -262,11 +262,11 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 			
 			for (Iterator<?> fi = transcripts.features(); fi.hasNext();) {
 				StrandedFeature transcript = (StrandedFeature) fi.next();
+				if (!transcript.getType().equals("transcript")) continue;
 				
 				System.err.printf("Transcript annotations: %s%n", transcript.getType());
 				for (Object o : transcript.getAnnotation().keys()) {
-					System.err.println(o);
-					System.err.println(transcript.getAnnotation().getProperty(o));
+					System.err.printf("%s:%s%n",o,transcript.getAnnotation().getProperty(o));
 				}
 				Location loc = transcript.getLocation();
 				int tStart;

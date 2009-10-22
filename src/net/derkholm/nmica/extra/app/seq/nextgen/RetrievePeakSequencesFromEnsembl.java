@@ -459,7 +459,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 					} else {
 						seq = 
 							new SimpleSequence(symList, null, 
-									String.format("%s_%d-%d;%f;%d;fdr=%f;score=%f;tag_count=%f;closest_gene=%s;", 
+									String.format("%s_%d-%d;%f;%d;fdr=%f;score=%f;tag_count=%f;closest_gene=%s;display_label=%s;", 
 										peak.seqName,
 										bloc.getMin(),
 										bloc.getMax(),
@@ -468,7 +468,10 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 										peak.fdr,
 										peak.score,
 										peak.tagCount,
-										nearestTranscript.getAnnotation().getProperty("ensembl.gene_id")),
+										nearestTranscript.getAnnotation().getProperty("ensembl.gene_id"),
+										nearestTranscript.getAnnotation().containsProperty("ensembl.gene_display_label") ? 
+												nearestTranscript.getAnnotation().getProperty("ensembl.gene_display_label") :
+													"none"),
 										annotation);
 					}
 					
