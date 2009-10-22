@@ -86,7 +86,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 
 	private int nearbyGenes;
 
-	private int nearbyGeneWindowSize = 1000000;
+	//private int nearbyGeneWindowSize = 1000000;
 
 	private int minNonN;
 
@@ -160,10 +160,11 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		this.nearbyGenes = n;
 	}
 	
+	/*
 	@Option(help="Maximum window size to look for nearby genes (default = 1 megabase)", optional=true)
 	public void setNearbyGeneWindowSize(int ws) {
 		this.nearbyGeneWindowSize = ws;
-	}
+	}*/
 	
 	@Option(help="Minimun number of gap symbols (N)", optional=true)
 	public void setMinNonN(int i) {
@@ -335,8 +336,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 					chromoSeq.filter(
 							new FeatureFilter.OverlapsLocation(
 								new RangeLocation(
-									peak.startCoord - nearbyGeneWindowSize, 
-									peak.endCoord + nearbyGeneWindowSize)));
+									peak.startCoord - maxDistFromGene, 
+									peak.endCoord + maxDistFromGene)));
 					
 				Iterator geneIterator = genes.features();
 				while (geneIterator.hasNext()) {
@@ -423,44 +424,70 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				
 				
 				
-				String nearestGeneName = peak.seqName;
+				StrandedFeature nearestTranscript = null;
 				if (maxDistFromGene > 0) {
-					
-					StrandedFeature.Template featTempl = new StrandedFeature.Template();
-					featTempl.type = "peak";
-					featTempl.source = this.inputFormat.name();
-					featTempl.location = new RangeLocation(bloc.getMin(), bloc.getMax());
-					featTempl.annotation = Annotation.EMPTY_ANNOTATION;
-					featTempl.strand= StrandedFeature.UNKNOWN;
-					
-					
-			        StrandedFeature feat = 
-			        	(StrandedFeature)
-			        		new SimpleSequence(seqDB.getSequence(peak.seqName), peak.seqName, peak.seqName, Annotation.EMPTY_ANNOTATION)
-			        			.createFeature(featTempl);
-					
-					nearestGeneName = RetrieveSequenceFeaturesFromEnsembl
-												.geneWithClosestTSS(
-													feat,
+										
+					nearestTranscript = RetrieveSequenceFeaturesFromEnsembl
+												.transcriptWithClosestTSS(
+													peak.seqName,
+													bloc.getMin(),
+													bloc.getMax(),
+													StrandedFeature.UNKNOWN,
 													seqDB,
 													maxDistFromGene,
 													ignoreGenesWithNoCrossReferences);
 			
 				}
 				
-				Sequence seq = 
-					new SimpleSequence(symList, null, 
-							String.format("%s_%d-%d;%f;%d;fdr=%f;score=%f;tag_count=%f;closest_gene=%s;", 
-								peak.seqName,
-								bloc.getMin(),
-								bloc.getMax(),
-								peak.score,
-								++frag,
-								peak.fdr,
-								peak.score,
-								peak.tagCount,
-								nearestGeneName),
-								annotation);
+				Sequence seq;
+				
+				if (maxDistFromGene > 0) {
+					if (nearestTranscript == null) {
+						seq = 
+							new SimpleSequence(symList, null, 
+									String.format("%s_%d-%d;%f;%d;fdr=%f;score=%f;tag_count=%f;closest_gene=%s;", 
+										peak.seqName,
+										bloc.getMin(),
+										bloc.getMax(),
+										peak.score,
+										++frag,
+										peak.fdr,
+										peak.score,
+										peak.tagCount,
+										"none"),
+										annotation);						
+					} else {
+						seq = 
+							new SimpleSequence(symList, null, 
+									String.format("%s_%d-%d;%f;%d;fdr=%f;score=%f;tag_count=%f;closest_gene=%s;", 
+										peak.seqName,
+										bloc.getMin(),
+										bloc.getMax(),
+										peak.score,
+										++frag,
+										peak.fdr,
+										peak.score,
+										peak.tagCount,
+										nearestTranscript.getAnnotation().getProperty("ensembl.gene_id")),
+										annotation);
+					}
+					
+				} else {
+					seq = 
+						new SimpleSequence(symList, null, 
+								String.format("%s_%d-%d;%f;%d;fdr=%f;score=%f;tag_count=%f;", 
+									peak.seqName,
+									bloc.getMin(),
+									bloc.getMax(),
+									peak.score,
+									++frag,
+									peak.fdr,
+									peak.score,
+									peak.tagCount),
+									annotation);
+					
+				}
+				
 				
 				if (chunkLength > 0) {
 					List<Sequence> outSeqs = 
