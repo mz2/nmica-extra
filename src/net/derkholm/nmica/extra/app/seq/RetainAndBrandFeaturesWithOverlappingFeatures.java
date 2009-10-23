@@ -78,7 +78,7 @@ public class RetainAndBrandFeaturesWithOverlappingFeatures {
         }        
     }
     
-    public void run(String[] args)
+    public void main(String[] args)
         throws Exception
     {        
         final Map<String,List<BrandedSpan>> locsByChr = new HashMap<String,List<BrandedSpan>>();
