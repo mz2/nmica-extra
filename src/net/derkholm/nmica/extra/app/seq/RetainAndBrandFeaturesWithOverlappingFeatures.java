@@ -26,21 +26,20 @@ import org.bjv2.util.cli.Option;
 @App(overview = "Brand features from input file those that overlap a 'branding' feature file", generateStub = true)
 @NMExtraApp(launchName = "nmbrandfeat", vm = VirtualMachine.SERVER)
 public class RetainAndBrandFeaturesWithOverlappingFeatures {
-	private String masterBrandKey = null;
-    private String outputBrandKey = null;
+	private String outputAttribute = null;
+    private String withName = null;
     private int minOverlap = 1;
+	private File brandFile;
 	private File featureFile;
-	private File brandFeatureFile;
-
     
 	@Option(help="Input feature file (GFF)", optional=true)
-	public void setFeatures(File f) {
-		this.featureFile = f;
+	public void setBrands(File f) {
+		this.brandFile = f;
 	}
 	
 	@Option(help="Input brand file (GFF)", optional=true)
-	public void setBrands(File f) {
-		this.brandFeatureFile = f;
+	public void setFeatures(File f) {
+		this.featureFile = f;
 	}    
 	
 	@Option(help="Minimum overlap", optional=true)
@@ -48,14 +47,14 @@ public class RetainAndBrandFeaturesWithOverlappingFeatures {
         this.minOverlap = i;
     }
 
-	@Option(help="Master brand key", optional=true)
-    public void setMasterBrandKey(String masterBrandKey) {
-        this.masterBrandKey = masterBrandKey;
+	@Option(help="Output this attribute", optional=true)
+    public void setOutputAttribute(String masterBrandKey) {
+        this.outputAttribute = masterBrandKey;
     }
 
-	@Option(help="Output brand key", optional=true)
-    public void setOutputBrandKey(String outputBrandKey) {
-        this.outputBrandKey = outputBrandKey;
+	@Option(help="Output the attribute with the given key (default:'match')", optional=true)
+    public void setWithName(String outputBrandKey) {
+        this.withName = outputBrandKey;
     }
 
     private static final class BrandedSpan implements Comparable<BrandedSpan> {
@@ -87,7 +86,7 @@ public class RetainAndBrandFeaturesWithOverlappingFeatures {
     {        
         final Map<String,List<BrandedSpan>> locsByChr = new HashMap<String,List<BrandedSpan>>();
         GFFParser gffp = new GFFParser();
-        BufferedReader refGff = new BufferedReader(new FileReader(featureFile));
+        BufferedReader refGff = new BufferedReader(new FileReader(brandFile));
         gffp.parse(refGff, new GFFDocumentHandler() {
             public void startDocument(String locator) {
             }
@@ -100,9 +99,9 @@ public class RetainAndBrandFeaturesWithOverlappingFeatures {
 
             public void recordLine(GFFRecord record) {
                 String brand;
-                if (masterBrandKey != null) {
+                if (outputAttribute != null) {
                 	try {
-                		brand = ((List) record.getGroupAttributes().get(masterBrandKey)).get(0).toString();
+                		brand = ((List) record.getGroupAttributes().get(outputAttribute)).get(0).toString();
                 	} catch (Exception ex) {return;}
                 } else {
                     brand = record.getFeature() + "_" + record.getSeqName() + "_" + record.getStart();
@@ -122,7 +121,7 @@ public class RetainAndBrandFeaturesWithOverlappingFeatures {
         }
         
         
-        BufferedReader gff = new BufferedReader(new FileReader(brandFeatureFile));
+        BufferedReader gff = new BufferedReader(new FileReader(featureFile));
         PrintWriter pw = new PrintWriter(new OutputStreamWriter(System.out));
         final GFFWriter gffw = new GFFWriter(pw);
         gffp.parse(gff, new GFFDocumentHandler() {
@@ -144,7 +143,7 @@ public class RetainAndBrandFeaturesWithOverlappingFeatures {
                         int overlap = Math.min(midSpan.max, record.getEnd()) - Math.max(midSpan.min, record.getStart()) + 1;
                         if (overlap >= minOverlap) {
                             SimpleGFFRecord r = new SimpleGFFRecord(record);
-                            r.getGroupAttributes().put(outputBrandKey, Collections.singletonList(midSpan.brand));
+                            r.getGroupAttributes().put(withName, Collections.singletonList(midSpan.brand));
                             gffw.recordLine(r);
                         }
                         return;
