@@ -463,9 +463,9 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				
 				
 				
-				Sequence seq;
+				Sequence seq = null;
 				
-				if (maxDistFromGene > 0) {
+				if (maxDistFromGene > 0 && this.outputFormat.equals(PeakOutputFormat.GFF)) {
 					if (nearestTranscript == null) {
 						seq = 
 							new SimpleSequence(symList, null, 
@@ -533,6 +533,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 					if (this.outputFormat.equals(PeakOutputFormat.FASTA)) {
 						RichSequence.IOTools.writeFasta(System.out, seq, null);
 					} else {
+						assert seq == null;
 						
 						SimpleGFFRecord rec = new SimpleGFFRecord();
 						rec.setSource("nmensemblpeakseq");
