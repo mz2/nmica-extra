@@ -505,9 +505,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 									peak.score,
 									peak.tagCount),
 									annotation);
-					
 				}
-				
 				
 				if (chunkLength > 0) {
 					List<Sequence> outSeqs = 
