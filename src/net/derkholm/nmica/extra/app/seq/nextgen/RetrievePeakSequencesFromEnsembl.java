@@ -100,7 +100,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 
 	private RankedProperty rankedProperty;
 
-	private boolean excludeUnlabelled;
+	private boolean excludeUnlabelled = false;
 
 	private int maxDistFromGene;
 	
@@ -346,6 +346,25 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			
 			Location loc = new RangeLocation(peak.startCoord,peak.endCoord);
 			
+
+			StrandedFeature nearestTranscript = null;
+			if (maxDistFromGene > 0) {
+									
+				nearestTranscript = RetrieveSequenceFeaturesFromEnsembl
+											.transcriptWithClosestTSS(
+												peak.seqName,
+												peak.startCoord,
+												peak.endCoord,
+												StrandedFeature.UNKNOWN,
+												seqDB,
+												maxDistFromGene,
+												ignoreGenesWithNoCrossReferences);
+				
+				if (nearestTranscript == null && this.excludeUnlabelled) {
+					System.err.println("Excluding unlabelled peak");
+					continue;
+				}
+			}
 			
 			if (this.nearbyGenes > 0) {
 				
@@ -441,20 +460,6 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				
 				
 				
-				StrandedFeature nearestTranscript = null;
-				if (maxDistFromGene > 0) {
-										
-					nearestTranscript = RetrieveSequenceFeaturesFromEnsembl
-												.transcriptWithClosestTSS(
-													peak.seqName,
-													bloc.getMin(),
-													bloc.getMax(),
-													StrandedFeature.UNKNOWN,
-													seqDB,
-													maxDistFromGene,
-													ignoreGenesWithNoCrossReferences);
-			
-				}
 				
 				Sequence seq;
 				
@@ -530,7 +535,11 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						SimpleGFFRecord rec = new SimpleGFFRecord();
 						rec.setSource("nmensemblpeakseq");
 						rec.setSeqName(peak.seqName);
-						rec.setFeature(nearestTranscript.getAnnotation().getProperty("ensembl.gene_id").toString());
+						if (nearestTranscript != null) {
+							rec.setFeature(nearestTranscript.getAnnotation().getProperty("ensembl.gene_id").toString());
+						} else {
+							
+						}
 						rec.setStart(bloc.getMin());
 						rec.setEnd(bloc.getMax());
 						rec.setScore(Double.NaN);
