@@ -9,8 +9,10 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.SortedSet;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
@@ -543,7 +545,14 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						rec.setStart(bloc.getMin());
 						rec.setEnd(bloc.getMax());
 						rec.setScore(Double.NaN);
-						rec.setGroupAttributes(annotation.asMap());
+						
+						Map<String,String> annotationMap = new HashMap<String,String>();
+						for (Object o : annotation.asMap().keySet()) {
+							annotationMap.put(o.toString(), annotation.getProperty(o).toString());
+						}
+						
+						//GFFWriter doesn't like some of the non-string typed annotation values
+						rec.setGroupAttributes(annotationMap);
 
 						gffWriter.recordLine(rec);
 						gffWriter.endDocument(); //force flush

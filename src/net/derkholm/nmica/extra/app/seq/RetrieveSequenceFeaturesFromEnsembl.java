@@ -208,6 +208,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 							if (nearestTranscript != null) {
 								ann.setProperty("nearest_gene", nearestTranscript.getAnnotation().getProperty("ensembl.gene_id"));
 							} else if (excludeUnlabelled) {
+								System.err.println("Excluding unlabelled feature.");
 								return;
 							}
 							
