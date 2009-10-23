@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
@@ -26,6 +27,8 @@ import net.derkholm.nmica.extra.peak.PeakEntryRandomComparitor;
 
 import org.biojava.bio.Annotation;
 import org.biojava.bio.BioError;
+import org.biojava.bio.program.gff.GFFWriter;
+import org.biojava.bio.program.gff.SimpleGFFRecord;
 import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.seq.Feature;
 import org.biojava.bio.seq.FeatureFilter;
@@ -33,7 +36,6 @@ import org.biojava.bio.seq.FeatureHolder;
 import org.biojava.bio.seq.Sequence;
 import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.seq.db.HashSequenceDB;
-import org.biojava.bio.seq.impl.DummySequence;
 import org.biojava.bio.seq.impl.SimpleSequence;
 import org.biojava.bio.symbol.Location;
 import org.biojava.bio.symbol.LocationTools;
@@ -71,7 +73,13 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		PEAKS
 	}
 	
+	public static enum PeakOutputFormat {
+		FASTA,
+		GFF
+	}
+	
 	private PeakFormat inputFormat = PeakFormat.BED;
+	private PeakOutputFormat outputFormat = PeakOutputFormat.FASTA;
 	
 	private File peaksFile;
 	private File outFile;
@@ -104,6 +112,11 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	@Option(help="Input format")
 	public void setInputFormat(PeakFormat f) {
 		this.inputFormat = f;
+	}
+
+	@Option(help="Output format (default=fasta)", optional=true)
+	public void setOutputFormat(PeakOutputFormat outputFormat) {
+		this.outputFormat = outputFormat;
 	}
 	
 	@Option(
@@ -181,6 +194,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		this.excludeUnlabelled  = b;
 	}
 	
+	
 	private static int gapSymbolCount(SymbolList seq) {
 		int numNs = 0;
 		for (Iterator<?> i = seq.iterator(); i.hasNext(); ) {
@@ -189,10 +203,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
                 ++numNs;
             }
         }
-		
 		return numNs;
 	}
-
 
 	public static class PeakEntry {
 		public final String id;
@@ -262,6 +274,11 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			os = System.out;
 		} else {
 			os = new PrintStream(new FileOutputStream(this.outFile, true));
+		}
+		
+		GFFWriter gffWriter = null;
+		if (this.outputFormat.equals(PeakOutputFormat.GFF)) {
+			gffWriter = new GFFWriter(new PrintWriter(os));
 		}
 		
 		BufferedReader br = new BufferedReader(new FileReader(peaksFile));
@@ -497,10 +514,33 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						SequenceSplitter.splitSequences(
 							new RichSequence.IOTools.SingleRichSeqIterator(seq),this.minLength, this.chunkLength);
 					for (Sequence s : outSeqs) {
-						RichSequence.IOTools.writeFasta(System.out, s, null);
+						
+						if (this.outputFormat.equals(PeakOutputFormat.FASTA)) {
+							RichSequence.IOTools.writeFasta(System.out, s, null);							
+						} else {
+							System.err.println("GFF output format not supported when -chunkLength is specified");
+							System.exit(1);
+						}
+						
 					}
 				} else {
-					RichSequence.IOTools.writeFasta(System.out, seq, null);					
+					
+					if (this.outputFormat.equals(PeakOutputFormat.FASTA)) {
+						RichSequence.IOTools.writeFasta(System.out, seq, null);
+					} else {
+						
+						SimpleGFFRecord rec = new SimpleGFFRecord();
+						rec.setSource("nmensemblpeakseq");
+						rec.setSeqName(peak.seqName);
+						rec.setFeature(nearestTranscript.getAnnotation().getProperty("ensembl.gene_id").toString());
+						rec.setStart(bloc.getMin());
+						rec.setEnd(bloc.getMax());
+						rec.setScore(Double.NaN);
+						rec.setGroupAttributes(annotation.asMap());
+
+						gffWriter.recordLine(rec);
+						gffWriter.endDocument(); //force flush
+					}
 				}
 				anyWereOutput = true;
 			}

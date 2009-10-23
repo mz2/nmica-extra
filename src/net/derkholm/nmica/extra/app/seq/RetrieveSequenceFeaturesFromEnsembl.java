@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -17,14 +18,16 @@ import java.util.TreeSet;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
+import net.derkholm.nmica.extra.app.seq.nextgen.RetrievePeakSequencesFromEnsembl.PeakOutputFormat;
 import net.derkholm.nmica.extra.seq.DistanceToPointLocationComparator;
 
 import org.biojava.bio.Annotation;
-import org.biojava.bio.BioError;
 import org.biojava.bio.BioException;
 import org.biojava.bio.program.gff.GFFDocumentHandler;
 import org.biojava.bio.program.gff.GFFParser;
 import org.biojava.bio.program.gff.GFFRecord;
+import org.biojava.bio.program.gff.GFFWriter;
+import org.biojava.bio.program.gff.SimpleGFFRecord;
 import org.biojava.bio.seq.DNATools;
 import org.biojava.bio.seq.FeatureFilter;
 import org.biojava.bio.seq.FeatureHolder;
@@ -48,18 +51,30 @@ import org.bjv2.util.cli.UserLevel;
 @NMExtraApp(launchName = "nmensemblfeat", vm = VirtualMachine.SERVER)
 public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequences {
 
+	protected enum FeatureOutputFormat {
+		FASTA,
+		GFF
+	};
+	
 	private File outFile;
 	private File featuresFile;
 	private int expandToLength = 0;
 	private int minNonN = 1;
 	private int maxDistFromGene;
 	private boolean excludeUnlabelled = true;
+	private FeatureOutputFormat outputFormat = FeatureOutputFormat.FASTA;
+	private GFFWriter gffWriter;
 
 	@Option(help="Output file",optional=true)
 	public void setOut(File f) {
 		this.outFile = f;
 	}
 
+	@Option(help="Output format",optional=true)
+	public void setOutputFormat(FeatureOutputFormat outputFormat) {
+		this.outputFormat  = outputFormat;
+	}
+	
 	@Option(help="Features file (read from stdin if not included)", optional=true)
 	public void setFeatures(File f) {
 		this.featuresFile = f;
@@ -109,6 +124,10 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 			os = new FileOutputStream(this.outFile);
 		}
 
+		if (this.outputFormat.equals(PeakOutputFormat.GFF)) {
+			this.gffWriter = new GFFWriter(new PrintWriter(os));
+		}
+		
 		InputStream inputStream;
 		if (featuresFile == null) {
 			inputStream = System.in;
@@ -166,7 +185,6 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 																seqDB,
 																maxDistFromGene,
 																ignoreGenesWithNoCrossReferences);
-						
 							}
 							
 							SymbolList symList = 
@@ -201,8 +219,23 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 											recLine.getStrand()
 												.equals(StrandedFeature.POSITIVE)? "+" : "-"),
 									ann);
+							
+							if (outputFormat.equals(FeatureOutputFormat.FASTA)) {
+								RichSequence.IOTools.writeFasta(os, s, null);
+							} else {
+								SimpleGFFRecord rec = new SimpleGFFRecord();
+								rec.setSource(recLine.getSource());
+								rec.setSeqName(recLine.getSeqName());
+								rec.setFeature(nearestTranscript.getAnnotation().getProperty("ensembl.gene_id").toString());
+								rec.setStart(Math.max(1,start));
+								rec.setEnd(end);
+								rec.setScore(recLine.getScore());
+								rec.setGroupAttributes(recLine.getGroupAttributes());
+
+								gffWriter.recordLine(rec);
+								gffWriter.endDocument(); //force flush
+							}
 		
-							RichSequence.IOTools.writeFasta(os, s, null);
 		
 						} catch (IllegalIDException e) {
 							e.printStackTrace();
