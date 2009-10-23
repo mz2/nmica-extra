@@ -545,13 +545,15 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						rec.setStart(bloc.getMin());
 						rec.setEnd(bloc.getMax());
 						rec.setScore(Double.NaN);
-						
-						Map<String,String> annotationMap = new HashMap<String,String>();
+
+						//GFFWriter wants its annotations in a specific sort of map
+						Map<String,List<String>> annotationMap = new HashMap<String,List<String>>();
 						for (Object o : annotation.asMap().keySet()) {
-							annotationMap.put(o.toString(), annotation.getProperty(o).toString());
+							List<String> items = new ArrayList<String>();
+							items.add(annotation.getProperty(o).toString());
+							annotationMap.put(o.toString(), new ArrayList<String>(items));
 						}
 						
-						//GFFWriter doesn't like some of the non-string typed annotation values
 						rec.setGroupAttributes(annotationMap);
 
 						gffWriter.recordLine(rec);
