@@ -42,14 +42,18 @@ public class RetainAndBrandFeaturesWithOverlappingFeatures {
 	public void setBrands(File f) {
 		this.brandFeatureFile = f;
 	}    
-    public void setMinOverlap(int i) {
+	
+	@Option(help="Minimum overlap", optional=true)
+	public void setMinOverlap(int i) {
         this.minOverlap = i;
     }
-    
+
+	@Option(help="Master brand key", optional=true)
     public void setMasterBrandKey(String masterBrandKey) {
         this.masterBrandKey = masterBrandKey;
     }
 
+	@Option(help="Output brand key", optional=true)
     public void setOutputBrandKey(String outputBrandKey) {
         this.outputBrandKey = outputBrandKey;
     }
