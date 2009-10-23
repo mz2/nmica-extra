@@ -88,7 +88,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 
 	//private int nearbyGeneWindowSize = 1000000;
 
-	private int minNonN;
+	private int minNonN = 10;
 
 	private RankedProperty rankedProperty;
 
@@ -166,7 +166,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		this.nearbyGeneWindowSize = ws;
 	}*/
 	
-	@Option(help="Minimun number of gap symbols (N)", optional=true)
+	@Option(help="Minimun number of unambiguous symbols in the output sequences (N)", optional=true)
 	public void setMinNonN(int i) {
 		this.minNonN = i;
 	}
