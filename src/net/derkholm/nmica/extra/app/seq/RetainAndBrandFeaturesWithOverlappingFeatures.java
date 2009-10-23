@@ -27,7 +27,7 @@ import org.bjv2.util.cli.Option;
 @NMExtraApp(launchName = "nmbrandfeat", vm = VirtualMachine.SERVER)
 public class RetainAndBrandFeaturesWithOverlappingFeatures {
 	private String outputAttribute = null;
-    private String withName = null;
+    private String withName = "match";
     private int minOverlap = 1;
 	private File brandFile;
 	private File featureFile;
@@ -47,12 +47,12 @@ public class RetainAndBrandFeaturesWithOverlappingFeatures {
         this.minOverlap = i;
     }
 
-	@Option(help="Output this attribute", optional=true)
-    public void setOutputAttribute(String masterBrandKey) {
+	@Option(help="Include this attribute's value to the output GFF")
+    public void setIncludeAttribute(String masterBrandKey) {
         this.outputAttribute = masterBrandKey;
     }
 
-	@Option(help="Output the attribute with the given key (default:'match')", optional=true)
+	@Option(help="The name of the included attribute (default:'match')", optional=true)
     public void setWithName(String outputBrandKey) {
         this.withName = outputBrandKey;
     }
@@ -102,7 +102,9 @@ public class RetainAndBrandFeaturesWithOverlappingFeatures {
                 if (outputAttribute != null) {
                 	try {
                 		brand = ((List) record.getGroupAttributes().get(outputAttribute)).get(0).toString();
-                	} catch (Exception ex) {return;}
+                	} catch (Exception ex) {
+                		System.err.println("No attribute " + outputAttribute + " found.");
+                		return;}
                 } else {
                     brand = record.getFeature() + "_" + record.getSeqName() + "_" + record.getStart();
                 }
