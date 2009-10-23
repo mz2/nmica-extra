@@ -32,6 +32,7 @@ public class RetainAndBrandFeaturesWithOverlappingFeatures {
 	private File brandFile;
 	private File featureFile;
     
+	
 	@Option(help="Input feature file (GFF)", optional=true)
 	public void setBrands(File f) {
 		this.brandFile = f;
@@ -47,10 +48,11 @@ public class RetainAndBrandFeaturesWithOverlappingFeatures {
         this.minOverlap = i;
     }
 
-	@Option(help="Include this attribute's value to the output GFF")
+	@Option(help="Include this attribute's value to the output GFF", optional=true)
     public void setIncludeAttribute(String masterBrandKey) {
         this.outputAttribute = masterBrandKey;
     }
+	
 
 	@Option(help="The name of the included attribute (default:'match')", optional=true)
     public void setWithName(String outputBrandKey) {
