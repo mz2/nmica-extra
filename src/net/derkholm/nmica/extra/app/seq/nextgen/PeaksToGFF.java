@@ -101,7 +101,6 @@ public class PeaksToGFF {
 		while (i < maxCount) {
 			final PeakEntry peak = peakIterator.next();
 			SimpleGFFRecord rec = new SimpleGFFRecord();
-			rec.setComment(String.format("\tp-value:%.3f fdr:%.3f", peak.score,peak.fdr));
 			rec.setEnd(peak.endCoord);
 			rec.setFeature("peak");
 			rec.setFrame(0);
