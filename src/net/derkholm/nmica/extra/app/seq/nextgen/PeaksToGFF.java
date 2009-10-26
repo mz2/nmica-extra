@@ -94,7 +94,7 @@ public class PeaksToGFF {
 		GFFWriter writer = new GFFWriter(new PrintWriter(System.out));
 		
 		Iterator<PeakEntry> peakIterator = peaks.iterator();
-		int i = maxCount;
+		int i = 0;
 		
 		while (i < maxCount) {
 			final PeakEntry peak = peakIterator.next();
@@ -119,6 +119,7 @@ public class PeaksToGFF {
 			writer.recordLine(rec);
 			writer.endDocument();
 			
+			i++;
 		}
 		writer.endDocument();
 
