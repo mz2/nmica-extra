@@ -26,7 +26,10 @@ public class PeakEntryDescComparitor extends PeakEntryComparator implements Comp
 		}
 		
 		if (this.format == PeakFormat.SWEMBL || this.format == PeakFormat.FINDPEAKS) {
+			
 			int valCompare = Double.compare(o1.score, o2.score); /* Both o1 and o2 should be NaN for Swembl so this should return 0 */
+			if (this.format == PeakFormat.SWEMBL) {valCompare = -valCompare;}
+			
 			if (valCompare != 0) return valCompare;
 
 			int fdrCompare = Double.compare(o1.fdr, o2.fdr);
