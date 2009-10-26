@@ -289,7 +289,6 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				br,
 				this.inputFormat, 
 				rankOrder, 
-				rankedProperty,
 				aroundPeak, 
 				this.minLength, 
 				this.maxLength);
@@ -583,7 +582,6 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			BufferedReader br,
 			PeakFormat inputFormat,
 			RankOrder rankOrder,
-			RankedProperty rankedProperty,
 			int aroundPeak,
 			int minLength,
 			int maxLength) throws IOException {

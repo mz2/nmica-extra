@@ -32,7 +32,6 @@ public class PeaksToGFF {
 	private PeakFormat format;
 	private FileReader peaksReader;
 	private RankOrder rankOrder = RetrievePeakSequencesFromEnsembl.RankOrder.DESC;
-	private RankedProperty rankedProperty = RetrievePeakSequencesFromEnsembl.RankedProperty.P_VALUE;
 	private int aroundPeak;
 	private int maxLength;
 	private int minLength;
@@ -73,17 +72,11 @@ public class PeaksToGFF {
 		this.rankOrder = rankOrder;
 	}
 	
-	@Option(help="Ranked property", optional=true)
-	public void setRankedProperty(RankedProperty rankedProp) {
-		this.rankedProperty = rankedProp;
-	}
-	
 	public void main(String[] args) throws FileNotFoundException, IOException {
 		SortedSet<PeakEntry> peaks = RetrievePeakSequencesFromEnsembl.parsePeaks(
 				new BufferedReader(peaksReader), 
 				format, 
 				rankOrder, 
-				rankedProperty, 
 				aroundPeak, 
 				minLength, 
 				maxLength);
@@ -106,9 +99,11 @@ public class PeaksToGFF {
 			rec.setFrame(0);
 			Map<String,List<String>> attribs = new HashMap<String,List<String>>();
 			
-			List<String> fdr = new ArrayList<String>();
-			fdr.add("" + peak.fdr);
-			attribs.put("fdr", fdr);
+			if (!this.format.equals(PeakFormat.SWEMBL)) { 
+				List<String> fdr = new ArrayList<String>();
+				fdr.add("" + peak.fdr);
+				attribs.put("fdr", fdr);				
+			}
 			
 			List<String> score = new ArrayList<String>();
 			fdr.add("" + peak.score );
