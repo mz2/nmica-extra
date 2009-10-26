@@ -106,7 +106,7 @@ public class PeaksToGFF {
 			}
 			
 			List<String> score = new ArrayList<String>();
-			fdr.add("" + peak.score );
+			score.add("" + peak.score );
 			attribs.put("score", score);
 			
 			List<String> tagCount = new ArrayList<String>();
