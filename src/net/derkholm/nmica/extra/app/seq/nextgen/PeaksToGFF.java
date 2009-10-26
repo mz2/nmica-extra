@@ -36,6 +36,7 @@ public class PeaksToGFF {
 	private int maxLength;
 	private int minLength;
 	private int maxCount;
+	private boolean groupBySeq;
 
 	@Option(help="Peak file format")
 	public void setFormat(RetrievePeakSequencesFromEnsembl.PeakFormat format) {
@@ -72,11 +73,17 @@ public class PeaksToGFF {
 		this.rankOrder = rankOrder;
 	}
 	
+	@Option(help="Group by sequence name", optional=true)
+	public void setGroupBySeq(boolean b) {
+		this.groupBySeq = b;
+	}
+	
 	public void main(String[] args) throws FileNotFoundException, IOException {
 		SortedSet<PeakEntry> peaks = RetrievePeakSequencesFromEnsembl.parsePeaks(
 				new BufferedReader(peaksReader), 
 				format, 
 				rankOrder, 
+				groupBySeq,
 				aroundPeak, 
 				minLength, 
 				maxLength);

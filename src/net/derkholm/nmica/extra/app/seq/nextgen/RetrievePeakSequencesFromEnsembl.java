@@ -105,6 +105,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	private boolean excludeUnlabelled = false;
 
 	private int maxDistFromGene;
+	private boolean groupBySeq;
 	
 	@Option(help="Peaks")
 	public void setPeaks(File f) {
@@ -194,6 +195,11 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	@Option(help="Exclude features that do fall within the specified maximum distance from a gene (done by default, applies only when -maxDistanceFromGene was given)", optional=true, userLevel=UserLevel.EXPERT)
 	public void setExcludeUnlabelled(boolean b) {
 		this.excludeUnlabelled  = b;
+	}
+	
+	@Option(help="Group by sequence name", optional=true)
+	public void setGroupBySeq(boolean b) {
+		this.groupBySeq = b;
 	}
 	
 	
@@ -289,6 +295,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				br,
 				this.inputFormat, 
 				rankOrder, 
+				this.groupBySeq,
 				aroundPeak, 
 				this.minLength, 
 				this.maxLength);
@@ -582,6 +589,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			BufferedReader br,
 			PeakFormat inputFormat,
 			RankOrder rankOrder,
+			boolean groupBySeq,
 			int aroundPeak,
 			int minLength,
 			int maxLength) throws IOException {
@@ -589,9 +597,9 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		PeakEntryComparator comp = null;
 		int peakCount = 0;
 		if (rankOrder == RankOrder.ASC) {
-			comp = new PeakEntryAscComparitor(false,inputFormat);
+			comp = new PeakEntryAscComparitor(groupBySeq,inputFormat);
 		} else if (rankOrder == RankOrder.DESC) {
-			comp = new PeakEntryDescComparitor(false,inputFormat);
+			comp = new PeakEntryDescComparitor(groupBySeq,inputFormat);
 		} else {
 			comp = new PeakEntryRandomComparitor();
 		}
