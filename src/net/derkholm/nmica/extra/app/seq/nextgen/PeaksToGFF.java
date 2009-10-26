@@ -5,8 +5,10 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
@@ -103,11 +105,19 @@ public class PeaksToGFF {
 			rec.setEnd(peak.endCoord);
 			rec.setFeature("peak");
 			rec.setFrame(0);
-			Map<String,Object> attribs = new HashMap<String,Object>();
+			Map<String,List<String>> attribs = new HashMap<String,List<String>>();
 			
-			attribs.put("fdr", peak.fdr);
-			attribs.put("score", peak.score);
+			List<String> fdr = new ArrayList<String>();
+			fdr.add("" + peak.fdr);
+			attribs.put("fdr", fdr);
 			
+			List<String> score = new ArrayList<String>();
+			fdr.add("" + peak.score );
+			attribs.put("score", score);
+			
+			List<String> tagCount = new ArrayList<String>();
+			tagCount.add("" + peak.tagCount);
+			attribs.put("tag_count", tagCount);
 			
 			rec.setGroupAttributes(attribs);
 			rec.setScore(peak.fdr);

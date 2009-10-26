@@ -144,10 +144,15 @@ public class RetainAndBrandFeaturesWithOverlappingFeatures {
                     } else if (midSpan.max < record.getStart()) {
                         lb = mid + 1;
                     } else {
-                        int overlap = Math.min(midSpan.max, record.getEnd()) - Math.max(midSpan.min, record.getStart()) + 1;
+                        int overlap = 
+                        	Math.min(midSpan.max, record.getEnd()) - 
+                        	Math.max(midSpan.min, record.getStart()) + 1;
+                        
                         if (overlap >= minOverlap) {
                             SimpleGFFRecord r = new SimpleGFFRecord(record);
-                            r.getGroupAttributes().put(withName, Collections.singletonList(midSpan.brand));
+                            r.getGroupAttributes().put(
+                            	withName, 
+                            	Collections.singletonList(midSpan.brand));
                             gffw.recordLine(r);
                         }
                         return;
