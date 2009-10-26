@@ -92,7 +92,7 @@ public class PeaksToGFF {
 			maxCount = peaks.size();
 		}
 		
-		System.err.printf("Parsed %d peaks", peaks.size());
+		System.err.printf("Parsed %d peaks%n", peaks.size());
 		GFFWriter writer = new GFFWriter(new PrintWriter(System.out));
 		
 		Iterator<PeakEntry> peakIterator = peaks.iterator();
