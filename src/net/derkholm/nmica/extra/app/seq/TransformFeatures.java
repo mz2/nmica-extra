@@ -31,6 +31,8 @@ public class TransformFeatures {
 	private int moveBy;
 	private String outFile;
 	private GFFWriter gffw;
+	private int expandLeft;
+	private int expandRight;
 
 	@Option(help="Input features file (read from stdin if not specified)", optional=true)
 	public void setFeatures(File f) {
@@ -40,6 +42,16 @@ public class TransformFeatures {
 	@Option(help="Scale regions to the specified number of nucleotides", optional=true)
 	public void setScaleTo(int i) {
 		this.scaleTo = i;
+	}
+	
+	@Option(help="Expand features to the left", optional=true)
+	public void expandLeft(int i) {
+		this.expandLeft = i;
+	}
+	
+	@Option(help="Expand features to the right", optional=true)
+	public void setExpandRight(int i) {
+		this.expandRight = i;
 	}
 	
 	@Option(help="Move the regions by the  specified number of nucleotides", optional=true)
@@ -100,12 +112,25 @@ public class TransformFeatures {
 							newEnd = Math.max(0,centrePoint + (scaleTo / 2));
 						}
 						
+						if (expandLeft != 0) {
+							newStart = newStart - expandLeft;
+						}
+						
+						if (expandRight != 0) {
+							newEnd = newEnd + expandRight;
+						}
+						
+						if (moveBy != 0) {
+							newStart = newStart + moveBy;
+							newEnd = newStart + moveBy;
+						}
+						
 						GFFRecord rec = new SimpleGFFRecord(
 								r.getSeqName(),
 								r.getSource(),
 								r.getFeature(),
-								newStart + moveBy,
-								newEnd + moveBy,
+								newStart,
+								newEnd,
 								r.getScore(),
 								r.getStrand(),
 								r.getFrame(),
