@@ -466,12 +466,9 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				annotation.setProperty("score", peak.score);
 				annotation.setProperty("tag_count", peak.tagCount);
 				
-				
-				
-				
 				Sequence seq = null;
 				
-				if (maxDistFromGene > 0 && this.outputFormat.equals(PeakOutputFormat.GFF)) {
+				if (maxDistFromGene > 0 &! this.outputFormat.equals(PeakOutputFormat.GFF)) {
 					if (nearestTranscript == null) {
 						seq = 
 							new SimpleSequence(symList, null, 
@@ -539,7 +536,6 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 					if (this.outputFormat.equals(PeakOutputFormat.FASTA)) {
 						RichSequence.IOTools.writeFasta(System.out, seq, null);
 					} else {
-						assert seq == null;
 						
 						SimpleGFFRecord rec = new SimpleGFFRecord();
 						rec.setSource("nmensemblpeakseq");
@@ -551,7 +547,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						}
 						rec.setStart(bloc.getMin());
 						rec.setEnd(bloc.getMax());
-						rec.setScore(Double.NaN);
+						rec.setScore((Double)annotation.getProperty("score"));
 
 						//GFFWriter wants its annotations in a specific sort of map
 						Map<String,List<String>> annotationMap = new HashMap<String,List<String>>();
