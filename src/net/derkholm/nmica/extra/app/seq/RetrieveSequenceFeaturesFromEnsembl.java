@@ -19,7 +19,7 @@ import java.util.TreeSet;
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.extra.app.seq.nextgen.RetrievePeakSequencesFromEnsembl.PeakOutputFormat;
-import net.derkholm.nmica.extra.seq.DistanceFromStartToPointLocationComparator;
+import net.derkholm.nmica.extra.seq.DistanceFromStartOfStrandedFeatureToPointLocationComparator;
 
 import org.biojava.bio.Annotation;
 import org.biojava.bio.BioException;
@@ -280,17 +280,17 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 			if (strand.equals(StrandedFeature.POSITIVE)) {
 				nearbyTranscripts = 
 					new TreeSet<StrandedFeature>(
-							new DistanceFromStartToPointLocationComparator(new PointLocation(minPos)));
+							new DistanceFromStartOfStrandedFeatureToPointLocationComparator(new PointLocation(minPos)));
 			} else if (strand.equals(StrandedFeature.NEGATIVE)) {
 				nearbyTranscripts = 
 					new TreeSet<StrandedFeature>(
-							new DistanceFromStartToPointLocationComparator(
+							new DistanceFromStartOfStrandedFeatureToPointLocationComparator(
 								new PointLocation(maxPos)));
 			} else {
 				int len = maxPos - minPos;
 				nearbyTranscripts = 
 					new TreeSet<StrandedFeature>(
-						new DistanceFromStartToPointLocationComparator(
+						new DistanceFromStartOfStrandedFeatureToPointLocationComparator(
 							new PointLocation(minPos + len / 2))); /* The feature's centre point */
 			}
 			
