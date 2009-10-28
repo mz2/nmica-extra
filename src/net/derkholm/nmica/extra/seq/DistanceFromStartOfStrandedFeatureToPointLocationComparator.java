@@ -5,10 +5,10 @@ import org.biojava.bio.seq.StrandedFeature;
 import org.biojava.bio.symbol.PointLocation;
 
 
-public class DistanceFromStartToPointLocationComparator implements Comparator<StrandedFeature> {
+public class DistanceFromStartOfStrandedFeatureToPointLocationComparator implements Comparator<StrandedFeature> {
 	private int referencePoint;
 	
-	public DistanceFromStartToPointLocationComparator(PointLocation refPos) {
+	public DistanceFromStartOfStrandedFeatureToPointLocationComparator(PointLocation refPos) {
 		this.referencePoint = refPos.getMin();
 	}
 
