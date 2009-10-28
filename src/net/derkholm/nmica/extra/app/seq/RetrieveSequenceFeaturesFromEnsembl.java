@@ -297,12 +297,10 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 				int tStart;
 				
 				/* Check that this is OK. */
-				if (strand.equals(StrandedFeature.POSITIVE)) {
+				if (transcript.getStrand().equals(StrandedFeature.POSITIVE)) {
 					tStart = loc.getMin();
-					//tEnd = loc.getMin();
 				} else {
 					tStart = loc.getMax();
-					//tEnd = loc.getMax();
 				}
 				
 				if (ignoreGenesWithNoCrossReferences && 
@@ -332,7 +330,9 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 				List<StrandedFeature> featList = new ArrayList<StrandedFeature>(nearbyTranscripts);
 				if (featList.size() > 0) {
 					StrandedFeature f = featList.get(0);
-					nearestTranscript = f;				}
+					nearestTranscript = f;				
+				
+				}
 			}
 		}
 		return nearestTranscript;
