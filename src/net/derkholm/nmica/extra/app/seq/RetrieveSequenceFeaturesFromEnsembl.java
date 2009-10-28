@@ -276,23 +276,14 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 			}
 			
 			Set<StrandedFeature> nearbyTranscripts;
+			int len = maxPos - minPos;
+			int centrePoint = minPos + len / 2;
 			
-			if (strand.equals(StrandedFeature.POSITIVE)) {
-				nearbyTranscripts = 
-					new TreeSet<StrandedFeature>(
-							new DistanceFromStartOfStrandedFeatureToPointLocationComparator(new PointLocation(minPos)));
-			} else if (strand.equals(StrandedFeature.NEGATIVE)) {
-				nearbyTranscripts = 
-					new TreeSet<StrandedFeature>(
-							new DistanceFromStartOfStrandedFeatureToPointLocationComparator(
-								new PointLocation(maxPos)));
-			} else {
-				int len = maxPos - minPos;
-				nearbyTranscripts = 
+			nearbyTranscripts = 
 					new TreeSet<StrandedFeature>(
 						new DistanceFromStartOfStrandedFeatureToPointLocationComparator(
-							new PointLocation(minPos + len / 2))); /* The feature's centre point */
-			}
+							new PointLocation(centrePoint))); /* The feature's centre point */
+			
 			
 			for (Iterator<?> fi = transcripts.features(); fi.hasNext();) {
 				StrandedFeature transcript = (StrandedFeature) fi.next();
