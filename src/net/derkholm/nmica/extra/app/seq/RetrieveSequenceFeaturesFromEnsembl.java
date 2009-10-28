@@ -11,14 +11,15 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
 import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
-import net.derkholm.nmica.extra.app.seq.nextgen.RetrievePeakSequencesFromEnsembl.PeakOutputFormat;
 import net.derkholm.nmica.extra.seq.DistanceFromStartOfStrandedFeatureToPointLocationComparator;
 
 import org.biojava.bio.Annotation;
@@ -85,7 +86,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 		this.expandToLength = i;
 	}
 	
-	@Option(help="Minimun number of gap symbols (N)", optional=true)
+	@Option(help="Minimun number of non gap symbols (N)", optional=true)
 	public void setMinNonN(int i) {
 		this.minNonN = i;
 	}
@@ -124,7 +125,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 			os = new FileOutputStream(this.outFile);
 		}
 
-		if (this.outputFormat.equals(PeakOutputFormat.GFF)) {
+		if (this.outputFormat.equals(FeatureOutputFormat.GFF)) {
 			this.gffWriter = new GFFWriter(new PrintWriter(os));
 		}
 		
@@ -140,12 +141,15 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 				new BufferedReader(new InputStreamReader(inputStream)),
 				new GFFDocumentHandler() {
 
-					public void commentLine(String str) {}
+					public void commentLine(String str) {
+                        System.err.println();
+                        System.err.println("# "+ str);
+                    }
 					public void endDocument() {}
 					public void startDocument(String str) {}
 		
-					public void recordLine(GFFRecord recLine) {
-						System.err.printf(".");
+					public void recordLine(GFFRecord recLine) {												
+						System.err.println(".");
 						try {
 		
 							int start = recLine.getStart();
@@ -175,7 +179,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 										        			recLine.getSeqName(), 
 										        			Annotation.EMPTY_ANNOTATION)
 							        							.createFeature(featTempl);
-								
+						        System.err.printf("Calling RetrieveSequenceFeaturesFromEnsembl.transcriptWithClosestTSS\n");
 						        nearestTranscript = RetrieveSequenceFeaturesFromEnsembl
 															.transcriptWithClosestTSS(
 																recLine.getSeqName(),
@@ -206,6 +210,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 								ann.setProperty(obj, recLine.getGroupAttributes().get(obj));
 							}
 							if (nearestTranscript != null) {
+								System.err.println("Returned non null transcript.");
 								ann.setProperty("nearest_gene", nearestTranscript.getAnnotation().getProperty("ensembl.gene_id"));
 							} else if (excludeUnlabelled) {
 								System.err.println("Excluding unlabelled feature.");
@@ -224,15 +229,20 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 							if (outputFormat.equals(FeatureOutputFormat.FASTA)) {
 								RichSequence.IOTools.writeFasta(os, s, null);
 							} else {
+								Annotation gann = nearestTranscript.getAnnotation();
 								SimpleGFFRecord rec = new SimpleGFFRecord();
 								rec.setSource(recLine.getSource());
 								rec.setSeqName(recLine.getSeqName());
-								rec.setFeature(nearestTranscript.getAnnotation().getProperty("ensembl.gene_id").toString());
+								rec.setFeature(gann.getProperty("ensembl.gene_id").toString());
 								rec.setStart(Math.max(1,start));
 								rec.setEnd(end);
 								rec.setScore(recLine.getScore());
-								rec.setGroupAttributes(recLine.getGroupAttributes());
-
+                                // for transcript in transcripts add group attributes
+                                Map<String,List<?>> attMap = new HashMap<String,List<?>>(recLine.getGroupAttributes()); 
+                                List<String> l = new ArrayList<String>();
+                                l.add(gann.getProperty("ensembl.id").toString());
+                                attMap.put("transcriptId", l);                                    
+								rec.setGroupAttributes(attMap);
 								gffWriter.recordLine(rec);
 								gffWriter.endDocument(); //force flush
 							}
@@ -258,15 +268,17 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 			SequenceDB seqDB, 
 			int maxDistFromGene,
 			boolean ignoreGenesWithNoCrossReferences) throws IllegalIDException, IndexOutOfBoundsException, BioException {
-		
+		// System.err.printf(
+		// 		"Called with args \nseqName: %s\nminPos: %d\nmaxPos: %d\nStrandedFeature: %s\nmaxDistFromGene: %d\nwithXref: %b\n", 
+		// 		seqName, minPos,maxPos,strand.toString(),maxDistFromGene, ignoreGenesWithNoCrossReferences);
 		System.err.printf("Getting genes close to %s:%d-%d%n", seqName, minPos-maxDistFromGene,maxPos+maxDistFromGene);
 		StrandedFeature nearestTranscript = null;
 		if (maxDistFromGene > 0) {
 			System.err.printf("Sequence name: %s%n",seqName);
-			FeatureHolder transcripts = seqDB.getSequence(seqName).filter(
-					new FeatureFilter.And(new FeatureFilter.OverlapsLocation(
-											new RangeLocation(minPos-maxDistFromGene,maxPos+maxDistFromGene)),
-											new FeatureFilter.ByType("transcript")));
+            RangeLocation rangeLoc = new RangeLocation(minPos-maxDistFromGene,maxPos+maxDistFromGene);
+			FeatureHolder transcripts =
+                seqDB.getSequence(seqName).filter(new FeatureFilter.And(new FeatureFilter.OverlapsLocation(rangeLoc),
+                                                                        new FeatureFilter.ByType("transcript")));
 			
 			System.err.printf("Transcripts found:%d%n",transcripts.countFeatures());
 			
@@ -283,7 +295,6 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 					new TreeSet<StrandedFeature>(
 						new DistanceFromStartOfStrandedFeatureToPointLocationComparator(
 							new PointLocation(centrePoint))); /* The feature's centre point */
-			
 			
 			for (Iterator<?> fi = transcripts.features(); fi.hasNext();) {
 				StrandedFeature transcript = (StrandedFeature) fi.next();
@@ -303,13 +314,23 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 					tStart = loc.getMax();
 				}
 				
-				if (ignoreGenesWithNoCrossReferences && 
-					transcript.getAnnotation().containsProperty("ensembl.xrefs")) {
-					if (transcript.getAnnotation().containsProperty("ensembl.id")) {
-						System.err.printf(
-								"Transcript of gene %s does not have cross-references%n", 
-								transcript.getAnnotation().getProperty("ensembl.id"));
+                if (ignoreGenesWithNoCrossReferences) {					
+					boolean hasXrefs = transcript.getAnnotation().containsProperty("ensembl.xrefs");
+					if(!hasXrefs) {
+						System.err.printf("xrefs is null, continuing...\n");
+						continue;
 					}
+					Object xrefs = transcript.getAnnotation().getProperty("ensembl.xrefs");				
+					if (!(xrefs instanceof List)) {
+                        System.err.printf("xrefs is not an instance of List, contiuing...\n");
+                        continue;
+                    }
+					
+					List xrefsList = (List)xrefs;
+					if (xrefsList.size() == 0) {
+                        System.err.printf("xrefs List is empty, contiuing...\n");
+                        continue;
+                    }
 				}
 				
 				RangeLocation tssLocationRange = new RangeLocation(tStart, tStart+1);

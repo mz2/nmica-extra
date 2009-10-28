@@ -11,7 +11,7 @@ import net.sf.samtools.util.CloseableIterator;
 import org.biojava.bio.BioException;
 import org.bjv2.util.cli.App;
 
-import sun.rmi.rmic.Names;
+
 
 @NMExtraApp(launchName = "ngcount", vm = VirtualMachine.SERVER)
 @App(overview = "Output the number of reads mapped to each of the reference sequences.", generateStub = true)
