@@ -152,7 +152,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 					public void startDocument(String str) {}
 		
 					public void recordLine(GFFRecord recLine) {												
-						System.err.println(".");
+						System.err.printf(".");
 						try {
 		
 							int start = recLine.getStart();
