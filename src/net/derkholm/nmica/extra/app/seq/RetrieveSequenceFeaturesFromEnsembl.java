@@ -65,6 +65,9 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 	private boolean excludeUnlabelled = true;
 	private FeatureOutputFormat outputFormat = FeatureOutputFormat.FASTA;
 	private GFFWriter gffWriter;
+	
+	private int randomFeatureCount;
+	private int randomFeatureLength;
 
 	@Option(help="Output file",optional=true)
 	public void setOut(File f) {
@@ -101,7 +104,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 	public void setExcludeUnlabelled(boolean b) {
 		this.excludeUnlabelled  = b;
 	}
-
+	
 	public static int gapSymbolCount(SymbolList seq) {
 		int numNs = 0;
 		for (Iterator<?> i = seq.iterator(); i.hasNext(); ) {
@@ -212,7 +215,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 							if (nearestTranscript != null) {
 								System.err.println("Returned non null transcript.");
 								ann.setProperty("nearest_gene", nearestTranscript.getAnnotation().getProperty("ensembl.gene_id"));
-							} else if (excludeUnlabelled) {
+							} else if (excludeUnlabelled && (maxDistFromGene > 0)) {
 								System.err.println("Excluding unlabelled feature.");
 								return;
 							}

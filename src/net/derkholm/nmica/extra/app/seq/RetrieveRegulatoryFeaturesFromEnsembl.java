@@ -57,7 +57,7 @@ public class RetrieveRegulatoryFeaturesFromEnsembl extends RetrieveEnsemblSequen
 	public void setOut(String str) {
 		this.outFileName = str;
 	}
-	
+		
 	public String schemaBuild() {
 		Matcher matcher = Pattern.compile("(\\d+\\_[\\w,\\d]+)$").matcher(this.database);
 		
