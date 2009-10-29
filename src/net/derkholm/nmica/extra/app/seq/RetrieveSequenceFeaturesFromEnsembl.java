@@ -222,6 +222,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 											recLine.getSeqName(),
 											Math.max(1,start),
 											end,
+											// what happens here if there is no strand info?
 											recLine.getStrand()
 												.equals(StrandedFeature.POSITIVE)? "+" : "-"),
 									ann);
@@ -236,6 +237,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 								rec.setFeature(gann.getProperty("ensembl.gene_id").toString());
 								rec.setStart(Math.max(1,start));
 								rec.setEnd(end);
+								rec.setStrand(recLine.getStrand());
 								rec.setScore(recLine.getScore());
                                 // for transcript in transcripts add group attributes
                                 Map<String,List<?>> attMap = new HashMap<String,List<?>>(recLine.getGroupAttributes()); 

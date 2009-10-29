@@ -19,6 +19,7 @@ import org.biojava.bio.program.gff.GFFParser;
 import org.biojava.bio.program.gff.GFFRecord;
 import org.biojava.bio.program.gff.GFFWriter;
 import org.biojava.bio.program.gff.SimpleGFFRecord;
+import org.biojava.bio.seq.StrandedFeature;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -111,14 +112,24 @@ public class TransformFeatures {
 							newStart = Math.max(0,centrePoint - (scaleTo / 2));
 							newEnd = Math.max(0,centrePoint + (scaleTo / 2));
 						}
-						
-						if (expandLeft != 0) {
-							newStart = newStart - expandLeft;
-						}
-						
-						if (expandRight != 0) {
-							newEnd = newEnd + expandRight;
-						}
+						if(r.getStrand() == StrandedFeature.NEGATIVE) {
+							if (expandLeft != 0) {
+								newEnd = newEnd + expandLeft;
+							}
+							
+							if (expandRight != 0) {
+								newStart = newStart - expandRight;
+							}	
+						} else if (r.getStrand().equals(StrandedFeature.POSITIVE) ||
+                                   r.getStrand().equals(StrandedFeature.UNKNOWN)) {
+							if (expandLeft != 0) {
+								newStart = newStart - expandLeft;
+							}	
+							if (expandRight != 0) {
+								newEnd = newEnd + expandRight;
+							}
+						} 
+
 						
 						if (moveBy != 0) {
 							newStart = newStart + moveBy;
