@@ -33,7 +33,7 @@ public class SampleRegions {
 	
 	private int sampleLength;
 	private ArrayList<GFFRecord> features;
-	public int totalLength;
+	public long totalLength;
 	private File featuresFile;
 	private int sampleCount;
 	private static Random random = new Random();
@@ -66,7 +66,9 @@ public class SampleRegions {
 		for (int i = 0; i < features.size(); i++) {
 			GFFRecord r = this.features.get(i);
 			double len = Math.abs(r.getEnd() - r.getStart());
+			
 			featureWeights[i] = len / (double)this.totalLength;
+			
 		}
 		
 		GFFWriter writer = new GFFWriter(new PrintWriter(System.out));
