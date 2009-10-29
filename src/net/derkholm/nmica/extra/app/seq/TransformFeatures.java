@@ -45,7 +45,7 @@ public class TransformFeatures {
 	}
 	
 	@Option(help="Expand features to the left", optional=true)
-	public void expandLeft(int i) {
+	public void setExpandLeft(int i) {
 		this.expandLeft = i;
 	}
 	
@@ -88,7 +88,7 @@ public class TransformFeatures {
 				new GFFDocumentHandler() {
 
 					public void commentLine(String arg0) {
-						
+						System.err.print(arg0);
 					}
 
 					public void endDocument() {
