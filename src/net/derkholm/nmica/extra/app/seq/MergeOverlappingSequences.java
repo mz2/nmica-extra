@@ -49,7 +49,7 @@ public class MergeOverlappingSequences {
 		this.format = format;
 	}
 	
-	@Option(help="Input sequences (only used with fasta output format)")
+	@Option(help="Input sequences (only used with fasta output format)", optional=true)
 	public void setSeqs(File f) throws FileNotFoundException {
 		this.seqFile = f;
 		this.seqDB = new HashSequenceDB();
