@@ -175,14 +175,8 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 								featTempl.annotation = Annotation.EMPTY_ANNOTATION;
 								featTempl.strand= recLine.getStrand();
 						        // System.err.println("Creating gap from " + temp.location.getMin() + " to " + temp.location.getMax());
-						        StrandedFeature feat = 
-						        	(StrandedFeature)new SimpleSequence(
-										        			seqDB.getSequence(recLine.getSeqName()), 
-										        			recLine.getSeqName(), 
-										        			recLine.getSeqName(), 
-										        			Annotation.EMPTY_ANNOTATION)
-							        							.createFeature(featTempl);
-						        System.err.printf("Calling RetrieveSequenceFeaturesFromEnsembl.transcriptWithClosestTSS\n");
+
+						        //System.err.printf("Calling RetrieveSequenceFeaturesFromEnsembl.transcriptWithClosestTSS\n");
 						        nearestTranscript = RetrieveSequenceFeaturesFromEnsembl
 															.transcriptWithClosestTSS(
 																recLine.getSeqName(),
@@ -212,23 +206,24 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 							for (Object obj : recLine.getGroupAttributes().keySet()) {
 								ann.setProperty(obj, recLine.getGroupAttributes().get(obj));
 							}
+                            Object retrievedGene = null; // haven't got eclipse open, don't know what this is. Don't care.
 							if (nearestTranscript != null) {
 								System.err.println("Returned non null transcript.");
-								ann.setProperty("nearest_gene", nearestTranscript.getAnnotation().getProperty("ensembl.gene_id"));
+                                retrievedGene = nearestTranscript.getAnnotation().getProperty("ensembl.gene_id");
+								ann.setProperty("nearest_gene", retrievedGene);
 							} else if (excludeUnlabelled && (maxDistFromGene > 0)) {
 								System.err.println("Excluding unlabelled feature.");
 								return;
 							}
-							
-							Sequence s = new SimpleSequence(symList, null,
-									String.format("%s;%d-%d(%s)",
-											recLine.getSeqName(),
-											Math.max(1,start),
-											end,
-											// what happens here if there is no strand info?
-											recLine.getStrand()
-												.equals(StrandedFeature.POSITIVE)? "+" : "-"),
-									ann);
+
+                            String fastaHeader = String.format("%s;%d-%d(%s);%s",
+                                                               recLine.getSeqName(),
+                                                               Math.max(1,start),
+                                                               end,
+                                                               // what happens here if there is no strand info?
+                                                               recLine.getStrand().equals(StrandedFeature.POSITIVE)? "+" : "-",
+                                                               retrievedGene.toString());
+							Sequence s = new SimpleSequence(symList, null, fastaHeader, ann);
 							
 							if (outputFormat.equals(FeatureOutputFormat.FASTA)) {
 								RichSequence.IOTools.writeFasta(os, s, null);
@@ -265,6 +260,9 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 		System.err.println();
 	}
 	
+
+
+
 	public static StrandedFeature transcriptWithClosestTSS(
 			String seqName,
 			int minPos,
@@ -279,7 +277,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 		System.err.printf("Getting genes close to %s:%d-%d%n", seqName, minPos-maxDistFromGene,maxPos+maxDistFromGene);
 		StrandedFeature nearestTranscript = null;
 		if (maxDistFromGene > 0) {
-			System.err.printf("Sequence name: %s%n",seqName);
+			// System.err.printf("Sequence name: %s%n",seqName);
             RangeLocation rangeLoc = new RangeLocation(minPos-maxDistFromGene,maxPos+maxDistFromGene);
 			FeatureHolder transcripts =
                 seqDB.getSequence(seqName).filter(new FeatureFilter.And(new FeatureFilter.OverlapsLocation(rangeLoc),
@@ -305,10 +303,10 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 				StrandedFeature transcript = (StrandedFeature) fi.next();
 				if (!transcript.getType().equals("transcript")) continue;
 				
-				System.err.printf("Transcript annotations: %s%n", transcript.getType());
-				for (Object o : transcript.getAnnotation().keys()) {
-					System.err.printf("%s:%s%n",o,transcript.getAnnotation().getProperty(o));
-				}
+				// System.err.printf("Transcript annotations: %s%n", transcript.getType());
+				// for (Object o : transcript.getAnnotation().keys()) {
+				// 	System.err.printf("%s:%s%n",o,transcript.getAnnotation().getProperty(o));
+				// }
 				Location loc = transcript.getLocation();
 				int tStart;
 				

@@ -26,7 +26,7 @@ import org.bjv2.util.cli.Option;
 @App(overview = "Write out random sequences or sections of sequences. If unnamed arguments are given, these are taken as output files and samples are divided equally amongst them.", generateStub = true)
 @NMExtraApp(launchName = "nmrandomseq", vm = VirtualMachine.SERVER)
 public class PickRandomSequences {
-	private int count = 1;
+	private int[] count = 1;
 	private File seqFile;
 	private int length = -1;
 	private boolean sampleWithReplacement = false;
@@ -35,7 +35,7 @@ public class PickRandomSequences {
 	private static Random random = new Random();
 	
 	@Option(help="Number of sequences to sample (default=1)", optional=true)
-	public void setCount(int count) {
+	public void setCount(int[] count) {
 		this.count = count;
 	}
 	
@@ -119,13 +119,10 @@ public class PickRandomSequences {
 		for (Sequence seq : chosenSeqs) {
 			Sequence s;
 			if (uniqueNames) {
-				s = new SimpleSequence(
-						seq.subList(
-								1, 
-								seq.length()),
-								null,
-								seq.getName() + "_" + i,
-								Annotation.EMPTY_ANNOTATION);
+				s = new SimpleSequence(seq.subList(1, seq.length()),
+                                       null,
+                                       seq.getName() + "_" + i,
+                                       Annotation.EMPTY_ANNOTATION);
 			} else {
 				s = seq;
 			}
