@@ -26,11 +26,11 @@ import org.bjv2.util.cli.Option;
 @App(overview = "Write out random sequences or sections of sequences. If unnamed arguments are given, these are taken as output files and samples are divided equally amongst them.", generateStub = true)
 @NMExtraApp(launchName = "nmrandomseq", vm = VirtualMachine.SERVER)
 public class PickRandomSequences {
-	private int[] count = 1;
+	private int[] count;
 	private File seqFile;
 	private int length = -1;
 	private boolean sampleWithReplacement = false;
-	private boolean sampleFragsWithReplacement = false;
+	//private boolean sampleFragsWithReplacement = false;
 	private boolean uniqueNames;
 	private static Random random = new Random();
 	
@@ -66,6 +66,12 @@ public class PickRandomSequences {
 	}
 
 	public void main(String[] args) throws BioException, IOException {
+		
+		if (count.length != args.length) {
+			System.err.println("The number of counts and output file arguments does not match!");
+			System.exit(1);
+		}
+		
 		OutputStream[] outputStreams;
 		if ((args != null) && (args.length > 0)) {
 			outputStreams = new OutputStream[args.length];
@@ -83,52 +89,62 @@ public class PickRandomSequences {
 			seqs.add(seqIterator.nextSequence());
 		}
 		
-		List<Sequence> chosenSeqs = new ArrayList<Sequence>();
+		List<List<Sequence>> chosenSeqs = new ArrayList<List<Sequence>>();
 		if (!sampleWithReplacement) {
-			int c = count;			
-			while (c > 0) {
-				int randSeqIndex = random.nextInt(seqs.size());
-				chosenSeqs.add(seqs.remove(randSeqIndex));
-				
-				c--;
-			}
+			for (int c : count) {
+				List<Sequence> cseqs = new ArrayList<Sequence>();
+				chosenSeqs.add(cseqs);
+				while (c > 0) {
+					int randSeqIndex = random.nextInt(seqs.size());
+					cseqs.add(seqs.remove(randSeqIndex));
+					c--;
+				}	
+			}			
 		} 
 		else if (sampleWithReplacement || (length > 0)) {
-			/* if you want to sample from sequences with replacement
+			/* 
+			 * if you want to sample from sequences with replacement
 			 * or if the wanted length is specified 
 			 */
-			int c = count;			
-			int i = 0;
-			while (c > 0) {
-				Sequence randomSeq = seqs.get(random.nextInt(seqs.size()));
-				if (length > 0) {
-					int startPos = random.nextInt(1 + randomSeq.length() - length);
-					chosenSeqs.add(new SimpleSequence(
-											randomSeq.subList(startPos,startPos + length),
-													null,
-													randomSeq.getName() + "_" + i++,
-													Annotation.EMPTY_ANNOTATION));
-				} else {
-					chosenSeqs.add(randomSeq);
+			
+			for (int c : count) {
+				int i = 0;
+				List<Sequence> cseqs = new ArrayList<Sequence>();
+				chosenSeqs.add(cseqs);
+
+				while (c > 0) {
+					Sequence randomSeq = seqs.get(random.nextInt(seqs.size()));
+					if (length > 0) {
+						int startPos = random.nextInt(1 + randomSeq.length() - length);
+						cseqs.add(new SimpleSequence(
+												randomSeq.subList(startPos,startPos + length),
+														null,
+														randomSeq.getName() + "_" + i++,
+														Annotation.EMPTY_ANNOTATION));
+					} else {
+						cseqs.add(randomSeq);
+					}
+					c--;
 				}
-				c--;
 			}
 		}
 		
 		int i = 0;
-		for (Sequence seq : chosenSeqs) {
-			Sequence s;
-			if (uniqueNames) {
-				s = new SimpleSequence(seq.subList(1, seq.length()),
-                                       null,
-                                       seq.getName() + "_" + i,
-                                       Annotation.EMPTY_ANNOTATION);
-			} else {
-				s = seq;
+		for (List<Sequence> seqList : chosenSeqs) {
+			for (Sequence seq : seqList) {
+				Sequence s;
+				if (uniqueNames) {
+					s = new SimpleSequence(seq.subList(1, seq.length()),
+	                                       null,
+	                                       seq.getName() + "_" + i,
+	                                       Annotation.EMPTY_ANNOTATION);
+				} else {
+					s = seq;
+				}
+				RichSequence.IOTools.writeFasta(outputStreams[i], s, null);
+				outputStreams[i].flush();
 			}
-			int osi = i++ % outputStreams.length;
-			RichSequence.IOTools.writeFasta(outputStreams[osi], s, null);
-			outputStreams[osi].flush();
+			i++;
 		}
 		seqs = null;
 	}
