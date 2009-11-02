@@ -202,7 +202,6 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		this.groupBySeq = b;
 	}
 	
-	
 	private static int gapSymbolCount(SymbolList seq) {
 		int numNs = 0;
 		for (Iterator<?> i = seq.iterator(); i.hasNext(); ) {
@@ -375,7 +374,6 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			}
 			
 			if (this.nearbyGenes > 0) {
-				
 				FeatureHolder genes = 
 					chromoSeq.filter(
 							new FeatureFilter.OverlapsLocation(
@@ -392,10 +390,8 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						System.err.printf("%s : %s", o, gf.getAnnotation().getProperty(o));						
 					}
 				}
-				
 				continue;
 			}
-			
 			
 			if (this.repeatMask) {
 				FeatureHolder repeats = chromoSeq.filter(new FeatureFilter.And(
@@ -524,7 +520,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 					for (Sequence s : outSeqs) {
 						
 						if (this.outputFormat.equals(PeakOutputFormat.FASTA)) {
-							RichSequence.IOTools.writeFasta(System.out, s, null);							
+							RichSequence.IOTools.writeFasta(os, s, null);							
 						} else {
 							System.err.println("GFF output format not supported when -chunkLength is specified");
 							System.exit(1);
@@ -534,7 +530,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				} else {
 					
 					if (this.outputFormat.equals(PeakOutputFormat.FASTA)) {
-						RichSequence.IOTools.writeFasta(System.out, seq, null);
+						RichSequence.IOTools.writeFasta(os, seq, null);
 					} else {
 						
 						SimpleGFFRecord rec = new SimpleGFFRecord();
