@@ -86,7 +86,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 	private File peaksFile;
 	private File outFile;
 	private int maxLength = Integer.MAX_VALUE;
-	private int minLength = 20;
+	private int minLength = 10;
 	private RankOrder rankOrder = RankOrder.DESC;
 	private int maxCount = 0;
 	private int aroundPeak;
@@ -171,10 +171,11 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		this.chunkLength = chunkLength;
 	}
 	
+	/*
 	@Option(help="Retrieve nearby genes (specified number of them)", optional=true)
 	public void setNearbyGenes(int n) {
 		this.nearbyGenes = n;
-	}
+	}*/
 	
 	/*
 	@Option(help="Maximum window size to look for nearby genes (default = 1 megabase)", optional=true)
@@ -321,6 +322,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 		int totalLength = 0;
 		int i = 0;
 		for (PeakEntry peak : peaks) {
+			System.err.println("Handling new peak entry");
 			totalLength += peak.endCoord - peak.startCoord;
 			Sequence chromoSeq = seqDB.getSequence(peak.seqName);
 			
@@ -331,6 +333,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			
 			if (chromoSeq.length() < peak.startCoord) {
 				System.err.printf(
+					"Ignoring peak whose start coordinate goes beyond the end of the sequence region. " +
 					"%s : %d - %d (%d) (start > seq.length)%n",
 					peak.seqName,
 					peak.startCoord,
@@ -341,6 +344,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			
 			if (chromoSeq.length() < peak.endCoord) {
 				System.err.printf(
+					"Ignoring peak region whose end coordinate goes beyond the end of the sequence region. " +
 					"%s : %d - %d (%d) (end > seq.length) %n",
 					peak.seqName,
 					peak.startCoord,
@@ -368,11 +372,12 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 												ignoreGenesWithNoCrossReferences);
 				
 				if (nearestTranscript == null && this.excludeUnlabelled) {
-					System.err.println("Excluding unlabelled peak");
+					System.err.println("Excluding unlabelled peak.");
 					continue;
 				}
 			}
 			
+			/*
 			if (this.nearbyGenes > 0) {
 				FeatureHolder genes = 
 					chromoSeq.filter(
@@ -392,6 +397,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 				}
 				continue;
 			}
+			*/
 			
 			if (this.repeatMask) {
 				FeatureHolder repeats = chromoSeq.filter(new FeatureFilter.And(
@@ -414,6 +420,7 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			}
 			
 			loc = LocationTools.subtract(loc, mask);
+			
 			if (excludeTranslations) {
 				FeatureHolder translations = chromoSeq.filter(new FeatureFilter.And(
 						new FeatureFilter.ByType("translation"),
@@ -446,15 +453,19 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 			for (Iterator<?> bi = loc.blockIterator(); bi.hasNext();) {
 				Location bloc = (Location) bi.next();
 				
-				if ((bloc.getMax() - bloc.getMin()) < this.minLength) continue; //too short, filter out
+				if ((bloc.getMax() - bloc.getMin()) < this.minLength) {
+					System.err.println("Filtering out too short sequence.");
+					continue; //too short, filter out
+				}
 				
 				SymbolList symList = chromoSeq.subList(bloc.getMin(), bloc.getMax());
 				
 				if (minNonN > 0 && 
 						RetrieveSequenceFeaturesFromEnsembl
 							.gapSymbolCount(symList) > minNonN) {
-						continue;
-					}
+					System.err.println("Filtering out sequence with too meny degenerate positions.");
+					continue;
+				}
 				
 				
 				Annotation annotation = new SimpleRichAnnotation();
@@ -559,15 +570,20 @@ public class RetrievePeakSequencesFromEnsembl extends RetrieveEnsemblSequences {
 						gffWriter.endDocument(); //force flush
 					}
 				}
+				
 				anyWereOutput = true;
 			}
 			
 			/* incremented for each *peak* that had at least one sequence, 
 			 * not for each output sequence 
 			 * (might be cut because of repeats/translations) */
-			if (anyWereOutput) i++;
+			if (anyWereOutput) {
+				System.err.printf("Sequences were output (%d out of %d)%n",i,maxCount);
+				i++;
+			}
 			
 			if ((maxCount > 0) && (i >= maxCount)) {
+				System.err.println("Maximum number of peaks output.");
 				break;
 			}
 		}

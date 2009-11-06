@@ -3,8 +3,10 @@ package net.derkholm.nmica.extra.app.motif;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -17,7 +19,6 @@ import java.util.Set;
 import java.util.StringTokenizer;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -54,6 +55,7 @@ public class MotifHitROCAUCalculator {
 	private File negativeSeqs;
 	private File positives;
 	private File negatives;
+	private File outputFile;
 	
 	@Option(help="Permute labels again (test)", optional=true)
 	public void setPermuteLabels(boolean b) {
@@ -128,6 +130,11 @@ public class MotifHitROCAUCalculator {
 	@Option(help="Negative hits. Default input format: motif \\t seq \\t maxscore \\t eval", optional=true)
 	public void setNegative(File f) {
 		this.negatives = f;
+	}
+	
+	@Option(help="Output file")
+	public void setOut(File f) {
+		this.outputFile = f;
 	}
 	
 	private int threads = 1;
@@ -258,8 +265,15 @@ public class MotifHitROCAUCalculator {
 	}
 	
 	public void main(String[] args)
-		throws Exception
-	{
+		throws Exception {
+		
+		PrintStream os = null;
+		if (this.outputFile == null) {
+			os = System.out;
+		} else {
+			os = new PrintStream(new FileOutputStream(this.outputFile, true));
+		}
+		
 		if ((motifs != null) && (positiveSeqs != null) && (negativeSeqs != null)) {
 			System.err.println("Calculating e-values...");
 			MotifSetEmpiricalEValueCalculator eValueCalc = new MotifSetEmpiricalEValueCalculator();
@@ -338,7 +352,7 @@ public class MotifHitROCAUCalculator {
 		Collections.sort(summaries);
 		
 		for (MotifROCAUCSummary sum : summaries) {
-			System.out.printf(
+			os.printf(
 				"%s\t%g\t%g%n", 
 				sum.getMotifName(),
 				sum.getAuc(),

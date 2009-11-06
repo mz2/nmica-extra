@@ -663,6 +663,7 @@ public class MotifAlignment implements
 					m0, 
 					m1, 
 					maxScore, 
+					Double.NaN,
 					flipped, offset);					
 			return mpoffset;
 		} else {
@@ -750,12 +751,14 @@ public class MotifAlignment implements
 				m0, 
 				m1, 
 				maxScore, 
+				Double.NaN,
 				flipped, offset);
 		else
 			mpoffset = new MotifPairWithOffset(
 				m1,
 				m0,
 				maxScore,
+				Double.NaN, 
 				flipped, offset);
 		return mpoffset;
 	} else {
@@ -877,7 +880,7 @@ public class MotifAlignment implements
 		if (m0 != null && m1 != null) {
 			mb.setAllowed(bestRow, bestCol, false);
 			MotifPairWithOffset mpoffset = 
-				new MotifPairWithOffset(m0, m1, maxScore, flipped, offset);					
+				new MotifPairWithOffset(m0, m1, maxScore, Double.NaN, flipped, offset);					
 			return mpoffset;
 		} else {
 			throw new MotifAlignmentException("Could not align motifs");

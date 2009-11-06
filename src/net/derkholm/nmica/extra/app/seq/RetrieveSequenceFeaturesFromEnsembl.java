@@ -65,9 +65,6 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 	private boolean excludeUnlabelled = true;
 	private FeatureOutputFormat outputFormat = FeatureOutputFormat.FASTA;
 	private GFFWriter gffWriter;
-	
-	private int randomFeatureCount;
-	private int randomFeatureLength;
 
 	@Option(help="Output file",optional=true)
 	public void setOut(File f) {

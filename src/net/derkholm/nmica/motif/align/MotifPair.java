@@ -15,15 +15,17 @@ public class MotifPair implements Comparable {
 	    protected final Motif m2;
 	    protected final boolean flip;
 	    protected final double score;
+	    protected final double pValue;
 	    
-	    public MotifPair(Motif m1, Motif m2, double score, boolean flip) {
+	    public MotifPair(Motif m1, Motif m2, double score, double pValue, boolean flip) {
 	        this.m1 = m1;
 	        this.m2 = m2;
 	        this.score = score;
 	        this.flip = flip;
+	        this.pValue = pValue;
 	    }
 
-        public int compareTo(Object o) {
+		public int compareTo(Object o) {
             MotifPair po = (MotifPair) o;
             double dif = score - po.score;
             if (dif < 0) {

@@ -1,6 +1,9 @@
 package net.derkholm.nmica.extra.app.motif;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -11,6 +14,9 @@ import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
+import net.derkholm.nmica.motif.SquaredDifferenceMotifComparitor;
+import net.derkholm.nmica.motif.align.MotifAlignment;
+import net.derkholm.nmica.motif.align.MotifPair;
 import net.derkholm.nmica.seq.WmTools;
 
 import org.biojava.bio.dist.Distribution;
@@ -34,6 +40,10 @@ public class MotifSetComparisonShuffler {
 	private Shuffler shuffle = Shuffler.SHUFFLE;
 	private boolean ignoreDiagonal = false;
 	private double threshold = Double.POSITIVE_INFINITY;
+	private File database;
+	private File motifs;
+	private boolean outputPairedMotifs;
+	private File outputFile;
 	
 	@Option(help="Significance threshold for reporting matches", optional=true)
 	public void setThreshold(double d) {
@@ -55,21 +65,52 @@ public class MotifSetComparisonShuffler {
 		this.bootstraps = i;
 	}
 	
+	@Option(help="Database of motifs to compare motif set against (can also alternatively supply database and query motifs as unnamed arguments)", optional=true)
+	public void setDatabase(File f) {
+		this.database = f;
+	}
+	
+	@Option(help="Source motif set (can also alternatively supply database and query motifs as unnamed arguments)", optional=true)
+	public void setMotifs(File f) {
+		this.motifs = f;
+	}
+	
+	@Option(help="Output paired motifs", optional=true)
+	public void setOutputPairedMotifs(boolean b) {
+		this.outputPairedMotifs = b;
+	}
+	
+	@Option(help="Output file (written to stdout if blank)", optional=true)
+	public void setOut(File f) {
+		this.outputFile = f;
+	}
+	
 	/**
 	 * @param args
 	 */
 	public void main(String[] args) 
 		throws Exception
 	{
-		
-		if (args.length != 2) {
-			System.err.println("USAGE: nmshuffle [...] dictionary.xms querymotifs.xms");
-			System.exit(1);
+		Motif[] dictionary, queries;
+		if (args.length == 2) {
+			dictionary = MotifIOTools.loadMotifSetXML(new FileReader(args[0]));
+			queries = MotifIOTools.loadMotifSetXML(new FileReader(args[1]));
+		} else {
+			dictionary = MotifIOTools.loadMotifSetXML(new FileReader(this.database));
+			queries = MotifIOTools.loadMotifSetXML(new FileReader(this.motifs));
 		}
 		
-		Motif[] dictionary = MotifIOTools.loadMotifSetXML(new FileReader(args[0]));
-		Motif[] queries = MotifIOTools.loadMotifSetXML(new FileReader(args[1]));
+		PrintStream outputStream = null;
+
+		if (outputFile == null) {
+			outputStream = System.out;
+		} else {
+			outputStream = new PrintStream(new FileOutputStream(outputFile));
+		}
+		
 		Distribution elsewhere = new UniformDistribution(DNATools.getDNA());
+		
+		List<MotifPair> motifPairs = new ArrayList<MotifPair>();
 		
 		for (Motif query : queries) {
 			System.err.println("Searching " + query.getName());
@@ -107,8 +148,38 @@ public class MotifSetComparisonShuffler {
 			
 			double pv = ((1.0 * c) / bootstraps);
 			if (pv <= threshold) {
-				System.out.printf("%s\t%s\t%g\t%d\t%g%n", query.getName(), bestMatch.getName(), bestScore, c, pv);
+				if (!outputPairedMotifs) {
+					outputStream.printf("%s\t%s\t%g\t%d\t%g%n", query.getName(), bestMatch.getName(), bestScore, c, pv);
+				} else {
+					motifPairs.add(new MotifPair(query,bestMatch,bestScore,pv,false));
+					
+					bestMatch.getAnnotation().setProperty("reciprocal_match", query.getName());
+					bestMatch.getAnnotation().setProperty("reciprocal_match_p-value", pv);
+					bestMatch.getAnnotation().setProperty("reciprocal_match_best_score", bestScore);
+
+					query.getAnnotation().setProperty("reciprocal_match", bestMatch.getName());
+					query.getAnnotation().setProperty("reciprocal_match_p-value", pv);
+					query.getAnnotation().setProperty("reciprocal_match_best_score", bestScore);
+				}
 			}
+		}
+		
+		if (motifPairs.size() > 0) {
+			List<Motif> motifs = new ArrayList<Motif>();
+			
+			for (MotifPair mp : motifPairs) {
+				MotifAlignment alignment 
+					= new MotifAlignment(
+						new Motif[]{mp.getM1(),mp.getM2()}, 
+						SquaredDifferenceMotifComparitor.getMotifComparitor());
+				
+				motifs.add(alignment.motifs()[0]);
+				motifs.add(alignment.motifs()[1]);
+			}
+			
+			MotifIOTools.writeMotifSetXML(
+					outputStream, 
+					motifs.toArray(new Motif[motifs.size()]));
 		}
 	}
 	

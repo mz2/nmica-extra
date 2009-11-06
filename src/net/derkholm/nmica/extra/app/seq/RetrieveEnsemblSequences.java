@@ -341,7 +341,7 @@ public class RetrieveEnsemblSequences {
 			for (String str : ids) {
 				String ensId = ensemblIDForGeneName(str);
 				idList .add(ensId);
-				System.err.printf("%s -> %s",str, ensId);
+				System.err.printf("%s -> %s%n",str, ensId);
 			}
 			ids = idList;
 		}
@@ -597,8 +597,6 @@ public class RetrieveEnsemblSequences {
 		}
 		return connection;
 	}
-
-
 
 	public String ensemblIDForGeneName(String name) throws SQLException {
 		{
