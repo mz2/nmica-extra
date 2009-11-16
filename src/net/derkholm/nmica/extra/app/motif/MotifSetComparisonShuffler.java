@@ -173,6 +173,9 @@ public class MotifSetComparisonShuffler {
 						new Motif[]{mp.getM1(),mp.getM2()}, 
 						SquaredDifferenceMotifComparitor.getMotifComparitor());
 				
+				alignment = new MotifAlignment(alignment.motifs(), SquaredDifferenceMotifComparitor.getMotifComparitor());
+				alignment = new MotifAlignment(alignment.motifs(), SquaredDifferenceMotifComparitor.getMotifComparitor());
+				
 				motifs.add(alignment.motifs()[0]);
 				motifs.add(alignment.motifs()[1]);
 			}
