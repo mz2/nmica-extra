@@ -183,6 +183,9 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 																seqDB,
 																maxDistFromGene,
 																ignoreGenesWithNoCrossReferences);
+						        
+
+						        
 							}
 							
 							SymbolList symList = 
@@ -207,7 +210,10 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 							if (nearestTranscript != null) {
 								System.err.println("Returned non null transcript.");
                                 retrievedGene = nearestTranscript.getAnnotation().getProperty("ensembl.gene_id");
+						        int distFromCentre = DistanceFromStartOfStrandedFeatureToPointLocationComparator
+        												.distance(nearestTranscript,(end + start) / 2);
 								ann.setProperty("nearest_gene", retrievedGene);
+								ann.setProperty("distance_from_nearest_tss", distFromCentre);
 							} else if (excludeUnlabelled && (maxDistFromGene > 0)) {
 								System.err.println("Excluding unlabelled feature.");
 								return;
@@ -268,21 +274,17 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 			SequenceDB seqDB, 
 			int maxDistFromGene,
 			boolean ignoreGenesWithNoCrossReferences) throws IllegalIDException, IndexOutOfBoundsException, BioException {
-		// System.err.printf(
-		// 		"Called with args \nseqName: %s\nminPos: %d\nmaxPos: %d\nStrandedFeature: %s\nmaxDistFromGene: %d\nwithXref: %b\n", 
-		// 		seqName, minPos,maxPos,strand.toString(),maxDistFromGene, ignoreGenesWithNoCrossReferences);
+		
 		System.err.printf("Getting genes close to %s:%d-%d%n", seqName, minPos-maxDistFromGene,maxPos+maxDistFromGene);
 		StrandedFeature nearestTranscript = null;
 		if (maxDistFromGene > 0) {
-			// System.err.printf("Sequence name: %s%n",seqName);
-            RangeLocation rangeLoc = new RangeLocation(minPos-maxDistFromGene,maxPos+maxDistFromGene);
+			RangeLocation rangeLoc = new RangeLocation(minPos-maxDistFromGene,maxPos+maxDistFromGene);
 			FeatureHolder transcripts =
                 seqDB.getSequence(seqName).filter(new FeatureFilter.And(new FeatureFilter.OverlapsLocation(rangeLoc),
                                                                         new FeatureFilter.ByType("transcript")));
 			
 			System.err.printf("Transcripts found:%d%n",transcripts.countFeatures());
 			
-			//transcripts = transcripts.filter(new FeatureFilter.ByType("gene"));
 			if (!strand.equals(StrandedFeature.UNKNOWN)) {
 				transcripts = transcripts.filter(new FeatureFilter.StrandFilter(strand));
 			}
@@ -300,14 +302,9 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 				StrandedFeature transcript = (StrandedFeature) fi.next();
 				if (!transcript.getType().equals("transcript")) continue;
 				
-				// System.err.printf("Transcript annotations: %s%n", transcript.getType());
-				// for (Object o : transcript.getAnnotation().keys()) {
-				// 	System.err.printf("%s:%s%n",o,transcript.getAnnotation().getProperty(o));
-				// }
 				Location loc = transcript.getLocation();
 				int tStart;
 				
-				/* Check that this is OK. */
 				if (transcript.getStrand().equals(StrandedFeature.POSITIVE)) {
 					tStart = loc.getMin();
 				} else {
@@ -322,13 +319,13 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
 					}
 					Object xrefs = transcript.getAnnotation().getProperty("ensembl.xrefs");				
 					if (!(xrefs instanceof List)) {
-                        System.err.printf("xrefs is not an instance of List, contiuing...\n");
+                        System.err.printf("WARNING: xrefs is not an instance of List, skipping...\n");
                         continue;
                     }
 					
 					List xrefsList = (List)xrefs;
 					if (xrefsList.size() == 0) {
-                        System.err.printf("xrefs List is empty, contiuing...\n");
+                        System.err.printf("xrefs list is empty, skipping...\n");
                         continue;
                     }
 				}

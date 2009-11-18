@@ -12,7 +12,7 @@ public class DistanceFromStartOfStrandedFeatureToPointLocationComparator impleme
 		this.referencePoint = refPos.getMin();
 	}
 
-	private int distance(StrandedFeature s, int referencePoint) {
+	public static int distance(StrandedFeature s, int referencePoint) {
 		int ref,refStart,refEnd;
 		if (s.getStrand().equals(StrandedFeature.POSITIVE)) {
 			ref = Math.abs(s.getLocation().getMin() - referencePoint);
@@ -28,8 +28,8 @@ public class DistanceFromStartOfStrandedFeatureToPointLocationComparator impleme
 	
 	public int compare(StrandedFeature s0, StrandedFeature s1) {
 		
-		int s0Dist = distance(s0,this.referencePoint);
-		int s1Dist = distance(s1,this.referencePoint);
+		int s0Dist = DistanceFromStartOfStrandedFeatureToPointLocationComparator.distance(s0,this.referencePoint);
+		int s1Dist = DistanceFromStartOfStrandedFeatureToPointLocationComparator.distance(s1,this.referencePoint);
 		
 		if (s0Dist < s1Dist) return -1;
 		else if (s0Dist > s1Dist) return 1;
