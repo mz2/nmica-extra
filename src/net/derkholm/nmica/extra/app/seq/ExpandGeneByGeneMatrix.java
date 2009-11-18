@@ -16,6 +16,7 @@ import net.derkholm.nmica.model.genematrix.GeneByGeneMatrix;
 import net.derkholm.nmica.model.genematrix.GeneByGeneMatrixExpansionBundle;
 
 import org.bjv2.util.cli.App;
+import org.bjv2.util.cli.Option;
 
 @App(overview="Expand a gene-by-gene matrix", generateStub=true)
 @NMExtraApp(launchName = "nmexpandgenematrix", vm = VirtualMachine.SERVER)
@@ -25,21 +26,27 @@ public class ExpandGeneByGeneMatrix {
 	protected File seqCountsFile;
 	protected int[] seqCounts;
 
+	@Option(help="Matrix file")
 	public void setMatrix(File f) {
 		this.matrixFile = f;
 	}
-	
-	public void setSeqCountsFile(File f) {
+
+	@Option(help="Sequence counts file")
+	public void setSeqCounts(File f) {
 		this.seqCountsFile = f;
 	}
 	
 	public void main(String[] args) throws IOException {
-		
+		System.err.println("Loading gene by gene matrix ");
 		GeneByGeneMatrix m = MotifFinder.loadGeneByGeneMatrix(this.matrixFile, null);
+				
 		this.seqCounts = ExpandGeneByGeneMatrix.loadSeqCounts(this.seqCountsFile);
-			
+		
+		for (int i = 0; i < this.seqCounts.length; i++) {System.err.printf("%d\t",this.seqCounts[i]);}
+		
 		GeneByGeneMatrixExpansionBundle expandedMBundle = m.expand(this.seqCounts);
-		System.err.println(expandedMBundle.expandedMatrix);
+		
+		System.out.println(expandedMBundle.expandedMatrix);
 	}
 	
 	public static int[] loadSeqCounts(File seqCountsFile) throws IOException {
