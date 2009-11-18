@@ -192,7 +192,7 @@ public class CreateDepthDatabase {
 							+ "ref_id INTEGER,"
 							+ "coord INTEGER,"
 							+ "conservation DOUBLE,"
-							+ " PRIMARY KEY (id));");
+							+ " PRIMARY KEY (id)) ENGINE=InnoDB;");
 		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON conservation(ref_id,coord);");
 		stat.close();
 	}

@@ -82,7 +82,7 @@ public class CalculateGCContent {
 				"ref_id integer," +
 				"begin_coord integer," +
 				"end_coord integer," +
-				"gccontent float);");
+				"gccontent float) ENGINE=InnoDB;");
 		stat.executeUpdate("CREATE INDEX gc_begin_end ON gccontent(ref_id,begin_coord,end_coord);");
 		stat.close();
 	}

@@ -102,7 +102,7 @@ public class PeakCaller {
 				"depth float," +
 				"depth_control float," +
 				"pvalue float," +
-				"fdr float);");
+				"fdr float) ENGINE=InnoDB;");
 		stat.executeUpdate("CREATE INDEX ref_name_begin_end_idx ON depth(ref_name,begin_coord,end_coord);");
 		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON depth(ref_name,begin_coord);");
 	}

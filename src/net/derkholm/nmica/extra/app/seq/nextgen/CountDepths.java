@@ -310,7 +310,7 @@ public class CountDepths extends SAMProcessor {
 							+ "coord integer,"
 							+ "depth DOUBLE,"
 							+ "pvalue DOUBLE,"
-							+ " PRIMARY KEY (id));");
+							+ " PRIMARY KEY (id)) ENGINE=InnoDB;");
 		stat.executeUpdate("CREATE INDEX ref_name_begin_idx ON depth(ref_id,coord);");
 		stat.close();
 	}

@@ -136,7 +136,7 @@ public class CreateGFFDatabase {
 			  +"end_phase    int(11) NOT NULL default '0',"
 			  +"KEY id_contig(contig_id),"
 			  +"KEY id_pos(id,start,end)"
-			  +");");
+			  +") ENGINE=InnoDB;");
 		stat.close();
 	}
 }
