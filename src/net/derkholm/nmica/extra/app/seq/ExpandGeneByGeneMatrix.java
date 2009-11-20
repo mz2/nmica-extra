@@ -14,7 +14,14 @@ import net.derkholm.nmica.build.NMExtraApp;
 import net.derkholm.nmica.build.VirtualMachine;
 import net.derkholm.nmica.model.genematrix.GeneByGeneMatrix;
 import net.derkholm.nmica.model.genematrix.GeneByGeneMatrixExpansionBundle;
+import net.derkholm.nmica.seq.OrderedMapSequenceDB;
 
+import org.biojava.bio.BioException;
+import org.biojava.bio.seq.DNATools;
+import org.biojava.bio.seq.SequenceIterator;
+import org.biojava.bio.seq.db.HashSequenceDB;
+import org.biojava.bio.seq.db.SequenceDB;
+import org.biojava.bio.seq.io.SeqIOTools;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
 
@@ -25,6 +32,8 @@ public class ExpandGeneByGeneMatrix {
 	protected File matrixFile;
 	protected File seqCountsFile;
 	protected int[] seqCounts;
+	private File seqsFile;
+	private OrderedMapSequenceDB seqDB;
 
 	@Option(help="Matrix file")
 	public void setMatrix(File f) {
@@ -36,6 +45,16 @@ public class ExpandGeneByGeneMatrix {
 		this.seqCountsFile = f;
 	}
 	
+	@Option(help="Sequence input file")
+	public void setSeqs(File f) throws FileNotFoundException, BioException {
+		this.seqsFile = f;
+		
+		this.seqDB = new OrderedMapSequenceDB();
+        SequenceIterator si = SeqIOTools.readFasta(new BufferedReader(new FileReader(f)),DNATools.getDNA().getTokenization("token"));
+        SequenceDB seqDB = new HashSequenceDB();
+        while (si.hasNext()) {seqDB.addSequence(si.nextSequence());}
+	}
+	
 	public void main(String[] args) throws IOException {
 		System.err.println("Loading gene by gene matrix ");
 		GeneByGeneMatrix m = MotifFinder.loadGeneByGeneMatrix(this.matrixFile, null);
@@ -44,7 +63,7 @@ public class ExpandGeneByGeneMatrix {
 		
 		for (int i = 0; i < this.seqCounts.length; i++) {System.err.printf("%d\t",this.seqCounts[i]);}
 		
-		GeneByGeneMatrixExpansionBundle expandedMBundle = m.expand(this.seqCounts);
+		GeneByGeneMatrixExpansionBundle expandedMBundle = m.expand(this.seqDB);
 		
 		System.out.println(expandedMBundle.expandedMatrix);
 	}
