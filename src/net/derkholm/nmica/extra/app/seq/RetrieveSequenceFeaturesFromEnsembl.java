@@ -225,7 +225,7 @@ public class RetrieveSequenceFeaturesFromEnsembl extends RetrieveEnsemblSequence
                                                                end,
                                                                // what happens here if there is no strand info?
                                                                recLine.getStrand().equals(StrandedFeature.POSITIVE)? "+" : "-",
-                                                               retrievedGene.toString());
+                                                               retrievedGene != null ? retrievedGene.toString() : null);
 							Sequence s = new SimpleSequence(symList, null, fastaHeader, ann);
 							
 							if (outputFormat.equals(FeatureOutputFormat.FASTA)) {
