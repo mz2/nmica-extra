@@ -133,6 +133,8 @@ public class FeatureToFeatureDistance {
 						null, 
 						str);
 			
+			map.put(str, s);
+			
 			for (GFFRecord r : seqRecs) {
 				StrandedFeature.Template templ = new StrandedFeature.Template();
 				templ.source = r.getSource();
