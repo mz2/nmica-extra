@@ -34,7 +34,7 @@ public class FeatureToFeatureDistance {
 	}
 	
 	@Option(help="Distance threshold",optional=true)
-	public void distThreshold(int i) {
+	public void setDistThreshold(int i) {
 		this.distanceThreshold = i;
 	}
 	
