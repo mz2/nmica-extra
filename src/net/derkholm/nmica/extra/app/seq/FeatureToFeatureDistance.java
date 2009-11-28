@@ -104,8 +104,8 @@ public class FeatureToFeatureDistance {
 					int distance = 
 						DistanceFromStartOfStrandedFeatureToPointLocationComparator
 							.distance(closestFeature, point);
-					List<Integer> distanceList = new ArrayList<Integer>();
-					distanceList.add(new Integer(distance));
+					List<String> distanceList = new ArrayList<String>();
+					distanceList.add("" + distance);
 					
 					r.getGroupAttributes().put("distance", distanceList);
 					gffWriter.recordLine(r);
