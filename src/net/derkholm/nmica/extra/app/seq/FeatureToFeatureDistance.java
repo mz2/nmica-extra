@@ -86,7 +86,7 @@ public class FeatureToFeatureDistance {
 				Comparator<StrandedFeature> comp = 
 					new DistanceFromStartOfStrandedFeatureToPointLocationComparator(new PointLocation(point));
 				
-				SortedSet<StrandedFeature> feats = new TreeSet<StrandedFeature>();
+				SortedSet<StrandedFeature> feats = new TreeSet<StrandedFeature>(comp);
 				Sequence seq = sequenceMap.get(str);
 				
 				FeatureFilter locationFilter = 
