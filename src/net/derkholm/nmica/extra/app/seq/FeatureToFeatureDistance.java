@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -103,8 +104,10 @@ public class FeatureToFeatureDistance {
 					int distance = 
 						DistanceFromStartOfStrandedFeatureToPointLocationComparator
 							.distance(closestFeature, point);
+					List<Integer> distanceList = new ArrayList<Integer>();
+					distanceList.add(new Integer(distance));
 					
-					r.getGroupAttributes().put("distance", distance);
+					r.getGroupAttributes().put("distance", distanceList);
 					gffWriter.recordLine(r);
 					gffWriter.endDocument();// forces buffer flush
 				} else {
