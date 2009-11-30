@@ -82,7 +82,7 @@ public class FeatureToFeatureDistance {
 			
 			for (GFFRecord r : locs) {
 				RangeLocation l = (RangeLocation) new RangeLocation(r.getStart(), r.getEnd());;
-				int point = l.getMin() + (l.getMax() - l.getMin()) / 2;
+				int point = l.getMin() + (l.getMax() - l.getMin()) / 2; //feature's midpoint
 				
 				Comparator<StrandedFeature> comp = 
 					new DistanceFromStartOfStrandedFeatureToPointLocationComparator(new PointLocation(point));
@@ -99,6 +99,12 @@ public class FeatureToFeatureDistance {
 				while (fs.hasNext()) {feats.add((StrandedFeature) fs.next());}
 				
 				if (feats.size() > 0) {
+					
+					for (StrandedFeature f : feats) {
+						System.err.println(
+							DistanceFromStartOfStrandedFeatureToPointLocationComparator.distance(f, point));
+					}
+					System.err.println("---");
 					StrandedFeature closestFeature = feats.first();
 					
 					int distance = 
@@ -121,9 +127,6 @@ public class FeatureToFeatureDistance {
 		Map<String, List<GFFRecord>> recs = GFFUtils.gffToRecordMap(f);
 		
 		Map<String, Sequence> map = new TreeMap<String, Sequence>();
-		
-		
-		
 		
 		for (String str : recs.keySet()) {
 			List<GFFRecord> seqRecs = recs.get(str);
