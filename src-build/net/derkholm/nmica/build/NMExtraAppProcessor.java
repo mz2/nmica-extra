@@ -77,7 +77,7 @@ public class NMExtraAppProcessor implements AnnotationProcessor {
 						pw.printf("fi%n");
 						pw.printf("%n");
 						pw.printf("APP_CLASSPATH=${NMICA_HOME}/lib/changeless.jar:" +
-								"${NMICA_HOME}/lib/biojava.jar:" +
+								"${NMICA_HOME}/lib/biojava-3.0-core-SNAPSHOT.jar:" +
 								"${NMICA_HOME}/lib/bytecode.jar:" +
 								"${NMICA_HOME}/lib/bjv2-core-0.1.jar:" +
 								"${NMICA_HOME}/lib/stax-api-1.0.1.jar:" +

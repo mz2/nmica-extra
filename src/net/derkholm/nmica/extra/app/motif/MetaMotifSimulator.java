@@ -270,13 +270,13 @@ public class MetaMotifSimulator {
     }
 	
 	@Option(help="Relative frequencies of each of the input metamotif " +
-			"(an array of the same length " +
+			"(list of the same length " +
 			"as there are metamotifs in the input file(s)", optional=true)
     public void setFreqs(double[] ds) {
     	this.freqs  = ds;
     }
 	
-	@Option(help="Maximum number of hits of metamotif(s) per data entry (motif). The length of this list", optional=true)
+	@Option(help="Maximum number of hits of metamotif(s) per data entry (motif). This should be a list of the same length as there are metamotifs.", optional=true)
     public void setMaxHits(int[] i) {
 		for (int j : i)
 		if (j <= 0) {
