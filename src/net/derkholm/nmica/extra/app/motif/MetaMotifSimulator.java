@@ -439,8 +439,12 @@ public class MetaMotifSimulator {
 			int metaMotifId = metaMotifIds.get(mm);
 			
 			//TODO: Check that this + 1 here is correct
-			for (int i = startOffset; i < (startOffset + hitLength + 1); i++)
+			for (int i = startOffset; i < (startOffset + hitLength + 1); i++) {
+				if (i < 0) continue;
+				if (i >= modificationMaskRow.length) continue;
+				
 				modificationMaskRow[i] = metaMotifId;
+			}
 			
 			metaMotifCountsPerTargetMotif[row][metaMotifIds.get(mm)]++;
 			
@@ -811,9 +815,11 @@ public class MetaMotifSimulator {
 		return sampleRandomMetaMotifWithPrecision(length, minAlphaSum + (maxAlphaSum - minAlphaSum) * Math.random());
 	}
 	
-	private void modifyWeights(WeightMatrix targetWM, WeightMatrix wm,
-			int startOffset) throws IllegalSymbolException {
+	private void modifyWeights(WeightMatrix targetWM, WeightMatrix wm, int startOffset) throws IllegalSymbolException {
 		for (int j = 0; j < wm.columns(); j++) {
+			if ((startOffset + j) < 0) continue;
+			if ((startOffset + j) >= wm.columns()) continue;
+			
 			Distribution d = targetWM.getColumn(startOffset + j);
 			Distribution newD = wm.getColumn(j);
 			for (Iterator it = ((FiniteAlphabet) d.getAlphabet())
