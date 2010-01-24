@@ -40,6 +40,7 @@ import net.derkholm.nmica.model.metamotif.sampler.SymbolWeightAlteringSampler;
 import net.derkholm.nmica.model.motif.NMWeightMatrix;
 import net.derkholm.nmica.motif.Motif;
 import net.derkholm.nmica.motif.MotifIOTools;
+import net.derkholm.nmica.motif.MotifTools;
 
 import org.biojava.bio.BioError;
 import org.biojava.bio.dist.Distribution;
@@ -51,6 +52,8 @@ import org.biojava.bio.symbol.IllegalSymbolException;
 import org.biojava.bio.symbol.Symbol;
 import org.bjv2.util.cli.App;
 import org.bjv2.util.cli.Option;
+
+import com.sun.java.swing.plaf.motif.MotifToggleButtonUI;
 
 import cern.colt.list.IntArrayList;
 
@@ -98,6 +101,8 @@ public class MetaMotifSimulator {
 	private double bgBiasAlpha;
 	private double bgOtherAlpha;
 	private double priorMeanSamplingAlphaSum;
+	
+	private double pseudoCount = 0.0;
 	
 	@Option(help="Background distribution alpha parameters (in the order A,C,G,T). Either this, -mixBG or -backgroundData has to be specified when spiking.", optional=true)
     public void setBackgroundAlphas(double[] ds) {
@@ -286,6 +291,12 @@ public class MetaMotifSimulator {
     	this.maxNumMetaMotifHitsPerMotif = i;
     }
 	
+	@Option(help="Add the specified amount of pseudocounts to output")
+	public void setPseudoCount(double d) {
+		this.pseudoCount = d;
+	}
+	
+	
 	public void main(String[] args) throws Exception {
 		if (outputFile == null) {
 			System.err.println("-out missing: you need to specify the output filename");
@@ -294,22 +305,6 @@ public class MetaMotifSimulator {
 		
     	if (inputMetaMotifFiles != null)
     		metaMotifs = MetaMotifIOTools.loadMetaMotifsFromMultipleFiles(inputMetaMotifFiles);
-		
-    	/*
-    	if (backgroundFile != null) {
-    		MetaMotif[] backgroundMMs = MetaMotifIOTools
-    									.loadMetaMotifSetXML(
-    											new FileInputStream(backgroundFile));
-    	
-	    	if (backgroundMMs.length > 1) {
-	    		System.err.println("More than one metamotif present in the input datafile");
-	    		System.exit(1);
-	    	}
-	    	
-	    	background = backgroundMMs[0].getColumn(0);
-	    	backgroundMMs = null; //don't need this, let's GC it
-	    	
-    	} */
     	
     	if (backgroundAlphas != null) {
     		//TODO: Support other alphabets but DNA here
@@ -737,6 +732,12 @@ public class MetaMotifSimulator {
     			
     			modifyWeights(targetWM, wm, offset);
     			modificationMask.addModification(mm, targetIndex, offset, mm.columns());
+    		}
+    	}
+    	
+    	if (this.pseudoCount > 0) {
+    		for (Motif m : outputMotifs) {
+    			MotifTools.addPseudoCounts(m, pseudoCount);
     		}
     	}
     	
